@@ -9,7 +9,7 @@ last_name: Kc
 contact_note: >
 description: > # the ">" symbol means to ignore newlines until "footer_text:"
   Here I try exploring the philosophy behind how systems work; from system internals and application security 
-  to the patterns behind internet communication. 
+  to the patterns behind internet communication.
 
 footer_text: >
   Powered by <a href="https://jekyllrb.com/" target="_blank">Jekyll</a> with <a href="https://github.com/alshedivat/al-folio">al-folio</a> theme.
@@ -190,7 +190,6 @@ exclude:
   - lighthouse_results/
   - package.json
   - package-lock.json
-  - _pages/about_einstein.md
   - purgecss.config.js
   - README.md
   - readme_preview/

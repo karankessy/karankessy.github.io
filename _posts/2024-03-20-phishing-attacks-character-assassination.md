@@ -26,13 +26,13 @@ Once you fall for the trick, these clever scammers instantly post a link to porn
 
 ## The Boys Are Falling More for It (But Beware, Ladies!)
 
-Now, we all know that boys tend to have a soft spot for adult content. It's just biology, and that's exactly what these scammers are exploiting. They know that by enticing guys with explicit material, they're more likely to get their hands on valuable passwords. 
+Now, we all know that boys tend to have a soft spot for adult content. It's just biology, and that's exactly what these scammers are exploiting. They know that by enticing guys with explicit material, they're more likely to get their hands on valuable passwords.
 
 But hold up, ladies! That doesn't mean you're off the hook. If you accidentally fall into their trap and enter your password on that dodgy link, your reputation could take a drop-dive too. The consequences of having your account compromised and subsequently tagging your contacts with explicit material can be catastrophic, jeopardizing personal and professional relationships. These scammers are ruthless, targeting anyone they can.
 
 ## The Never-Ending Nightmare!
 
-Think the nightmare ends with you? Think again. The scammers have designed this attack to keep spreading like wildfire. Once you've been tricked, they want you to unwittingly carry on the cycle. Unsuspecting victims perpetuate the attack by entering their passwords on the malicious link. 
+Think the nightmare ends with you? Think again. The scammers have designed this attack to keep spreading like wildfire. Once you've been tricked, they want you to unwittingly carry on the cycle. Unsuspecting victims perpetuate the attack by entering their passwords on the malicious link.
 
 This creates a devastating ripple effect, amplifying the damage inflicted upon an ever-expanding network of friends and family. The attackers thrive on the chaos and the destruction of reputations, leaving victims feeling helpless and stripped of control over their own accounts. It's a never-ending nightmare that can leave you feeling powerless and totally out of control.
 

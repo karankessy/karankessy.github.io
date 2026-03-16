@@ -16,9 +16,9 @@ Taking this as an example:
 
 ```json
 {
-	"user_id": 123,
-	"email": "heisenberg@gmail.com",
-	"active": true
+  "user_id": 123,
+  "email": "heisenberg@gmail.com",
+  "active": true
 }
 ```
 
@@ -34,7 +34,7 @@ With this you allegedly reduce 40-60% of the tokens. Things run faster. It costs
 
 {% include figure.liquid loading="eager" path="assets/img/toon.png" class="img-fluid rounded z-depth-1" zoomable=true %}
 
-But the problem is, TOON works best on flat JSON data. If your JSON is nested—one object inside another—flatten it first. If you don't, TOON can make things worse. You'll use more tokens; likely 20-30% more, not fewer. 
+But the problem is, TOON works best on flat JSON data. If your JSON is nested—one object inside another—flatten it first. If you don't, TOON can make things worse. You'll use more tokens; likely 20-30% more, not fewer.
 
 So, we have turn this (Nested JSON):
 
@@ -52,8 +52,8 @@ To this (Flat Normalized JSON):
 
 ```json
 {
-	"user.id": 123,
-	"user.email":"heisenberg@gmail.com"
+  "user.id": 123,
+  "user.email": "heisenberg@gmail.com"
 }
 ```
 

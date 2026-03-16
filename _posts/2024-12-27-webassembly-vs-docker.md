@@ -25,20 +25,19 @@ In this blog post, we'll explore what WebAssembly and Docker are, compare their 
 Imagine being able to run a complex desktop application like Photoshop or Figma directly in your web browser—no downloads or installations required. That's one of the exciting promises of WebAssembly.
 
 - **Easy to Understand:**  
-    WebAssembly is a new type of code that lets you run applications built in languages like C, C++, or Rust right in your browser. It works alongside HTML, CSS, and JavaScript, making it possible to bring powerful, high-performance applications online.
+   WebAssembly is a new type of code that lets you run applications built in languages like C, C++, or Rust right in your browser. It works alongside HTML, CSS, and JavaScript, making it possible to bring powerful, high-performance applications online.
 
-    {% include figure.liquid loading="eager" path="assets/img/wasm2.png" class="img-fluid rounded z-depth-1" zoomable=true %}
+  {% include figure.liquid loading="eager" path="assets/img/wasm2.png" class="img-fluid rounded z-depth-1" zoomable=true %}
 
 - **How It Works:**  
-    Normally, desktop programs need to be compiled into machine code that your computer can understand. With WASM, developers compile their code into a special binary format that runs quickly and securely in the browser. Tools like Emscripten help convert C programs into WASM files that can run seamlessly online.
-    
+   Normally, desktop programs need to be compiled into machine code that your computer can understand. With WASM, developers compile their code into a special binary format that runs quickly and securely in the browser. Tools like Emscripten help convert C programs into WASM files that can run seamlessly online.
 
 ### WASM Outside of Browsers
 
 WASM isn't just for web pages—it can also run on any system that supports a WASM runtime. Think of these runtimes like the engines that let your computer run programs written in other languages (such as the Java Virtual Machine or Python's interpreter).
 
 - **Portability:**  
-    WASM binaries are designed to be platform-neutral. This means they can run on different operating systems and processor types without needing major changes.
+   WASM binaries are designed to be platform-neutral. This means they can run on different operating systems and processor types without needing major changes.
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
@@ -47,7 +46,7 @@ WASM isn't just for web pages—it can also run on any system that supports a WA
 </div>
 
 - **System Access:**  
-    Using the WebAssembly System Interface (WASI), WASM modules can access files, directories, and other system resources. This ability makes it similar to how containers work.
+   Using the WebAssembly System Interface (WASI), WASM modules can access files, directories, and other system resources. This ability makes it similar to how containers work.
 
 ---
 
@@ -56,11 +55,9 @@ WASM isn't just for web pages—it can also run on any system that supports a WA
 Docker is a popular technology that packages your application code along with all its dependencies into a single container. This container can run anywhere—on any computer or server—without worrying about differences in operating systems or installed libraries.
 
 - **The Problem It Solves:**  
-    Think about how many steps are involved in running a simple C program: installing the right compiler, managing libraries, and setting system paths. Docker simplifies this by bundling everything into one neat package. Now, your colleague on a different system can run your program without any setup headaches.
-    
+   Think about how many steps are involved in running a simple C program: installing the right compiler, managing libraries, and setting system paths. Docker simplifies this by bundling everything into one neat package. Now, your colleague on a different system can run your program without any setup headaches.
 - **How It Works:**  
-    A Docker container uses a Docker image—a snapshot of a file system with all necessary tools, libraries, and your application. When you run the container, it behaves like a small, self-contained computer.
-    
+   A Docker container uses a Docker image—a snapshot of a file system with all necessary tools, libraries, and your application. When you run the container, it behaves like a small, self-contained computer.
 
 ---
 
@@ -71,21 +68,17 @@ Docker is a popular technology that packages your application code along with al
 While Docker and WASM both help package and run applications, they work in different ways:
 
 - **Architecture:**
-    
-    - **Docker:** Packages the entire file system, dependencies, and binaries into a container.
-    - **WASM:** Creates a compact, precompiled binary. WASI then supplies the system resources at runtime.
+  - **Docker:** Packages the entire file system, dependencies, and binaries into a container.
+  - **WASM:** Creates a compact, precompiled binary. WASI then supplies the system resources at runtime.
 - **Portability:**
-    
-    - **Docker:** Requires matching the image with the right operating system and processor type.
-    - **WASM:** Works across platforms, independent of the underlying hardware.
+  - **Docker:** Requires matching the image with the right operating system and processor type.
+  - **WASM:** Works across platforms, independent of the underlying hardware.
 - **Performance & Size:**
-    
-    - **Docker:** Containers can be tens or hundreds of megabytes and may take seconds to start.
-    - **WASM:** Modules are only a few megabytes and start in milliseconds, offering near-native performance.
+  - **Docker:** Containers can be tens or hundreds of megabytes and may take seconds to start.
+  - **WASM:** Modules are only a few megabytes and start in milliseconds, offering near-native performance.
 - **Usage Scenarios:**
-    
-    - **Docker:** Best for packaging full applications with all their dependencies in a controlled environment.
-    - **WASM:** Ideal for running high-performance code on the web or in other environments where quick startup is crucial.
+  - **Docker:** Best for packaging full applications with all their dependencies in a controlled environment.
+  - **WASM:** Ideal for running high-performance code on the web or in other environments where quick startup is crucial.
 
 ---
 
@@ -94,11 +87,9 @@ While Docker and WASM both help package and run applications, they work in diffe
 There has been some speculation that WASM could eventually replace Docker, Kubernetes, and other container technologies. However, it's more likely that WASM will work alongside Docker rather than replace it completely.
 
 - **Integration Potential:**  
-    Docker's recent technical preview shows that you can now run WASM containers alongside traditional Linux and Windows containers. This integration means you could use the fast startup and small size of WASM while still taking advantage of Docker's powerful container management features.
-    
+   Docker's recent technical preview shows that you can now run WASM containers alongside traditional Linux and Windows containers. This integration means you could use the fast startup and small size of WASM while still taking advantage of Docker's powerful container management features.
 - **Real-World Impact:**  
-    Combining these two technologies could lead to even more efficient, scalable, and secure web applications. Developers might soon enjoy the best of both worlds: Docker's ease of deployment and WASM's performance benefits.
-    
+   Combining these two technologies could lead to even more efficient, scalable, and secure web applications. Developers might soon enjoy the best of both worlds: Docker's ease of deployment and WASM's performance benefits.
 
 ---
 

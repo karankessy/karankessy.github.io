@@ -13,6 +13,7 @@ HTTP routing is a fundamental concept in web development that determines how web
 Host-based routing, also known as VHOST (Virtual Host) routing, is a pattern where multiple domain names point to the same server or endpoint. This approach is particularly useful for managing multiple services under different domains while utilizing the same infrastructure.
 
 ### Key Features:
+
 - Multiple domains (e.g., **server.web.site.com** and **api.site.com**) can point to the same endpoint
 - Uses the publicly available IP address
 - Ideal for microservices architecture
@@ -31,6 +32,7 @@ http://api.example.com/getprofile/v1/123456
 ```
 
 ### Benefits:
+
 - Granular control over request handling
 - Excellent for versioning APIs
 - Simplified container scaling
@@ -41,6 +43,7 @@ http://api.example.com/getprofile/v1/123456
 The third crucial pattern involves routing based on HTTP headers. While this includes cookie-based persistence, it's important to note that the Host header is typically excluded from this category since it falls under host-based routing.
 
 ### Important Considerations:
+
 - Cookie-based persistence for session management
 - Custom headers for routing decisions
 - Distinct from Host header routing
@@ -49,6 +52,7 @@ The third crucial pattern involves routing based on HTTP headers. While this inc
 ## Best Practices
 
 When implementing these routing patterns, consider:
+
 - Using HTTPS for secure communication
 - Implementing proper error handling
 - Setting up monitoring and logging

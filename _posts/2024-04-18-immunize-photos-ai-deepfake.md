@@ -60,7 +60,7 @@ Don't keep this blog's valuable insights to yourself. Sharing it with your loved
 
 ## Tools and References
 
-- **PhotoGuard Tool:** [Try it on Hugging Face](https://huggingface.co/spaces/hadisalman/photoguard)  
-- **Tutorial Video:** [Watch on YouTube](https://www.youtube.com/watch?v=qhoK3q2fknk&t=229s)  
-- **Research Paper on Immunization:** [View PDF](https://arxiv.org/pdf/2302.06588.pdf)  
+- **PhotoGuard Tool:** [Try it on Hugging Face](https://huggingface.co/spaces/hadisalman/photoguard)
+- **Tutorial Video:** [Watch on YouTube](https://www.youtube.com/watch?v=qhoK3q2fknk&t=229s)
+- **Research Paper on Immunization:** [View PDF](https://arxiv.org/pdf/2302.06588.pdf)
 - **MIT Technology Review:** [Read More](https://www.technologyreview.com/2023/07/26/1076764/this-new-tool-could-protect-your-pictures-from-ai-manipulation/)

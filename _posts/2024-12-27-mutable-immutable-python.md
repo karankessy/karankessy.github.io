@@ -6,14 +6,14 @@ description: Explore the core engineering concepts behind mutable and immutable 
 tags: [Python, Programming, Mutable, Immutable, Memory Management]
 ---
 
-If you've been programming in Python, you've probably come across the terms *mutable* and *immutable*. These words might sound casual, but have you ever wondered how mutable is actually mutable? and immutable immutable? Its quite simple once you get the hang of it. Let's break it down and look at the "how" and "why" behind these concepts.
+If you've been programming in Python, you've probably come across the terms _mutable_ and _immutable_. These words might sound casual, but have you ever wondered how mutable is actually mutable? and immutable immutable? Its quite simple once you get the hang of it. Let's break it down and look at the "how" and "why" behind these concepts.
 
 ---
 
 ### What Do Mutable and Immutable Mean?
 
-- **Mutable** means *changeable*. Data types like lists, sets, and dictionaries can be modified after they are created.
-- **Immutable** means *unchangeable*. Data types like strings, integers, and tuples cannot be altered once they are created.
+- **Mutable** means _changeable_. Data types like lists, sets, and dictionaries can be modified after they are created.
+- **Immutable** means _unchangeable_. Data types like strings, integers, and tuples cannot be altered once they are created.
 
 Now, here's where it gets interesting: even if a data type is immutable, it doesn't mean you can't assign new values to a variable. Let's go a bit further.
 
@@ -39,10 +39,10 @@ Strings are immutable, so when you assign a new value to the variable `username`
 #### Memory Allocation Diagrams
 
 {% include figure.liquid loading="eager" path="assets/img/userkaran.png" class="img-fluid rounded z-depth-1" zoomable=true %}
-*when username = "karan"*
+_when username = "karan"_
 
 {% include figure.liquid loading="eager" path="assets/img/usernotkaran.png" class="img-fluid rounded z-depth-1" zoomable=true %}
-*after re-assigning the value when username = "notkaran"*
+_after re-assigning the value when username = "notkaran"_
 
 Here, the value `"karan"` is stored at a different memory location, which will be removed by the garbage collector in Python since no variable is referencing it.
 
@@ -69,7 +69,7 @@ In this case:
 #### Memory Allocation Diagram
 
 {% include figure.liquid loading="eager" path="assets/img/xandy.png" class="img-fluid rounded z-depth-1" zoomable=true %}
-*In this case, the value `10` won't be deleted as it is being referenced by `y`.*
+_In this case, the value `10` won't be deleted as it is being referenced by `y`._
 
 ---
 

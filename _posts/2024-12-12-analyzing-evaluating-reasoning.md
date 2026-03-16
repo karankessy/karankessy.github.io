@@ -34,7 +34,7 @@ As mentioned before, when looking at an argument, the first things to consider a
 
 The purpose of the argument is to respond to the alleged claim of unfairness and inequality by women. Some may refer to parts of a text that serve as the target of an argument as a counter-argument, but this is misleading. If anything, the author's argument should be considered the counter-argument, since the author is the one responding, not the women.
 
-In standard form, the argument can be represented as follows: Context (or target): Top women tennis players used to complain about the inequalities of prize money. 
+In standard form, the argument can be represented as follows: Context (or target): Top women tennis players used to complain about the inequalities of prize money.
 
 In the diagram, R1 to R3 represent the reasons, IC is the intermediate conclusion, followed by the reasons R1 to R3, and the main conclusion (MC) is C, which is the main point of the argument, supported by all the reasons and intermediate conclusion (IC).
 
@@ -42,7 +42,7 @@ Now let's visualize the argument in a diagram:
 
 {% include figure.liquid loading="eager" path="assets/img/thinkingskill.png" class="img-fluid rounded z-depth-1" zoomable=true %}
 
-> # R1 & R2 ---> IC --->  [C]  <--- R3
+> # R1 & R2 ---> IC ---> [C] <--- R3
 
 In the diagram, R1 to R3 represent the reasons, IC is the intermediate conclusion, followed by the reasons R1 to R3, and the main conclusion (MC) is C, which is the main point of the argument, supported by all the reasons and intermediate conclusion (IC).
 
@@ -63,6 +63,5 @@ does not follow the conclusion,
 Thus, the conclusion of an argument needs to be supported by the reasons presented.
 
 Understanding the structure of an argument is essential in identifying its strengths and weaknesses. By breaking down an argument into its constituent parts, we can evaluate the validity of the reasons presented and determine if the conclusion follows logically. Additionally, conducting thorough research and ensuring that the main conclusion is supported by all the reasons presented is critical in building a strong argument. By employing these techniques, we can strive better critical thinkers and more effective communicators.
-
 
 To conclude, I hope this blog has provided you with a better understanding of how to analyze and evaluate arguments. The examples used in this blog are taken from a book by Cambridge University, and I highly recommend it to those who want to delve deeper into the topic. Feel free to reach out to me via [Instagram](https://instagram.com/_wd.erick) or [Facebook](https://fb.com/karankessy) if you would like the book's details.

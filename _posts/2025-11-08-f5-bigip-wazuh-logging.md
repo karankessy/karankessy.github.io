@@ -11,7 +11,7 @@ Its already been eighteen months since I first had the failure trying integrate 
 
 F5 BIG-IP is a good of a solutions when it comes to Web Application Firewall and Load Balancing tasks. I've been working with it for over half and a year now — it does its job quite well, protecting applications through real time traffic inspection and respective response enforcement. But it comes with a very real limit when it comes to local log storage at least in this series of F5 WAF which is claimed to be fixed in newer product series. On virtual editions, it caps at 3 million records or 2 GB of database space; on physical systems, it goes to 5 GB.
 
-I often get surprised when I find people getting disappointed over F5 not storing logs for much longer time. It is a limit but not really a flaw — it is so by design. WAF's main job is to process live traffic and respond to attacks instantly & accordingly. Storing, indexing, and searching logs is whole another world — slow, storage-hungry, and heavy on CPU. If F5 did all that itself, it would steal power from what it's best at: stopping attacks as they happen. That's why offloading logs & events to a SIEM is all that makes sense & that is why it is made for. 
+I often get surprised when I find people getting disappointed over F5 not storing logs for much longer time. It is a limit but not really a flaw — it is so by design. WAF's main job is to process live traffic and respond to attacks instantly & accordingly. Storing, indexing, and searching logs is whole another world — slow, storage-hungry, and heavy on CPU. If F5 did all that itself, it would steal power from what it's best at: stopping attacks as they happen. That's why offloading logs & events to a SIEM is all that makes sense & that is why it is made for.
 
 Expecting a single product to be both a WAF and a SIEM is like asking a Formula 1 car to tow a truck—technically possible, but you'll burn the engine before the truck moves.
 
@@ -123,7 +123,7 @@ As I write this, logs keep coming in, each one like a little postcard from F5 sa
 
 It took eighteen months for them to talk. But now they do.
 
-Maybe it was an update, maybe a coincidence, at least my ego is not letting I was mistaken as I've almost given 1 month trying all the ways I could — or maybe machines just have their moods too.  
+Maybe it was an update, maybe a coincidence, at least my ego is not letting I was mistaken as I've almost given 1 month trying all the ways I could — or maybe machines just have their moods too.
 
 Nothing mystical about it, but after enough retries, even logic seems to respond better when you stop arguing with it.  
 This time, it simply worked. And that was enough.
