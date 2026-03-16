@@ -193,11 +193,6 @@ ninja.data = [{
           description: "",
           section: "Books",handler: () => {
               window.location.href = "/books/the_alchemist/";
-            },},{id: "books-the-godfather",
-          title: 'The Godfather',
-          description: "",
-          section: "Books",handler: () => {
-              window.location.href = "/books/the_godfather/";
             },},{id: "books-you-39-re-too-good-to-feel-this-bad",
           title: 'You&amp;#39;re Too Good to Feel This Bad',
           description: "",
