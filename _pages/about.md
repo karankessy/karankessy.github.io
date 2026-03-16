@@ -2,7 +2,6 @@
 layout: about
 title: about
 permalink: /
-subtitle: Life, conversations, cybersecurity, web technologies, and the little things that catch my interest.
 
 profile:
   align: right
