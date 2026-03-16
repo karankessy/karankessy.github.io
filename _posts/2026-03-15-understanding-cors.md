@@ -10,6 +10,12 @@ mermaid:
   zoomable: true
 ---
 
+If you've ever built a modern web application, you've probably stared at a CORS error in your browser console wondering why your perfectly fine API call works in Postman but dies in the browser. This article breaks down exactly what's happening under the hood — from the Same-Origin Policy's origins in 1995, through preflight mechanics, credentials, common misconfigurations, and real-world deployment patterns.
+
+I've also put together a hands-on demo project — [**demoCORS**](https://github.com/karankessy/demoCORS) — that you can clone and run locally to see every concept in action.
+
+---
+
 ## 1. The Same-Origin Policy (SOP)
 
 ### Why it exists
@@ -41,7 +47,7 @@ Every single one of these is a **different origin**:
 - Row 1 vs Row 3: different **scheme** (`https` vs `http`)
 - Row 1 vs Row 4: different **port** (`443` vs `8080`)
 
-This is exactly the principle at work in the demo code: `http://localhost:3000` and `http://localhost:4000` differ in port, making them cross-origin.
+This is exactly the principle at work in the [demoCORS](https://github.com/karankessy/demoCORS) project: `http://localhost:3000` and `http://localhost:4000` differ in port, making them cross-origin.
 
 ### What SOP blocks
 
@@ -69,7 +75,7 @@ SOP was designed for a 1990s web where pages were self-contained documents. The 
 - **Single-Page Applications (SPAs)** serve a static frontend from `app.example.com` and call APIs at `api.example.com`
 - **Microservices** expose multiple APIs on different domains or ports
 - **Third-party integrations** require calling payment processors, analytics services, CDNs
-- **Development environments** run frontends and backends on different ports (exactly like our demo: port 3000 and port 4000)
+- **Development environments** run frontends and backends on different ports (exactly like [demoCORS](https://github.com/karankessy/demoCORS): port 3000 and port 4000)
 
 Without any mechanism to relax SOP, none of these architectures would work. You'd be forced to same-origin-proxy every API call through your frontend server.
 
@@ -112,7 +118,7 @@ A request is "simple" (formally a request that doesn't trigger a preflight) when
 
 **Why these conditions?** Because a simple request is no more dangerous than what an HTML `<form>` can already do. Forms can POST with `application/x-www-form-urlencoded` or `multipart/form-data` to any URL. SOP never blocked form submissions. So a "simple" CORS request adds no new attack surface — the browser just needs to check whether the server wants the _response_ shared.
 
-In our demo, the `fetch()` calls are simple GET requests with no custom headers:
+In the [demoCORS](https://github.com/karankessy/demoCORS) project, the `fetch()` calls are simple GET requests with no custom headers:
 
 ```js
 await fetch("http://localhost:4000/api/data");
@@ -286,7 +292,7 @@ Access-Control-Max-Age: 86400
 
 `Access-Control-Max-Age` tells the browser how many seconds to cache the preflight result. During that window, subsequent requests to the same URL with compatible methods and headers skip the OPTIONS check entirely.
 
-**Without caching, every single API call generates two HTTP requests** — a significant performance tax. In the demo, `Max-Age` is not configured, meaning every preflight is re-sent. In production, values of `86400` (24 hours) or `3600` (1 hour) are typical.
+**Without caching, every single API call generates two HTTP requests** — a significant performance tax. In the [demoCORS](https://github.com/karankessy/demoCORS) project, `Max-Age` is not configured, meaning every preflight is re-sent. In production, values of `86400` (24 hours) or `3600` (1 hour) are typical.
 
 Note: Browsers impose their own maximum. Chrome caps at 7200 seconds (2 hours), regardless of what the server sends.
 
@@ -380,8 +386,6 @@ Access-Control-Max-Age: 86400
 - Safari: max 604800 (7 days)
 
 ### `Access-Control-Expose-Headers`
-
-**Bonus header not in the demo but important in production.**
 
 **Purpose:** By default, JavaScript can only access these response headers: `Cache-Control`, `Content-Language`, `Content-Length`, `Content-Type`, `Expires`, `Pragma`. All other headers are hidden.
 
@@ -612,7 +616,7 @@ If the response includes correct CORS headers, the server is fine — the issue 
 
 ### Node.js / Express
 
-The demo uses the `cors` npm package, which is the standard for Express:
+The [demoCORS](https://github.com/karankessy/demoCORS) project uses the `cors` npm package, which is the standard for Express:
 
 ```js
 const cors = require("cors");
@@ -732,23 +736,25 @@ If you can answer these five questions, you can debug any CORS issue.
 
 ---
 
-toolName: todo_write
+## Try It Yourself
 
-status: success
+Clone the [**demoCORS**](https://github.com/karankessy/demoCORS) project to see these concepts in action:
 
-Todos updated: 3 items
+```bash
+git clone https://github.com/karankessy/demoCORS.git
+cd demoCORS
+npm install
+npm start
+```
 
-Both phases are complete. Here's a summary of the key findings from the code review and what the article covers:
+Open `http://localhost:3000` and watch the **Network** tab in DevTools to see CORS headers and preflight requests in real time.
 
-### Code Review Highlights
+---
 
-**The demo is functionally correct.** The use of ports 3000 and 4000 creates genuinely different origins, and the browser will enforce CORS. The `cors` middleware configuration in [server-with-cors.js](file:///Users/karan/code/cors/server-with-cors.js#L7-L13) is secure — it pins a specific origin, restricts methods, and limits allowed headers.
+## Further Reading
 
-**Key observations:**
-
-- The demo only exercises **simple requests** (plain GET with no custom headers), so preflight is never triggered. Adding a POST with `Authorization` or `Content-Type: application/json` would demonstrate the preflight flow.
-- The demo doesn't include credentials (`cookies`/`Authorization`), which is the area where most real-world CORS misconfigurations create vulnerabilities.
-- The demo doesn't explicitly show that the **server still processes the request** even when the browser blocks the response — a critically misunderstood behavior.
-- No same-origin request example is included for contrast.
-
-**The article covers all 11 sections** requested — from the historical context of Same-Origin Policy through browser behavior flow diagrams, every CORS header explained with edge cases, credential handling, common vulnerabilities with exploitation paths, comparisons with CSRF/CORB/CSP, debugging workflows, and production deployment patterns across Node.js, Nginx, cloud APIs, and API gateways.
+- [MDN — Cross-Origin Resource Sharing (CORS)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
+- [Fetch Standard — CORS Protocol](https://fetch.spec.whatwg.org/#http-cors-protocol)
+- [web.dev — Cross-Origin Resource Sharing](https://web.dev/articles/cross-origin-resource-sharing)
+- [PortSwigger — CORS Misconfigurations](https://portswigger.net/web-security/cors)
+- [OWASP — CORS Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/CORS_Cheat_Sheet.html)
