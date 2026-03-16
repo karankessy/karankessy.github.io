@@ -2,33 +2,31 @@
 layout: about
 title: about
 permalink: /
-subtitle: <a href='#'>Affiliations</a>. Address. Contacts. Motto. Etc.
+subtitle: Life, conversations, cybersecurity, web technologies, and the little things that catch my interest.
 
 profile:
   align: right
   image: prof_pic.jpg
-  image_circular: false # crops the image to make it circular
-  more_info: >
-    <p>555 your office number</p>
-    <p>123 your address street</p>
-    <p>Your City, State 12345</p>
+  image_circular: false
 
-selected_papers: true # includes a list of papers marked as "selected={true}"
-social: true # includes social icons at the bottom of the page
+selected_papers: false
+social: true
 
 announcements:
-  enabled: true # includes a list of news items
-  scrollable: true # adds a vertical scroll bar if there are more than 3 news items
-  limit: 5 # leave blank to include all the news in the `_news` folder
+  enabled: false
+  scrollable: true
+  limit: 5
 
 latest_posts:
   enabled: true
-  scrollable: true # adds a vertical scroll bar if there are more than 3 new posts items
-  limit: 3 # leave blank to include all the blog posts
+  scrollable: true
+  limit: 3
 ---
 
-Write your biography here. Tell the world about yourself. Link to your favorite [subreddit](https://www.reddit.com). You can put a picture in, too. The code is already in, just name your picture `prof_pic.jpg` and put it in the `img/` folder.
+I'm Karan KC, someone who likes to keep things simple and maybe complex often. I find joy in understanding how things work and figuring out ways to improve them. Whether it's solving a problem or creating something useful, I approach it with a mix of curiosity and patience.
 
-Put your address / P.O. box / other info right below your picture. You can also disable any of these elements by editing `profile` property of the YAML header of your `_pages/about.md`. Edit `_bibliography/papers.bib` and Jekyll will render your [publications page](/al-folio/publications/) automatically.
+Life, to me, feels like a story—some chapters are slow and thoughtful, while others are fast and challenging. I've had my share of both, and each has taught me something valuable. Along the way, I've learned that it's not about being perfect; it's about staying open to growth.
 
-Link to your social media connections, too. This theme is set up to use [Font Awesome icons](https://fontawesome.com/) and [Academicons](https://jpswalsh.github.io/academicons/), like the ones below. Add your Facebook, Twitter, LinkedIn, Google Scholar, or just disable all of them.
+My work is an extension of how I see life. I focus on doing what matters, being honest with my efforts, and learning from those around me. I enjoy working with others, sharing ideas, and finding small yet ways to make things better.
+
+When I'm not working, you might find me lost in a book, reflecting on something simple yet profound, or enjoying quiet moments that remind me to slow down. At the end of the day, I believe in taking one step at a time—learning, building, and growing along the way.
