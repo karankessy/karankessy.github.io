@@ -10,9 +10,9 @@ mermaid:
   zoomable: true
 ---
 
-If you've ever built a modern web application, you've probably stared at a CORS error in your browser console wondering why your perfectly fine API call works in Postman but dies in the browser. This article breaks down exactly what's happening under the hood — from the Same-Origin Policy's origins in 1995, through preflight mechanics, credentials, common misconfigurations, and real-world deployment patterns.
+If you've ever built a modern web application, you've probably stared at a CORS error in your browser console wondering why your perfectly fine API call works in Postman but dies in the browser. This article breaks down exactly what's happening under the hood - from the Same-Origin Policy's origins in 1995, through preflight mechanics, credentials, common misconfigurations, and real-world deployment patterns.
 
-I've also put together a hands-on demo project — [**demoCORS**](https://github.com/karankessy/demoCORS) — that you can clone and run locally to see every concept in action.
+I've also put together a hands-on demo project - [**demoCORS**](https://github.com/karankessy/demoCORS) - that you can clone and run locally to see every concept in action.
 
 ---
 
@@ -20,7 +20,7 @@ I've also put together a hands-on demo project — [**demoCORS**](https://github
 
 ### Why it exists
 
-The year is 1995. Netscape Navigator 2.0 introduces JavaScript into the browser. For the first time, code running in one browser tab can manipulate the DOM, read form data, and make HTTP requests. Immediately, a problem emerges: if a user has two tabs open — their bank at `bank.com` and a malicious site at `evil.com` — the malicious site's JavaScript could read data from the bank tab.
+The year is 1995. Netscape Navigator 2.0 introduces JavaScript into the browser. For the first time, code running in one browser tab can manipulate the DOM, read form data, and make HTTP requests. Immediately, a problem emerges: if a user has two tabs open - their bank at `bank.com` and a malicious site at `evil.com` - the malicious site's JavaScript could read data from the bank tab.
 
 The **Same-Origin Policy** was introduced to prevent this. It is the foundational security boundary of the web platform: **code from one origin cannot read data from a different origin.**
 
@@ -43,7 +43,7 @@ Let's examine concrete examples:
 
 Every single one of these is a **different origin**:
 
-- Row 1 vs Row 2: different **host** (`example.com` vs `api.example.com` — subdomains are different hosts)
+- Row 1 vs Row 2: different **host** (`example.com` vs `api.example.com` - subdomains are different hosts)
 - Row 1 vs Row 3: different **scheme** (`https` vs `http`)
 - Row 1 vs Row 4: different **port** (`443` vs `8080`)
 
@@ -60,11 +60,11 @@ SOP restricts JavaScript's ability to read cross-origin responses from:
 
 SOP does **NOT** block:
 
-- `<img src="...">` — images load cross-origin (but you can't read their pixels)
-- `<script src="...">` — scripts load and execute cross-origin (the origin of JSONP and supply-chain attacks)
-- `<link rel="stylesheet" href="...">` — stylesheets load cross-origin
-- `<form action="...">` — forms can submit cross-origin (the origin of CSRF attacks)
-- `<iframe src="...">` — iframes load cross-origin (but parent can't read content)
+- `<img src="...">` - images load cross-origin (but you can't read their pixels)
+- `<script src="...">` - scripts load and execute cross-origin (the origin of JSONP and supply-chain attacks)
+- `<link rel="stylesheet" href="...">` - stylesheets load cross-origin
+- `<form action="...">` - forms can submit cross-origin (the origin of CSRF attacks)
+- `<iframe src="...">` - iframes load cross-origin (but parent can't read content)
 
 ---
 
@@ -79,7 +79,7 @@ SOP was designed for a 1990s web where pages were self-contained documents. The 
 
 Without any mechanism to relax SOP, none of these architectures would work. You'd be forced to same-origin-proxy every API call through your frontend server.
 
-**CORS (Cross-Origin Resource Sharing)** is that mechanism. It is a **protocol** — a set of HTTP headers — that allows a server to declare: "I trust requests from these specific origins."
+**CORS (Cross-Origin Resource Sharing)** is that mechanism. It is a **protocol** - a set of HTTP headers - that allows a server to declare: "I trust requests from these specific origins."
 
 The key insight is: **CORS is not a way to add security. It's a controlled way to remove a security restriction.** SOP is the default. CORS is the opt-out.
 
@@ -116,7 +116,7 @@ A request is "simple" (formally a request that doesn't trigger a preflight) when
 **No** `ReadableStream` body is used.
 **No** event listeners are registered on the `XMLHttpRequest.upload` object.
 
-**Why these conditions?** Because a simple request is no more dangerous than what an HTML `<form>` can already do. Forms can POST with `application/x-www-form-urlencoded` or `multipart/form-data` to any URL. SOP never blocked form submissions. So a "simple" CORS request adds no new attack surface — the browser just needs to check whether the server wants the _response_ shared.
+**Why these conditions?** Because a simple request is no more dangerous than what an HTML `<form>` can already do. Forms can POST with `application/x-www-form-urlencoded` or `multipart/form-data` to any URL. SOP never blocked form submissions. So a "simple" CORS request adds no new attack surface - the browser just needs to check whether the server wants the _response_ shared.
 
 In the [demoCORS](https://github.com/karankessy/demoCORS) project, the `fetch()` calls are simple GET requests with no custom headers:
 
@@ -138,7 +138,7 @@ Before sending the actual request, the browser sends an `OPTIONS` request asking
 
 The reason for preflight is safety: methods like `DELETE` or headers like `Authorization` can cause **side effects** on the server. The browser needs to verify the server actually expects these cross-origin requests _before_ sending them, because unlike simple requests, these operations couldn't be triggered by a plain HTML `<form>`.
 
-### Full HTTP Flow — Preflighted Request
+### Full HTTP Flow - Preflighted Request
 
 **Scenario:** A frontend at `https://app.example.com` sends a JSON POST to `https://api.example.com`.
 
@@ -188,7 +188,7 @@ If the preflight response at Step 2 were missing `authorization` in `Access-Cont
 
 ---
 
-## 4. CORS Request Flow — Step by Step
+## 4. CORS Request Flow - Step by Step
 
 Here's the complete decision tree the browser follows for every `fetch()` call:
 
@@ -239,17 +239,17 @@ JavaScript calls fetch(url, options)
 
 For simple requests, the server always receives and processes the request. The `Origin` header is present, but the server responds normally. Only then does the browser decide whether to hand the response to JavaScript.
 
-This means **CORS is not a substitute for server-side authorization**. If your server processes a `DELETE /api/users/42` and only then sends back a response missing CORS headers, the record is already deleted — the browser just won't show the confirmation to the attacker's JavaScript.
+This means **CORS is not a substitute for server-side authorization**. If your server processes a `DELETE /api/users/42` and only then sends back a response missing CORS headers, the record is already deleted - the browser just won't show the confirmation to the attacker's JavaScript.
 
 For preflighted requests, the protection is stronger: the browser's OPTIONS preflight happens first, and if it fails, the actual `DELETE` is never sent. But you should **never** rely on preflight as your security boundary.
 
 ---
 
-## 5. Preflight Mechanism — Deep Dive
+## 5. Preflight Mechanism - Deep Dive
 
 ### The OPTIONS request
 
-When a browser determines that a request requires preflight, it constructs an `OPTIONS` request automatically. JavaScript code has **no control** over this — no ability to modify, suppress, or intercept the preflight.
+When a browser determines that a request requires preflight, it constructs an `OPTIONS` request automatically. JavaScript code has **no control** over this - no ability to modify, suppress, or intercept the preflight.
 
 **Example preflight request:**
 
@@ -292,13 +292,13 @@ Access-Control-Max-Age: 86400
 
 `Access-Control-Max-Age` tells the browser how many seconds to cache the preflight result. During that window, subsequent requests to the same URL with compatible methods and headers skip the OPTIONS check entirely.
 
-**Without caching, every single API call generates two HTTP requests** — a significant performance tax. In the [demoCORS](https://github.com/karankessy/demoCORS) project, `Max-Age` is not configured, meaning every preflight is re-sent. In production, values of `86400` (24 hours) or `3600` (1 hour) are typical.
+**Without caching, every single API call generates two HTTP requests** - a significant performance tax. In the [demoCORS](https://github.com/karankessy/demoCORS) project, `Max-Age` is not configured, meaning every preflight is re-sent. In production, values of `86400` (24 hours) or `3600` (1 hour) are typical.
 
 Note: Browsers impose their own maximum. Chrome caps at 7200 seconds (2 hours), regardless of what the server sends.
 
 ---
 
-## 6. CORS Headers Explained — In Depth
+## 6. CORS Headers Explained - In Depth
 
 ### `Access-Control-Allow-Origin`
 
@@ -306,8 +306,8 @@ Note: Browsers impose their own maximum. Chrome caps at 7200 seconds (2 hours), 
 
 **Valid values:**
 
-- `*` — Any origin (but cannot be used with credentials)
-- `https://specific-origin.com` — Exactly one origin
+- `*` - Any origin (but cannot be used with credentials)
+- `https://specific-origin.com` - Exactly one origin
 - (There is **no** native support for multiple origins in a single header value)
 
 **The multiple-origin problem:** You cannot write:
@@ -331,7 +331,7 @@ This is exactly what the `cors` npm middleware does when given an array or funct
 
 **Purpose:** Sent only in preflight responses. Lists the HTTP methods the server accepts.
 
-**Note:** For simple requests (GET, HEAD, POST), this header is not checked — the browser already knows those methods are inherently acceptable at the CORS level.
+**Note:** For simple requests (GET, HEAD, POST), this header is not checked - the browser already knows those methods are inherently acceptable at the CORS level.
 
 **Example:**
 
@@ -349,7 +349,7 @@ Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH
 Access-Control-Allow-Headers: Authorization, Content-Type, X-Request-ID
 ```
 
-**Important:** As of the 2023 Fetch specification, `*` is a valid value for this header (and `Access-Control-Allow-Methods`), meaning "all headers/methods are allowed." However, this wildcard **does not apply** when `credentials: true` — in that case, every header must be explicitly listed.
+**Important:** As of the 2023 Fetch specification, `*` is a valid value for this header (and `Access-Control-Allow-Methods`), meaning "all headers/methods are allowed." However, this wildcard **does not apply** when `credentials: true` - in that case, every header must be explicitly listed.
 
 ### `Access-Control-Allow-Credentials`
 
@@ -498,7 +498,7 @@ const origin = req.headers.origin;
 if (allowed.some(a => origin.includes(a))) { ... }
 ```
 
-An attacker registers `https://app.example.com.evil.com` — the `includes()` check passes.
+An attacker registers `https://app.example.com.evil.com` - the `includes()` check passes.
 
 **Correct approach:** Use exact string matching or properly anchored regexes.
 
@@ -527,11 +527,11 @@ CORS does not prevent CSRF. A form submission or a simple POST from an attacker'
 
 ### CORS vs CORB (Cross-Origin Read Blocking)
 
-CORB is a **browser-side** defense (introduced in Chrome 68) that blocks certain cross-origin responses from even entering the renderer process — before CORS checks. It protects against Spectre-style side-channel attacks.
+CORB is a **browser-side** defense (introduced in Chrome 68) that blocks certain cross-origin responses from even entering the renderer process - before CORS checks. It protects against Spectre-style side-channel attacks.
 
 If a `<script>` tag requests an HTML or JSON resource cross-origin, CORB strips the body entirely, preventing even a Spectre attack from reading it from memory.
 
-CORB is transparent and automatic. It does not replace CORS — it adds defense-in-depth.
+CORB is transparent and automatic. It does not replace CORS - it adds defense-in-depth.
 
 ### CORS vs CSP (Content Security Policy)
 
@@ -559,7 +559,7 @@ These are layers of a defense-in-depth strategy, not alternatives to each other.
 
 ## 10. Practical Debugging
 
-### Browser DevTools — The CORS Debugging Workflow
+### Browser DevTools - The CORS Debugging Workflow
 
 **Step 1: Open Network Tab**
 Open DevTools (F12) → Network tab → reproduce the request.
@@ -567,8 +567,8 @@ Open DevTools (F12) → Network tab → reproduce the request.
 **Step 2: Look for the OPTIONS request**
 If preflight is involved, you'll see two requests:
 
-1. `OPTIONS /api/data` — the preflight
-2. `GET /api/data` (or POST, etc.) — the actual request
+1. `OPTIONS /api/data` - the preflight
+2. `GET /api/data` (or POST, etc.) - the actual request
 
 If only the OPTIONS appears and the actual request is missing, the preflight failed.
 
@@ -608,7 +608,7 @@ curl -v -X OPTIONS \
   http://localhost:4000/api/data
 ```
 
-If the response includes correct CORS headers, the server is fine — the issue is in the browser-side code. If not, the server needs fixing.
+If the response includes correct CORS headers, the server is fine - the issue is in the browser-side code. If not, the server needs fixing.
 
 ---
 
@@ -698,7 +698,7 @@ plugins:
 
 **Advantage:** CORS is handled at the edge, and individual microservices don't need to implement it.
 
-**Risk:** If the gateway handles CORS but a microservice also adds CORS headers, you get **duplicate headers** — and browsers may reject responses with multiple `Access-Control-Allow-Origin` values.
+**Risk:** If the gateway handles CORS but a microservice also adds CORS headers, you get **duplicate headers** - and browsers may reject responses with multiple `Access-Control-Allow-Origin` values.
 
 ### Summary of Common Deployment Mistakes
 
@@ -716,9 +716,9 @@ plugins:
 
 ## Conclusion: A Mental Model for CORS
 
-CORS is often perceived as an obstacle — an annoying error that appears in the console during development. But understanding it deeply reveals that it is an elegantly simple protocol:
+CORS is often perceived as an obstacle - an annoying error that appears in the console during development. But understanding it deeply reveals that it is an elegantly simple protocol:
 
-1. **The browser is the enforcer.** Not the server, not JavaScript — the browser's security engine.
+1. **The browser is the enforcer.** Not the server, not JavaScript - the browser's security engine.
 2. **The server is the policy declarer.** It communicates trust via response headers.
 3. **JavaScript is the subject.** It can initiate requests but has no power to override CORS.
 4. **CORS protects the response, not the request.** The server always receives the request (except when preflight fails).
@@ -753,8 +753,8 @@ Open `http://localhost:3000` and watch the **Network** tab in DevTools to see CO
 
 ## Further Reading
 
-- [MDN — Cross-Origin Resource Sharing (CORS)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
-- [Fetch Standard — CORS Protocol](https://fetch.spec.whatwg.org/#http-cors-protocol)
-- [web.dev — Cross-Origin Resource Sharing](https://web.dev/articles/cross-origin-resource-sharing)
-- [PortSwigger — CORS Misconfigurations](https://portswigger.net/web-security/cors)
-- [OWASP — CORS Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/CORS_Cheat_Sheet.html)
+- [MDN - Cross-Origin Resource Sharing (CORS)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
+- [Fetch Standard - CORS Protocol](https://fetch.spec.whatwg.org/#http-cors-protocol)
+- [web.dev - Cross-Origin Resource Sharing](https://web.dev/articles/cross-origin-resource-sharing)
+- [PortSwigger - CORS Misconfigurations](https://portswigger.net/web-security/cors)
+- [OWASP - CORS Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/CORS_Cheat_Sheet.html)
