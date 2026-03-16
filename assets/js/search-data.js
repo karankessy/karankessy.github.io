@@ -16,7 +16,18 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/blog/";
           },
-        },{id: "post-f5-big-ip-wazuh-getting-logs-working-after-18-months",
+        },{id: "post-why-your-api-works-in-postman-but-fails-in-the-browser",
+        
+          title: "Why Your API Works in Postman but Fails in the Browser",
+        
+        description: "An in-depth exploration of Cross-Origin Resource Sharing (CORS), preflight requests, and common pitfalls, accompanied by a hands-on demo.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/understanding-cors/";
+          
+        },
+      },{id: "post-f5-big-ip-wazuh-getting-logs-working-after-18-months",
         
           title: "F5 BIG-IP + Wazuh: Getting Logs Working After 18 Months",
         
@@ -263,7 +274,7 @@ ninja.data = [{
         title: 'Instagram',
         section: 'Socials',
         handler: () => {
-          window.open("https://instagram.com/_wd.erick", "_blank");
+          window.open("https://instagram.com/karankessy", "_blank");
         },
       },{
         id: 'social-rss',
