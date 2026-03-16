@@ -16,6 +16,13 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/blog/";
           },
+        },{id: "nav-bookshelf",
+          title: "bookshelf",
+          description: "",
+          section: "Navigation",
+          handler: () => {
+            window.location.href = "/books/";
+          },
         },{id: "post-why-your-api-works-in-postman-but-fails-in-the-browser",
         
           title: "Why Your API Works in Postman but Fails in the Browser",
@@ -181,11 +188,66 @@ ninja.data = [{
             window.location.href = "/blog/2024/phishing-attacks-character-assassination/";
           
         },
-      },{id: "books-the-godfather",
+      },{id: "books-the-alchemist",
+          title: 'The Alchemist',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_alchemist/";
+            },},{id: "books-the-godfather",
           title: 'The Godfather',
           description: "",
           section: "Books",handler: () => {
               window.location.href = "/books/the_godfather/";
+            },},{id: "books-you-39-re-too-good-to-feel-this-bad",
+          title: 'You&amp;#39;re Too Good to Feel This Bad',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/youre_too_good_to_feel_this_bad/";
+            },},{id: "books-read-people-like-a-book",
+          title: 'Read People Like a Book',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/read_people_like_a_book/";
+            },},{id: "books-21-lessons-for-the-21st-century",
+          title: '21 Lessons for the 21st Century',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/21_lessons_for_the_21st_century/";
+            },},{id: "books-think-again",
+          title: 'Think Again',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/think_again/";
+            },},{id: "books-on-truth",
+          title: 'On Truth',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/on_truth/";
+            },},{id: "books-the-myth-of-sisyphus",
+          title: 'The Myth of Sisyphus',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_myth_of_sisyphus/";
+            },},{id: "books-the-personal-mba",
+          title: 'The Personal MBA',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_personal_mba/";
+            },},{id: "books-the-courage-to-be-disliked",
+          title: 'The Courage to Be Disliked',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_courage_to_be_disliked/";
+            },},{id: "books-seto-dharti",
+          title: 'Seto Dharti',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/seto_dharti/";
+            },},{id: "books-the-kite-runner",
+          title: 'The Kite Runner',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_kite_runner/";
             },},{id: "projects-project-1",
           title: 'project 1',
           description: "with background image",
