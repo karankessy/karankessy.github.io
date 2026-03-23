@@ -23,18 +23,7 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/books/";
           },
-        },{id: "post-everything-is-inter-process-communication-http-rest-apis-serverless-functions-what-not",
-        
-          title: "Everything is Inter-Process Communication: HTTP, REST APIs, Serverless functions, what not",
-        
-        description: "Modern software is rarely a single process doing one thing. Browsers isolate tabs for security. Databases split query workers from storage workers. API backends offload CPU-heavy jobs to background processes. The moment you divide work across processes, you need them to talk to each other.",
-        section: "Posts",
-        handler: () => {
-          
-            window.location.href = "/blog/2026/everything-is-IPC/";
-          
-        },
-      },{id: "post-why-your-api-works-in-postman-but-fails-in-the-browser",
+        },{id: "post-why-your-api-works-in-postman-but-fails-in-the-browser",
         
           title: "Why Your API Works in Postman but Fails in the Browser",
         
