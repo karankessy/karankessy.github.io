@@ -15,7 +15,5 @@ nav_order: 2
 {% include bib_search.liquid %}
 
 <div class="publications">
-
-{% bibliography %}
-
+	<p>Publication list rendering via jekyll-scholar is disabled for GitHub Pages branch builds.</p>
 </div>
