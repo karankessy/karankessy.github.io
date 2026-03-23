@@ -23,18 +23,7 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/books/";
           },
-        },{id: "post-why-your-api-works-in-postman-but-fails-in-the-browser",
-        
-          title: "Why Your API Works in Postman but Fails in the Browser",
-        
-        description: "An in-depth exploration of Cross-Origin Resource Sharing (CORS), preflight requests, and common pitfalls, accompanied by a hands-on demo.",
-        section: "Posts",
-        handler: () => {
-          
-            window.location.href = "/blog/2026/understanding-cors/";
-          
-        },
-      },{id: "post-everything-is-inter-process-communication-http-rest-apis-serverless-functions-what-not",
+        },{id: "post-everything-is-inter-process-communication-http-rest-apis-serverless-functions-what-not",
         
           title: "Everything is Inter-Process Communication: HTTP, REST APIs, Serverless functions, what not",
         
@@ -43,6 +32,17 @@ ninja.data = [{
         handler: () => {
           
             window.location.href = "/blog/2026/everything-is-IPC/";
+          
+        },
+      },{id: "post-why-your-api-works-in-postman-but-fails-in-the-browser",
+        
+          title: "Why Your API Works in Postman but Fails in the Browser",
+        
+        description: "An in-depth exploration of Cross-Origin Resource Sharing (CORS), preflight requests, and common pitfalls, accompanied by a hands-on demo.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/understanding-cors/";
           
         },
       },{id: "post-f5-big-ip-wazuh-getting-logs-working-after-18-months",
