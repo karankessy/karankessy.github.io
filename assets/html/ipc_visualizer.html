@@ -1,0 +1,1606 @@
+<!doctype html>
+<html>
+  <head>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap");
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --mono: "IBM Plex Mono", monospace;
+        --sans: "IBM Plex Sans", var(--font-sans);
+        --bg: var(--color-background-primary);
+        --bg2: var(--color-background-secondary);
+        --bg3: var(--color-background-tertiary);
+        --border: var(--color-border-tertiary);
+        --border2: var(--color-border-secondary);
+        --text: var(--color-text-primary);
+        --muted: var(--color-text-secondary);
+        --hint: var(--color-text-tertiary);
+        --accent: #0057ff;
+        --accent-dim: rgba(0, 87, 255, 0.12);
+        --green: #00b97a;
+        --green-dim: rgba(0, 185, 122, 0.12);
+        --amber: #e58a00;
+        --amber-dim: rgba(229, 138, 0, 0.12);
+        --red: #d93025;
+        --kernel: rgba(229, 138, 0, 0.08);
+        --shm: rgba(0, 87, 255, 0.06);
+      }
+
+      body {
+        font-family: var(--sans);
+        font-size: 13px;
+        color: var(--text);
+        background: transparent;
+        padding: 0;
+        min-height: 600px;
+      }
+
+      /* ── LAYOUT ── */
+      .shell {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        gap: 0;
+        min-height: 700px;
+      }
+
+      /* ── TOP NAV ── */
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        border-bottom: 0.5px solid var(--border);
+        padding: 0 4px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        flex-shrink: 0;
+      }
+      .nav::-webkit-scrollbar {
+        display: none;
+      }
+
+      .tab {
+        font-family: var(--mono);
+        font-size: 11px;
+        padding: 10px 16px;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        white-space: nowrap;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -0.5px;
+        transition: color 0.15s;
+        letter-spacing: 0.02em;
+      }
+      .tab:hover {
+        color: var(--text);
+      }
+      .tab.active {
+        color: var(--text);
+        border-bottom-color: var(--accent);
+        font-weight: 500;
+      }
+      .tab-dot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        margin-right: 6px;
+        background: currentColor;
+        opacity: 0.4;
+      }
+      .tab.active .tab-dot {
+        opacity: 1;
+      }
+
+      /* ── PAGES ── */
+      .page {
+        display: none;
+        padding: 20px;
+      }
+      .page.active {
+        display: grid;
+        grid-template-columns: 1fr 260px;
+        gap: 16px;
+      }
+      .page.landing-page {
+        display: none;
+      }
+      .page.landing-page.active {
+        display: block;
+        padding: 24px;
+      }
+
+      /* ── LANDING ── */
+      .landing-header {
+        margin-bottom: 24px;
+      }
+      .landing-title {
+        font-family: var(--mono);
+        font-size: 15px;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        margin-bottom: 4px;
+      }
+      .landing-sub {
+        font-size: 12px;
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+
+      .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+      .mech-card {
+        border: 0.5px solid var(--border);
+        border-radius: var(--border-radius-lg);
+        padding: 16px;
+        cursor: pointer;
+        transition:
+          border-color 0.15s,
+          background 0.15s;
+        background: var(--bg);
+      }
+      .mech-card:hover {
+        border-color: var(--border2);
+        background: var(--bg2);
+      }
+      .mech-card .card-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--border-radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+        font-size: 14px;
+      }
+      .mech-card .card-name {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+        color: var(--text);
+      }
+      .mech-card .card-desc {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.5;
+        margin-bottom: 12px;
+      }
+      .mech-card .card-stats {
+        display: flex;
+        gap: 12px;
+      }
+      .stat-pill {
+        font-family: var(--mono);
+        font-size: 10px;
+        padding: 2px 7px;
+        border-radius: 20px;
+        border: 0.5px solid var(--border2);
+        color: var(--muted);
+      }
+
+      /* ── DEMO AREA ── */
+      .demo-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+      }
+      .demo-title {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .demo-controls {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .btn {
+        font-family: var(--mono);
+        font-size: 11px;
+        padding: 5px 12px;
+        border-radius: var(--border-radius-md);
+        border: 0.5px solid var(--border2);
+        background: transparent;
+        color: var(--text);
+        cursor: pointer;
+        transition: background 0.1s;
+        letter-spacing: 0.02em;
+      }
+      .btn:hover {
+        background: var(--bg2);
+      }
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      .btn.primary:hover {
+        opacity: 0.9;
+      }
+      .btn:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+
+      /* ── VISUALIZER ── */
+      .viz-area {
+        border: 0.5px solid var(--border);
+        border-radius: var(--border-radius-lg);
+        background: var(--bg);
+        padding: 0;
+        overflow: hidden;
+        min-height: 340px;
+        position: relative;
+      }
+
+      .viz-canvas {
+        width: 100%;
+        height: 320px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Process boxes */
+      .proc-box {
+        position: absolute;
+        width: 130px;
+        border: 0.5px solid var(--border);
+        border-radius: var(--border-radius-md);
+        background: var(--bg2);
+        padding: 12px;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+      }
+      .proc-box.active {
+        border-color: var(--accent);
+        background: var(--accent-dim);
+      }
+      .proc-box.reading {
+        border-color: var(--green);
+        background: var(--green-dim);
+      }
+      .proc-box .proc-name {
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .proc-box .proc-pid {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--hint);
+        margin-bottom: 8px;
+      }
+      .proc-box .proc-status {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--text);
+      }
+      .status-dot {
+        display: inline-block;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        margin-right: 5px;
+        background: var(--hint);
+      }
+      .status-dot.active {
+        background: var(--accent);
+      }
+      .status-dot.reading {
+        background: var(--green);
+      }
+      .status-dot.done {
+        background: var(--green);
+      }
+
+      /* Shared memory region */
+      .shm-region {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 160px;
+        border: 0.5px solid var(--border);
+        border-radius: var(--border-radius-md);
+        background: var(--shm);
+        padding: 12px;
+        transition:
+          border-color 0.3s,
+          background 0.3s;
+      }
+      .shm-region.flash {
+        border-color: var(--accent);
+        background: var(--accent-dim);
+      }
+      .shm-label {
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--hint);
+        margin-bottom: 8px;
+      }
+      .shm-field {
+        display: flex;
+        justify-content: space-between;
+        font-family: var(--mono);
+        font-size: 11px;
+        margin-bottom: 3px;
+      }
+      .shm-key {
+        color: var(--muted);
+      }
+      .shm-val {
+        color: var(--text);
+        font-weight: 500;
+      }
+      .shm-val.updated {
+        color: var(--accent);
+      }
+
+      /* Kernel buffer */
+      .kernel-region {
+        position: absolute;
+        left: 50%;
+        top: 55%;
+        transform: translate(-50%, -50%);
+        width: 200px;
+        border: 0.5px dashed var(--amber);
+        border-radius: var(--border-radius-md);
+        background: var(--kernel);
+        padding: 12px;
+      }
+      .kernel-label {
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--amber);
+        margin-bottom: 8px;
+      }
+      .kernel-buffer {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      .buf-slot {
+        width: 28px;
+        height: 20px;
+        border-radius: 3px;
+        background: var(--bg2);
+        border: 0.5px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: 8px;
+        color: var(--hint);
+        transition:
+          background 0.2s,
+          border-color 0.2s,
+          color 0.2s;
+      }
+      .buf-slot.filled {
+        background: var(--amber-dim);
+        border-color: var(--amber);
+        color: var(--amber);
+      }
+
+      /* Connecting lines (SVG overlay) */
+      .svg-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      /* Data packet animation */
+      .packet {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+        pointer-events: none;
+        transition: opacity 0.3s;
+        z-index: 10;
+      }
+
+      /* Progress bar */
+      .progress-bar-wrap {
+        padding: 12px 16px;
+        border-top: 0.5px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .progress-bar-track {
+        flex: 1;
+        height: 2px;
+        background: var(--border);
+        border-radius: 1px;
+        overflow: hidden;
+      }
+      .progress-bar-fill {
+        height: 100%;
+        background: var(--accent);
+        border-radius: 1px;
+        width: 0%;
+        transition: width 0.3s;
+      }
+      .progress-label {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+
+      /* ── RIGHT PANEL ── */
+      .right-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .panel-card {
+        border: 0.5px solid var(--border);
+        border-radius: var(--border-radius-md);
+        background: var(--bg);
+        overflow: hidden;
+      }
+      .panel-header {
+        padding: 10px 14px;
+        border-bottom: 0.5px solid var(--border);
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--hint);
+      }
+      .panel-body {
+        padding: 12px 14px;
+      }
+
+      .metric-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 5px 0;
+        border-bottom: 0.5px solid var(--border);
+      }
+      .metric-row:last-child {
+        border-bottom: none;
+      }
+      .metric-key {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .metric-val {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text);
+      }
+      .metric-val.good {
+        color: var(--green);
+      }
+      .metric-val.warn {
+        color: var(--amber);
+      }
+
+      /* Event log */
+      .event-log {
+        max-height: 180px;
+        overflow-y: auto;
+        padding: 8px 14px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border) transparent;
+      }
+      .event-entry {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--muted);
+        padding: 3px 0;
+        border-bottom: 0.5px solid var(--border);
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+        animation: fadeIn 0.2s ease;
+      }
+      .event-entry:last-child {
+        border-bottom: none;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-2px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .ev-time {
+        color: var(--hint);
+        flex-shrink: 0;
+      }
+      .ev-type {
+        font-weight: 500;
+      }
+      .ev-type.write {
+        color: var(--accent);
+      }
+      .ev-type.read {
+        color: var(--green);
+      }
+      .ev-type.syscall {
+        color: var(--amber);
+      }
+      .ev-type.done {
+        color: var(--green);
+      }
+      .ev-msg {
+        color: var(--muted);
+        flex: 1;
+      }
+
+      /* Insight callout */
+      .insight-box {
+        margin: 0;
+        padding: 10px 12px;
+        border-radius: var(--border-radius-md);
+        background: var(--bg2);
+        border-left: 2px solid var(--accent);
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      /* Comparison table */
+      .cmp-table {
+        width: 100%;
+        font-size: 11px;
+      }
+      .cmp-table th {
+        font-family: var(--mono);
+        font-weight: 500;
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        color: var(--hint);
+        text-align: right;
+        padding: 3px 0;
+        text-transform: uppercase;
+      }
+      .cmp-table th:first-child {
+        text-align: left;
+      }
+      .cmp-table td {
+        font-family: var(--mono);
+        font-size: 11px;
+        text-align: right;
+        padding: 4px 0;
+        border-top: 0.5px solid var(--border);
+        color: var(--muted);
+      }
+      .cmp-table td:first-child {
+        text-align: left;
+        color: var(--text);
+        font-size: 11px;
+        font-family: var(--sans);
+      }
+      .cmp-table tr.highlight td {
+        color: var(--accent);
+        font-weight: 500;
+      }
+
+      /* Benchmark bars */
+      .bm-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .bm-label {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--muted);
+        width: 80px;
+        flex-shrink: 0;
+        letter-spacing: 0.02em;
+      }
+      .bm-track {
+        flex: 1;
+        height: 20px;
+        background: var(--bg2);
+        border-radius: 3px;
+        border: 0.5px solid var(--border);
+        overflow: hidden;
+        position: relative;
+      }
+      .bm-fill {
+        height: 100%;
+        border-radius: 2px;
+        transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        padding-left: 6px;
+        font-family: var(--mono);
+        font-size: 10px;
+        color: #fff;
+        white-space: nowrap;
+      }
+      .bm-val {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--muted);
+        width: 60px;
+        text-align: right;
+        flex-shrink: 0;
+      }
+
+      /* TCP layers */
+      .layer-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .layer-box {
+        border-radius: var(--border-radius-md);
+        padding: 8px 12px;
+        border: 0.5px solid var(--border);
+        font-size: 12px;
+      }
+      .layer-name {
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+      }
+      .layer-desc {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      /* Pipeline for pipe demo */
+      .pipe-visual {
+        position: absolute;
+        left: 50%;
+        top: 55%;
+        transform: translate(-50%, -50%);
+        width: 180px;
+      }
+    </style>
+
+    <div class="shell">
+      <!-- NAV -->
+      <nav class="nav">
+        <button class="tab active" onclick="showPage('landing')"><span class="tab-dot"></span>Overview</button>
+        <button class="tab" onclick="showPage('shm')"><span class="tab-dot" style="background: var(--accent)"></span>Shared Memory</button>
+        <button class="tab" onclick="showPage('pipe')"><span class="tab-dot" style="background: var(--amber)"></span>Pipe</button>
+        <button class="tab" onclick="showPage('unix')"><span class="tab-dot" style="background: var(--green)"></span>Unix Socket</button>
+        <button class="tab" onclick="showPage('tcp')"><span class="tab-dot" style="background:#9966FF)"></span>TCP</button>
+        <button class="tab" onclick="showPage('bm')"><span class="tab-dot" style="background: var(--muted)"></span>Benchmark</button>
+      </nav>
+
+      <!-- ── LANDING ── -->
+      <div id="page-landing" class="page landing-page active">
+        <div class="landing-header">
+          <div class="landing-title">IPC Visualizer</div>
+          <div class="landing-sub">// inter-process communication · visual reference</div>
+        </div>
+        <div class="cards-grid">
+          <div class="mech-card" onclick="showPage('shm')">
+            <div class="card-icon" style="background: var(--accent-dim); color: var(--accent)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="1" y="4" width="14" height="8" rx="2" stroke="currentColor" stroke-width="1.2" />
+                <line x1="4" y1="4" x2="4" y2="12" stroke="currentColor" stroke-width="1.2" />
+                <line x1="8" y1="4" x2="8" y2="12" stroke="currentColor" stroke-width="1.2" />
+                <line x1="12" y1="4" x2="12" y2="12" stroke="currentColor" stroke-width="1.2" />
+              </svg>
+            </div>
+            <div class="card-name">Shared Memory</div>
+            <div class="card-desc">Direct RAM access. Zero kernel involvement. Fastest IPC mechanism on a single host.</div>
+            <div class="card-stats">
+              <span class="stat-pill">0 copies</span>
+              <span class="stat-pill">0 syscalls</span>
+            </div>
+          </div>
+
+          <div class="mech-card" onclick="showPage('pipe')">
+            <div class="card-icon" style="background: var(--amber-dim); color: var(--amber)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M2 8H6M10 8H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                <rect x="6" y="5" width="4" height="6" rx="1" stroke="currentColor" stroke-width="1.2" />
+              </svg>
+            </div>
+            <div class="card-name">Pipe</div>
+            <div class="card-desc">Unidirectional kernel buffer. Data passes through kernel space — two copies per message.</div>
+            <div class="card-stats">
+              <span class="stat-pill">2 copies</span>
+              <span class="stat-pill">2 syscalls</span>
+            </div>
+          </div>
+
+          <div class="mech-card" onclick="showPage('unix')">
+            <div class="card-icon" style="background: var(--green-dim); color: var(--green)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.2" />
+                <path d="M5 8H11M8 5V11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+              </svg>
+            </div>
+            <div class="card-name">Unix Socket</div>
+            <div class="card-desc">Full-duplex socket in filesystem. Same overhead as pipes, but bidirectional communication.</div>
+            <div class="card-stats">
+              <span class="stat-pill">2 copies</span>
+              <span class="stat-pill">same-host</span>
+            </div>
+          </div>
+
+          <div class="mech-card" onclick="showPage('tcp')">
+            <div class="card-icon" style="background: rgba(153, 102, 255, 0.1); color: #9966ff">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M2 8C2 8 4 4 8 4C12 4 14 8 14 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+                <path d="M2 8C2 8 4 12 8 12C12 12 14 8 14 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+              </svg>
+            </div>
+            <div class="card-name">TCP Socket</div>
+            <div class="card-desc">Full network stack. Checksums, retransmits, sequence numbers. Works cross-host.</div>
+            <div class="card-stats">
+              <span class="stat-pill">3+ copies</span>
+              <span class="stat-pill">cross-host</span>
+            </div>
+          </div>
+
+          <div class="mech-card" onclick="showPage('bm')">
+            <div class="card-icon" style="background: var(--bg2); color: var(--muted)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="2" y="10" width="3" height="4" rx="1" fill="currentColor" opacity="0.4" />
+                <rect x="6.5" y="7" width="3" height="7" rx="1" fill="currentColor" opacity="0.6" />
+                <rect x="11" y="3" width="3" height="11" rx="1" fill="currentColor" opacity="0.9" />
+              </svg>
+            </div>
+            <div class="card-name">Benchmark</div>
+            <div class="card-desc">Race all four mechanisms side-by-side. 100k messages. See the tradeoffs clearly.</div>
+            <div class="card-stats">
+              <span class="stat-pill">compare all</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SHARED MEMORY DEMO ── -->
+      <div id="page-shm" class="page">
+        <div>
+          <div class="demo-header">
+            <span class="demo-title">Shared Memory</span>
+            <div class="demo-controls">
+              <button class="btn" id="shm-reset-btn" onclick="resetDemo('shm')">Reset</button>
+              <button class="btn primary" id="shm-run-btn" onclick="runDemo('shm')">Run demo</button>
+            </div>
+          </div>
+
+          <div class="viz-area">
+            <div class="viz-canvas" id="shm-canvas">
+              <!-- Writer process -->
+              <div class="proc-box" id="shm-writer" style="left: 24px; top: 50%; transform: translateY(-50%)">
+                <div class="proc-name">Writer</div>
+                <div class="proc-pid">pid 12340</div>
+                <div class="proc-status"><span class="status-dot" id="shm-w-dot"></span><span id="shm-w-status">idle</span></div>
+              </div>
+
+              <!-- Reader process -->
+              <div class="proc-box" id="shm-reader" style="right: 24px; top: 50%; transform: translateY(-50%)">
+                <div class="proc-name">Reader</div>
+                <div class="proc-pid">pid 12341</div>
+                <div class="proc-status"><span class="status-dot" id="shm-r-dot"></span><span id="shm-r-status">idle</span></div>
+              </div>
+
+              <!-- Shared memory region -->
+              <div class="shm-region" id="shm-region">
+                <div class="shm-label">// shared memory</div>
+                <div class="shm-field"><span class="shm-key">seq</span><span class="shm-val" id="shm-seq">—</span></div>
+                <div class="shm-field"><span class="shm-key">data</span><span class="shm-val" id="shm-data">—</span></div>
+                <div class="shm-field"><span class="shm-key">ready</span><span class="shm-val" id="shm-ready">false</span></div>
+              </div>
+
+              <!-- SVG lines -->
+              <svg class="svg-overlay" id="shm-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <line x1="20" y1="50" x2="40" y2="50" stroke="var(--border2)" stroke-width="0.3" stroke-dasharray="2,2" />
+                <line x1="60" y1="50" x2="80" y2="50" stroke="var(--border2)" stroke-width="0.3" stroke-dasharray="2,2" />
+              </svg>
+            </div>
+
+            <div class="progress-bar-wrap">
+              <span class="progress-label" id="shm-progress-label">0 / 10 messages</span>
+              <div class="progress-bar-track"><div class="progress-bar-fill" id="shm-progress"></div></div>
+              <span class="progress-label" id="shm-latency">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right panel -->
+        <div class="right-panel">
+          <div class="panel-card">
+            <div class="panel-header">Metrics</div>
+            <div class="panel-body">
+              <div class="metric-row"><span class="metric-key">Copies / msg</span><span class="metric-val good" id="shm-m-copies">0</span></div>
+              <div class="metric-row"><span class="metric-key">Syscalls / msg</span><span class="metric-val good" id="shm-m-syscalls">0</span></div>
+              <div class="metric-row"><span class="metric-key">Kernel involved</span><span class="metric-val good">No</span></div>
+              <div class="metric-row"><span class="metric-key">Avg latency</span><span class="metric-val" id="shm-m-latency">—</span></div>
+              <div class="metric-row"><span class="metric-key">Throughput</span><span class="metric-val" id="shm-m-throughput">—</span></div>
+            </div>
+          </div>
+          <div class="panel-card">
+            <div class="panel-header">Event log</div>
+            <div class="event-log" id="shm-log"></div>
+          </div>
+          <div class="insight-box">
+            No kernel transition. Writer maps memory, reader maps same region. No copying — both see the same physical RAM.
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PIPE DEMO ── -->
+      <div id="page-pipe" class="page">
+        <div>
+          <div class="demo-header">
+            <span class="demo-title">Pipe</span>
+            <div class="demo-controls">
+              <button class="btn" onclick="resetDemo('pipe')">Reset</button>
+              <button class="btn primary" id="pipe-run-btn" onclick="runDemo('pipe')">Run demo</button>
+            </div>
+          </div>
+
+          <div class="viz-area">
+            <div class="viz-canvas" id="pipe-canvas">
+              <div class="proc-box" id="pipe-parent" style="left: 24px; top: 50%; transform: translateY(-50%)">
+                <div class="proc-name">Parent</div>
+                <div class="proc-pid">pid 12340</div>
+                <div class="proc-status"><span class="status-dot" id="pipe-p-dot"></span><span id="pipe-p-status">idle</span></div>
+              </div>
+              <div class="proc-box" id="pipe-child" style="right: 24px; top: 50%; transform: translateY(-50%)">
+                <div class="proc-name">Child</div>
+                <div class="proc-pid">pid 12341</div>
+                <div class="proc-status"><span class="status-dot" id="pipe-c-dot"></span><span id="pipe-c-status">idle</span></div>
+              </div>
+
+              <!-- Kernel buffer -->
+              <div class="kernel-region" id="pipe-kernel">
+                <div class="kernel-label">kernel · pipe buffer</div>
+                <div class="kernel-buffer" id="pipe-buf">
+                  <div class="buf-slot">—</div>
+                  <div class="buf-slot">—</div>
+                  <div class="buf-slot">—</div>
+                  <div class="buf-slot">—</div>
+                  <div class="buf-slot">—</div>
+                  <div class="buf-slot">—</div>
+                </div>
+              </div>
+
+              <svg class="svg-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <line x1="20" y1="50" x2="38" y2="55" stroke="var(--amber)" stroke-width="0.3" stroke-dasharray="2,2" opacity="0.4" />
+                <line x1="62" y1="55" x2="80" y2="50" stroke="var(--amber)" stroke-width="0.3" stroke-dasharray="2,2" opacity="0.4" />
+              </svg>
+            </div>
+
+            <div class="progress-bar-wrap">
+              <span class="progress-label" id="pipe-progress-label">0 / 10 messages</span>
+              <div class="progress-bar-track"><div class="progress-bar-fill" id="pipe-progress" style="background: var(--amber)"></div></div>
+              <span class="progress-label" id="pipe-latency">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="right-panel">
+          <div class="panel-card">
+            <div class="panel-header">Metrics</div>
+            <div class="panel-body">
+              <div class="metric-row"><span class="metric-key">Copies / msg</span><span class="metric-val warn">2</span></div>
+              <div class="metric-row"><span class="metric-key">Syscalls / msg</span><span class="metric-val warn">2</span></div>
+              <div class="metric-row"><span class="metric-key">Kernel involved</span><span class="metric-val warn">Yes</span></div>
+              <div class="metric-row"><span class="metric-key">Avg latency</span><span class="metric-val" id="pipe-m-latency">—</span></div>
+              <div class="metric-row"><span class="metric-key">Throughput</span><span class="metric-val" id="pipe-m-throughput">—</span></div>
+            </div>
+          </div>
+          <div class="panel-card">
+            <div class="panel-header">Event log</div>
+            <div class="event-log" id="pipe-log"></div>
+          </div>
+          <div class="insight-box" style="border-left-color: var(--amber)">
+            write() copies data into kernel buffer. read() copies out. Two mandatory kernel transitions per message — that's the isolation cost.
+          </div>
+        </div>
+      </div>
+
+      <!-- ── UNIX SOCKET ── -->
+      <div id="page-unix" class="page">
+        <div>
+          <div class="demo-header">
+            <span class="demo-title">Unix Socket</span>
+            <div class="demo-controls">
+              <button class="btn" onclick="resetDemo('unix')">Reset</button>
+              <button class="btn primary" id="unix-run-btn" onclick="runDemo('unix')">Run demo</button>
+            </div>
+          </div>
+
+          <div class="viz-area">
+            <div class="viz-canvas" id="unix-canvas">
+              <div class="proc-box" id="unix-server" style="left: 24px; top: 50%; transform: translateY(-50%)">
+                <div class="proc-name">Server</div>
+                <div class="proc-pid">pid 12340</div>
+                <div class="proc-status"><span class="status-dot" id="unix-s-dot"></span><span id="unix-s-status">idle</span></div>
+              </div>
+              <div class="proc-box" id="unix-client" style="right: 24px; top: 50%; transform: translateY(-50%)">
+                <div class="proc-name">Client</div>
+                <div class="proc-pid">pid 12341</div>
+                <div class="proc-status"><span class="status-dot" id="unix-c-dot"></span><span id="unix-c-status">idle</span></div>
+              </div>
+
+              <div class="kernel-region" id="unix-kernel" style="border-color: var(--green); background: var(--green-dim)">
+                <div class="kernel-label" style="color: var(--green)">/tmp/ipc.sock</div>
+                <div style="font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 4px">⇄ full duplex</div>
+                <div style="font-family: var(--mono); font-size: 10px; color: var(--hint); margin-top: 4px" id="unix-msgs">0 msgs sent</div>
+              </div>
+
+              <svg class="svg-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <line x1="20" y1="50" x2="38" y2="55" stroke="var(--green)" stroke-width="0.3" stroke-dasharray="2,2" opacity="0.4" />
+                <line x1="62" y1="55" x2="80" y2="50" stroke="var(--green)" stroke-width="0.3" stroke-dasharray="2,2" opacity="0.4" />
+              </svg>
+            </div>
+            <div class="progress-bar-wrap">
+              <span class="progress-label" id="unix-progress-label">0 / 10 messages</span>
+              <div class="progress-bar-track"><div class="progress-bar-fill" id="unix-progress" style="background: var(--green)"></div></div>
+              <span class="progress-label" id="unix-latency">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="right-panel">
+          <div class="panel-card">
+            <div class="panel-header">Metrics</div>
+            <div class="panel-body">
+              <div class="metric-row"><span class="metric-key">Copies / msg</span><span class="metric-val warn">2</span></div>
+              <div class="metric-row"><span class="metric-key">Direction</span><span class="metric-val good">Bidirectional</span></div>
+              <div class="metric-row"><span class="metric-key">Cross-host</span><span class="metric-val" style="color: var(--muted)">No</span></div>
+              <div class="metric-row"><span class="metric-key">Avg latency</span><span class="metric-val" id="unix-m-latency">—</span></div>
+              <div class="metric-row"><span class="metric-key">vs pipe</span><span class="metric-val" id="unix-m-vs">—</span></div>
+            </div>
+          </div>
+          <div class="panel-card">
+            <div class="panel-header">Event log</div>
+            <div class="event-log" id="unix-log"></div>
+          </div>
+          <div class="insight-box" style="border-left-color: var(--green)">
+            Same kernel overhead as a pipe, but bidirectional. Both peers can send and receive on the same socket. Stays on-machine.
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TCP ── -->
+      <div id="page-tcp" class="page">
+        <div>
+          <div class="demo-header">
+            <span class="demo-title">TCP Socket</span>
+            <div class="demo-controls">
+              <button class="btn" onclick="resetDemo('tcp')">Reset</button>
+              <button class="btn primary" id="tcp-run-btn" onclick="runDemo('tcp')">Run demo</button>
+            </div>
+          </div>
+
+          <div class="viz-area">
+            <div class="viz-canvas" id="tcp-canvas" style="height: 290px">
+              <div class="proc-box" id="tcp-server" style="left: 24px; top: 40%; transform: translateY(-50%)">
+                <div class="proc-name">Server</div>
+                <div class="proc-pid">:8080</div>
+                <div class="proc-status"><span class="status-dot" id="tcp-s-dot"></span><span id="tcp-s-status">idle</span></div>
+              </div>
+              <div class="proc-box" id="tcp-client" style="right: 24px; top: 40%; transform: translateY(-50%)">
+                <div class="proc-name">Client</div>
+                <div class="proc-pid">127.0.0.1</div>
+                <div class="proc-status"><span class="status-dot" id="tcp-c-dot"></span><span id="tcp-c-status">idle</span></div>
+              </div>
+
+              <!-- Layer stack (center) -->
+              <div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 160px">
+                <div class="layer-box" style="background: rgba(153, 102, 255, 0.06); border-color: rgba(153, 102, 255, 0.3); margin-bottom: 4px">
+                  <div class="layer-name" style="color: #9966ff; font-size: 8px">Socket API</div>
+                  <div class="layer-desc" style="font-size: 9px">send/recv</div>
+                </div>
+                <div class="layer-box" style="background: rgba(153, 102, 255, 0.04); border-color: rgba(153, 102, 255, 0.2); margin-bottom: 4px">
+                  <div class="layer-name" style="color: #9966ff; font-size: 8px">TCP Layer</div>
+                  <div class="layer-desc" style="font-size: 9px">seq · checksum</div>
+                </div>
+                <div class="layer-box" style="background: rgba(153, 102, 255, 0.02); border-color: rgba(153, 102, 255, 0.15)">
+                  <div class="layer-name" style="color: #9966ff; font-size: 8px">IP · Loopback</div>
+                  <div class="layer-desc" style="font-size: 9px">lo interface</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="progress-bar-wrap">
+              <span class="progress-label" id="tcp-progress-label">0 / 10 messages</span>
+              <div class="progress-bar-track"><div class="progress-bar-fill" id="tcp-progress" style="background: #9966ff"></div></div>
+              <span class="progress-label" id="tcp-latency">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="right-panel">
+          <div class="panel-card">
+            <div class="panel-header">Metrics</div>
+            <div class="panel-body">
+              <div class="metric-row"><span class="metric-key">Copies / msg</span><span class="metric-val warn">3+</span></div>
+              <div class="metric-row"><span class="metric-key">Syscalls / msg</span><span class="metric-val warn">3+</span></div>
+              <div class="metric-row"><span class="metric-key">Cross-host</span><span class="metric-val good">Yes</span></div>
+              <div class="metric-row"><span class="metric-key">Avg latency</span><span class="metric-val" id="tcp-m-latency">—</span></div>
+              <div class="metric-row"><span class="metric-key">vs shm</span><span class="metric-val" id="tcp-m-vs">—</span></div>
+            </div>
+          </div>
+          <div class="panel-card">
+            <div class="panel-header">Event log</div>
+            <div class="event-log" id="tcp-log"></div>
+          </div>
+          <div class="insight-box" style="border-left-color: #9966ff">
+            Most overhead: TCP seq tracking, checksum computation, ACK round-trip. Even on loopback, the full network stack runs.
+          </div>
+        </div>
+      </div>
+
+      <!-- ── BENCHMARK ── -->
+      <div id="page-bm" class="page">
+        <div>
+          <div class="demo-header">
+            <span class="demo-title">Benchmark · 100k messages · 64 bytes</span>
+            <div class="demo-controls">
+              <button class="btn primary" id="bm-run-btn" onclick="runBenchmark()">Run benchmark</button>
+            </div>
+          </div>
+
+          <div class="viz-area" style="padding: 20px 24px; min-height: 280px">
+            <div id="bm-bars">
+              <div class="bm-row">
+                <span class="bm-label">shm</span>
+                <div class="bm-track"><div class="bm-fill" id="bm-shm" style="width: 0%; background: var(--accent)"></div></div>
+                <span class="bm-val" id="bm-shm-val">—</span>
+              </div>
+              <div class="bm-row">
+                <span class="bm-label">pipe</span>
+                <div class="bm-track"><div class="bm-fill" id="bm-pipe" style="width: 0%; background: var(--amber)"></div></div>
+                <span class="bm-val" id="bm-pipe-val">—</span>
+              </div>
+              <div class="bm-row">
+                <span class="bm-label">unix sock</span>
+                <div class="bm-track"><div class="bm-fill" id="bm-unix" style="width: 0%; background: var(--green)"></div></div>
+                <span class="bm-val" id="bm-unix-val">—</span>
+              </div>
+              <div class="bm-row">
+                <span class="bm-label">tcp</span>
+                <div class="bm-track"><div class="bm-fill" id="bm-tcp" style="width: 0%; background: #9966ff"></div></div>
+                <span class="bm-val" id="bm-tcp-val">—</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 20px; border-top: 0.5px solid var(--border); padding-top: 16px">
+              <table class="cmp-table">
+                <thead>
+                  <tr>
+                    <th>Mechanism</th>
+                    <th>Copies</th>
+                    <th>Syscalls</th>
+                    <th>Latency</th>
+                    <th>Use when</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="highlight">
+                    <td>Shared memory</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>~0.002ms</td>
+                    <td style="text-align: right; font-family: var(--sans); color: var(--muted)">max speed</td>
+                  </tr>
+                  <tr>
+                    <td>Pipe</td>
+                    <td>2</td>
+                    <td>2</td>
+                    <td>~0.04ms</td>
+                    <td style="text-align: right; font-family: var(--sans); color: var(--muted)">simple IPC</td>
+                  </tr>
+                  <tr>
+                    <td>Unix socket</td>
+                    <td>2</td>
+                    <td>2</td>
+                    <td>~0.05ms</td>
+                    <td style="text-align: right; font-family: var(--sans); color: var(--muted)">bidirectional</td>
+                  </tr>
+                  <tr>
+                    <td>TCP</td>
+                    <td>3+</td>
+                    <td>3+</td>
+                    <td>~0.15ms</td>
+                    <td style="text-align: right; font-family: var(--sans); color: var(--muted)">cross-host</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="right-panel">
+          <div class="panel-card">
+            <div class="panel-header">Summary</div>
+            <div class="panel-body">
+              <div class="metric-row"><span class="metric-key">Fastest</span><span class="metric-val good">Shared mem</span></div>
+              <div class="metric-row"><span class="metric-key">SHM vs TCP</span><span class="metric-val">~75×</span></div>
+              <div class="metric-row"><span class="metric-key">SHM vs Pipe</span><span class="metric-val">~18×</span></div>
+              <div class="metric-row">
+                <span class="metric-key">Pipe vs Unix</span><span class="metric-val" style="color: var(--muted)">~similar</span>
+              </div>
+            </div>
+          </div>
+          <div class="insight-box">
+            Faster ≠ always better. Shared memory has no isolation — a bug in either process can corrupt the shared region. TCP adds retransmit,
+            ordering, and network portability. Choose by your real constraints.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ── NAVIGATION ──
+      function showPage(id) {
+        document.querySelectorAll(".page").forEach((p) => p.classList.remove("active"));
+        document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+        const page = document.getElementById("page-" + id);
+        if (page) page.classList.add("active");
+        const tabs = document.querySelectorAll(".tab");
+        const tabMap = { landing: 0, shm: 1, pipe: 2, unix: 3, tcp: 4, bm: 5 };
+        if (tabMap[id] !== undefined) tabs[tabMap[id]].classList.add("active");
+      }
+
+      // ── SHARED STATE ──
+      let demoTimers = {};
+
+      function clearDemo(key) {
+        if (demoTimers[key]) {
+          demoTimers[key].forEach((t) => clearTimeout(t));
+          demoTimers[key] = [];
+        }
+      }
+
+      function schedule(key, fn, delay) {
+        if (!demoTimers[key]) demoTimers[key] = [];
+        demoTimers[key].push(setTimeout(fn, delay));
+      }
+
+      function logEvent(logId, type, msg) {
+        const log = document.getElementById(logId);
+        if (!log) return;
+        const now = new Date();
+        const ts =
+          now.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" }) +
+          "." +
+          String(now.getMilliseconds()).padStart(3, "0");
+        const entry = document.createElement("div");
+        entry.className = "event-entry";
+        entry.innerHTML = `<span class="ev-time">${ts}</span><span class="ev-type ${type}">${type}</span><span class="ev-msg">${msg}</span>`;
+        log.insertBefore(entry, log.firstChild);
+      }
+
+      // ── SHARED MEMORY DEMO ──
+      function resetDemo(which) {
+        clearDemo(which);
+        if (which === "shm") {
+          setEl("shm-w-status", "idle");
+          setDot("shm-w-dot", "");
+          setEl("shm-r-status", "idle");
+          setDot("shm-r-dot", "");
+          setEl("shm-seq", "—");
+          setEl("shm-data", "—");
+          setEl("shm-ready", "false");
+          document.getElementById("shm-region").classList.remove("flash");
+          document.getElementById("shm-writer").classList.remove("active", "reading");
+          document.getElementById("shm-reader").classList.remove("active", "reading");
+          setProgress("shm", 0, "0 / 10 messages", "—");
+          document.getElementById("shm-log").innerHTML = "";
+          document.getElementById("shm-m-latency").textContent = "—";
+          document.getElementById("shm-m-throughput").textContent = "—";
+          document.getElementById("shm-run-btn").disabled = false;
+        } else if (which === "pipe") {
+          setEl("pipe-p-status", "idle");
+          setDot("pipe-p-dot", "");
+          setEl("pipe-c-status", "idle");
+          setDot("pipe-c-dot", "");
+          setProgress("pipe", 0, "0 / 10 messages", "—");
+          document.getElementById("pipe-log").innerHTML = "";
+          document.getElementById("pipe-m-latency").textContent = "—";
+          document.getElementById("pipe-m-throughput").textContent = "—";
+          document.getElementById("pipe-parent").classList.remove("active", "reading");
+          document.getElementById("pipe-child").classList.remove("active", "reading");
+          resetBufSlots();
+          document.getElementById("pipe-run-btn").disabled = false;
+        } else if (which === "unix") {
+          setEl("unix-s-status", "idle");
+          setDot("unix-s-dot", "");
+          setEl("unix-c-status", "idle");
+          setDot("unix-c-dot", "");
+          setProgress("unix", 0, "0 / 10 messages", "—");
+          document.getElementById("unix-log").innerHTML = "";
+          document.getElementById("unix-m-latency").textContent = "—";
+          document.getElementById("unix-m-vs").textContent = "—";
+          document.getElementById("unix-server").classList.remove("active", "reading");
+          document.getElementById("unix-client").classList.remove("active", "reading");
+          setEl("unix-msgs", "0 msgs sent");
+          document.getElementById("unix-run-btn").disabled = false;
+        } else if (which === "tcp") {
+          setEl("tcp-s-status", "idle");
+          setDot("tcp-s-dot", "");
+          setEl("tcp-c-status", "idle");
+          setDot("tcp-c-dot", "");
+          setProgress("tcp", 0, "0 / 10 messages", "—");
+          document.getElementById("tcp-log").innerHTML = "";
+          document.getElementById("tcp-m-latency").textContent = "—";
+          document.getElementById("tcp-m-vs").textContent = "—";
+          document.getElementById("tcp-server").classList.remove("active", "reading");
+          document.getElementById("tcp-client").classList.remove("active", "reading");
+          document.getElementById("tcp-run-btn").disabled = false;
+        }
+      }
+
+      function setEl(id, val) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      }
+      function setDot(id, cls) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.className = "status-dot" + (cls ? " " + cls : "");
+      }
+      function setProgress(which, pct, label, latency) {
+        const fill = document.getElementById(which + "-progress");
+        const lbl = document.getElementById(which + "-progress-label");
+        const lat = document.getElementById(which + "-latency");
+        if (fill) fill.style.width = pct + "%";
+        if (lbl) lbl.textContent = label;
+        if (lat) lat.textContent = latency;
+      }
+      function resetBufSlots() {
+        document.querySelectorAll("#pipe-buf .buf-slot").forEach((s) => {
+          s.classList.remove("filled");
+          s.textContent = "—";
+        });
+      }
+
+      function runDemo(which) {
+        resetDemo(which);
+        document.getElementById(which === "shm" ? "shm-run-btn" : which + "-run-btn").disabled = true;
+
+        const total = 10;
+        const msgs = ["msg_1", "msg_2", "msg_3", "msg_4", "msg_5", "msg_6", "msg_7", "msg_8", "msg_9", "msg_10"];
+        const latencies =
+          which === "shm"
+            ? [0.002, 0.0018, 0.0021, 0.0019, 0.0022, 0.002, 0.0018, 0.0021, 0.002, 0.0019]
+            : which === "pipe"
+              ? [0.041, 0.038, 0.044, 0.04, 0.039, 0.042, 0.041, 0.043, 0.04, 0.038]
+              : which === "unix"
+                ? [0.051, 0.049, 0.053, 0.05, 0.052, 0.051, 0.05, 0.053, 0.051, 0.049]
+                : [0.154, 0.148, 0.162, 0.155, 0.151, 0.158, 0.16, 0.156, 0.153, 0.15];
+
+        if (which === "shm") runShmDemo(msgs, latencies);
+        else if (which === "pipe") runPipeDemo(msgs, latencies);
+        else if (which === "unix") runUnixDemo(msgs, latencies);
+        else if (which === "tcp") runTcpDemo(msgs, latencies);
+      }
+
+      function runShmDemo(msgs, latencies) {
+        const total = msgs.length;
+        // Init
+        schedule(
+          "shm",
+          () => {
+            setEl("shm-w-status", "writing");
+            setDot("shm-w-dot", "active");
+            setEl("shm-r-status", "waiting");
+            setDot("shm-r-dot", "");
+            document.getElementById("shm-writer").classList.add("active");
+            logEvent("shm-log", "write", "process start · pid 12340");
+            logEvent("shm-log", "read", "process start · pid 12341");
+          },
+          100
+        );
+
+        msgs.forEach((msg, i) => {
+          const baseDelay = 400 + i * 600;
+          // Writer writes
+          schedule(
+            "shm",
+            () => {
+              setEl("shm-seq", String(i + 1));
+              setEl("shm-data", msg);
+              setEl("shm-ready", "false");
+              const region = document.getElementById("shm-region");
+              region.classList.add("flash");
+              document.getElementById("shm-seq").classList.add("updated");
+              document.getElementById("shm-data").classList.add("updated");
+              logEvent("shm-log", "write", `seq:${i + 1} → "${msg}"`);
+            },
+            baseDelay
+          );
+
+          // Ready flag
+          schedule(
+            "shm",
+            () => {
+              setEl("shm-ready", "true");
+              document.getElementById("shm-ready").classList.add("updated");
+            },
+            baseDelay + 120
+          );
+
+          // Reader reads
+          schedule(
+            "shm",
+            () => {
+              document.getElementById("shm-region").classList.remove("flash");
+              document.getElementById("shm-seq").classList.remove("updated");
+              document.getElementById("shm-data").classList.remove("updated");
+              document.getElementById("shm-ready").classList.remove("updated");
+              document.getElementById("shm-reader").classList.add("reading");
+              setEl("shm-r-status", "reading");
+              setDot("shm-r-dot", "reading");
+              logEvent("shm-log", "read", `seq:${i + 1} ← "${msg}"`);
+            },
+            baseDelay + 250
+          );
+
+          // Progress
+          schedule(
+            "shm",
+            () => {
+              const pct = Math.round(((i + 1) / total) * 100);
+              const avgLat = latencies.slice(0, i + 1).reduce((a, b) => a + b, 0) / (i + 1);
+              setProgress("shm", pct, `${i + 1} / ${total} messages`, `${avgLat.toFixed(3)}ms`);
+              if (i === total - 1) {
+                document.getElementById("shm-m-latency").textContent = avgLat.toFixed(3) + "ms";
+                document.getElementById("shm-m-throughput").textContent = ((1 / avgLat) * 1000).toFixed(0) + "k msg/s";
+                setEl("shm-w-status", "done");
+                setDot("shm-w-dot", "done");
+                setEl("shm-r-status", "done");
+                setDot("shm-r-dot", "done");
+                logEvent("shm-log", "done", "all messages transferred");
+                document.getElementById("shm-run-btn").disabled = false;
+              }
+            },
+            baseDelay + 400
+          );
+        });
+      }
+
+      function runPipeDemo(msgs, latencies) {
+        const total = msgs.length;
+        schedule(
+          "pipe",
+          () => {
+            setEl("pipe-p-status", "writing");
+            setDot("pipe-p-dot", "active");
+            document.getElementById("pipe-parent").classList.add("active");
+            logEvent("pipe-log", "write", "parent start · write() fd[1]");
+          },
+          100
+        );
+
+        msgs.forEach((msg, i) => {
+          const base = 300 + i * 700;
+          schedule(
+            "pipe",
+            () => {
+              logEvent("pipe-log", "syscall", `write(fd[1], "${msg}", 5)`);
+              const slots = document.querySelectorAll("#pipe-buf .buf-slot");
+              const slot = slots[i % slots.length];
+              slot.classList.add("filled");
+              slot.textContent = `s${i + 1}`;
+            },
+            base
+          );
+          schedule(
+            "pipe",
+            () => {
+              document.getElementById("pipe-child").classList.add("reading");
+              setEl("pipe-c-status", "reading");
+              setDot("pipe-c-dot", "reading");
+              logEvent("pipe-log", "syscall", `read(fd[0], buf, 64)`);
+            },
+            base + 200
+          );
+          schedule(
+            "pipe",
+            () => {
+              logEvent("pipe-log", "read", `received "${msg}"`);
+              const slots = document.querySelectorAll("#pipe-buf .buf-slot");
+              slots[i % slots.length].classList.remove("filled");
+              slots[i % slots.length].textContent = "—";
+              const pct = Math.round(((i + 1) / total) * 100);
+              const avgLat = latencies.slice(0, i + 1).reduce((a, b) => a + b, 0) / (i + 1);
+              setProgress("pipe", pct, `${i + 1} / ${total} messages`, `${avgLat.toFixed(3)}ms`);
+              if (i === total - 1) {
+                document.getElementById("pipe-m-latency").textContent = avgLat.toFixed(3) + "ms";
+                document.getElementById("pipe-m-throughput").textContent = ((1 / avgLat) * 1000).toFixed(0) + "k msg/s";
+                setEl("pipe-p-status", "done");
+                setDot("pipe-p-dot", "done");
+                setEl("pipe-c-status", "done");
+                setDot("pipe-c-dot", "done");
+                logEvent("pipe-log", "done", "pipe closed");
+                document.getElementById("pipe-run-btn").disabled = false;
+              }
+            },
+            base + 450
+          );
+        });
+      }
+
+      function runUnixDemo(msgs, latencies) {
+        const total = msgs.length;
+        schedule(
+          "unix",
+          () => {
+            setEl("unix-s-status", "listening");
+            setDot("unix-s-dot", "active");
+            document.getElementById("unix-server").classList.add("active");
+            logEvent("unix-log", "write", "server bind /tmp/ipc.sock");
+          },
+          100
+        );
+        schedule(
+          "unix",
+          () => {
+            setEl("unix-c-status", "connected");
+            setDot("unix-c-dot", "active");
+            document.getElementById("unix-client").classList.add("active");
+            logEvent("unix-log", "read", "client connect()");
+          },
+          300
+        );
+
+        msgs.forEach((msg, i) => {
+          const base = 600 + i * 650;
+          // Alternate direction to show bidirectional
+          const fromClient = i % 3 === 2;
+          schedule(
+            "unix",
+            () => {
+              if (fromClient) {
+                logEvent("unix-log", "write", `client → server: "${msg}"`);
+              } else {
+                logEvent("unix-log", "write", `server → client: "${msg}"`);
+              }
+              setEl("unix-msgs", `${i + 1} msgs sent`);
+            },
+            base
+          );
+          schedule(
+            "unix",
+            () => {
+              const pct = Math.round(((i + 1) / total) * 100);
+              const avgLat = latencies.slice(0, i + 1).reduce((a, b) => a + b, 0) / (i + 1);
+              setProgress("unix", pct, `${i + 1} / ${total} messages`, `${avgLat.toFixed(3)}ms`);
+              if (i === total - 1) {
+                document.getElementById("unix-m-latency").textContent = avgLat.toFixed(3) + "ms";
+                document.getElementById("unix-m-vs").textContent = "~similar to pipe";
+                setEl("unix-s-status", "done");
+                setDot("unix-s-dot", "done");
+                setEl("unix-c-status", "done");
+                setDot("unix-c-dot", "done");
+                logEvent("unix-log", "done", "socket closed");
+                document.getElementById("unix-run-btn").disabled = false;
+              }
+            },
+            base + 400
+          );
+        });
+      }
+
+      function runTcpDemo(msgs, latencies) {
+        const total = msgs.length;
+        schedule(
+          "tcp",
+          () => {
+            setEl("tcp-s-status", "SYN_LISTEN");
+            setDot("tcp-s-dot", "active");
+            document.getElementById("tcp-server").classList.add("active");
+            logEvent("tcp-log", "write", "server listen :8080");
+          },
+          100
+        );
+        schedule(
+          "tcp",
+          () => {
+            logEvent("tcp-log", "syscall", "connect() → SYN → SYN-ACK → ACK");
+            setEl("tcp-c-status", "ESTABLISHED");
+            setDot("tcp-c-dot", "active");
+            document.getElementById("tcp-client").classList.add("active");
+            setEl("tcp-s-status", "ESTABLISHED");
+          },
+          400
+        );
+
+        msgs.forEach((msg, i) => {
+          const base = 800 + i * 800;
+          schedule(
+            "tcp",
+            () => {
+              logEvent("tcp-log", "syscall", `send() seq=${1000 + i} checksum`);
+            },
+            base
+          );
+          schedule(
+            "tcp",
+            () => {
+              logEvent("tcp-log", "read", `recv() ← ACK seq=${1000 + i + 1}`);
+              const pct = Math.round(((i + 1) / total) * 100);
+              const avgLat = latencies.slice(0, i + 1).reduce((a, b) => a + b, 0) / (i + 1);
+              setProgress("tcp", pct, `${i + 1} / ${total} messages`, `${avgLat.toFixed(3)}ms`);
+              if (i === total - 1) {
+                document.getElementById("tcp-m-latency").textContent = avgLat.toFixed(3) + "ms";
+                document.getElementById("tcp-m-vs").textContent = "~75× slower than shm";
+                setEl("tcp-s-status", "CLOSE_WAIT");
+                setDot("tcp-s-dot", "done");
+                setEl("tcp-c-status", "TIME_WAIT");
+                setDot("tcp-c-dot", "done");
+                logEvent("tcp-log", "done", "FIN-ACK · connection closed");
+                document.getElementById("tcp-run-btn").disabled = false;
+              }
+            },
+            base + 500
+          );
+        });
+      }
+
+      // ── BENCHMARK ──
+      function runBenchmark() {
+        document.getElementById("bm-run-btn").disabled = true;
+        // SHM fastest = 100%
+        const data = { shm: 100, pipe: 24, unix: 20, tcp: 7 };
+        const vals = { shm: "4,320 μs", pipe: "234 μs", unix: "196 μs", tcp: "63 μs" };
+        const order = ["shm", "pipe", "unix", "tcp"];
+        let delay = 200;
+        order.forEach((key) => {
+          setTimeout(() => {
+            document.getElementById("bm-" + key).style.width = data[key] + "%";
+            document.getElementById("bm-" + key + "-val").textContent = vals[key];
+          }, delay);
+          delay += 300;
+        });
+        setTimeout(() => {
+          document.getElementById("bm-run-btn").disabled = false;
+        }, delay + 200);
+      }
+    </script>
+  </head>
+</html>

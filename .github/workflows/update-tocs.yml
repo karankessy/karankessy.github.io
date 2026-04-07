@@ -28,6 +28,9 @@ jobs:
         with:
           files: ./*.md
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+
       - name: Updated toc on all markdown changed files
         env:
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
@@ -40,6 +43,7 @@ jobs:
               continue
             fi
             ./gh-md-toc --indent 2 --insert --no-backup --hide-footer $file
+            npx --yes prettier --write "$file"
           done
           rm gh-md-toc
 

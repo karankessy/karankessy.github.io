@@ -1,0 +1,37 @@
+{%- comment -%}
+  Render social links from _data/socials.yml without requiring custom plugins.
+  Renders nothing if no social data is configured.
+{%- endcomment -%}
+{%- assign socials = site.data.socials -%}
+{%- if socials -%}
+  {%- if socials.github_username -%}
+    <a href="https://github.com/{{ socials.github_username }}" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+      <i class="fa-brands fa-github"></i>
+    </a>
+  {%- endif -%}
+  {%- if socials.linkedin_username -%}
+    <a href="https://linkedin.com/in/{{ socials.linkedin_username }}" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+      <i class="fa-brands fa-linkedin"></i>
+    </a>
+  {%- endif -%}
+  {%- if socials.x_username -%}
+    <a href="https://x.com/{{ socials.x_username }}" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)">
+      <i class="fa-brands fa-x-twitter"></i>
+    </a>
+  {%- endif -%}
+  {%- if socials.instagram_id -%}
+    <a href="https://instagram.com/{{ socials.instagram_id }}" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+      <i class="fa-brands fa-instagram"></i>
+    </a>
+  {%- endif -%}
+  {%- if socials.facebook_id -%}
+    <a href="https://facebook.com/{{ socials.facebook_id }}" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+      <i class="fa-brands fa-facebook"></i>
+    </a>
+  {%- endif -%}
+  {%- if socials.rss_icon -%}
+    <a href="{{ '/feed.xml' | relative_url }}" target="_blank" rel="noopener noreferrer" aria-label="RSS Feed">
+      <i class="fa-solid fa-rss"></i>
+    </a>
+  {%- endif -%}
+{%- endif -%}
