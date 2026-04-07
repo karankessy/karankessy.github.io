@@ -88,6 +88,12 @@ jobs:
           valueFile: "_config.yml"
           propertyPath: "giscus.repo"
           value: ${{ github.repository }}
+      - name: Validate Liquid tags 🧪
+        run: |
+          if grep -R -n "{%[[:space:]]*toc[[:space:]]*%}" _layouts _includes; then
+            echo "Unsupported Liquid tag '{% toc %}' detected. Use supported TOC structures only."
+            exit 1
+          fi
       - name: Install and Build 🔧
         run: |
           sudo apt-get update && sudo apt-get install -y imagemagick

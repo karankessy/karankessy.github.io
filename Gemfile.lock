@@ -70,6 +70,14 @@ GEM
       http_parser.rb (~> 0)
     eventmachine (1.2.7)
     execjs (2.10.0)
+    faraday (2.14.1)
+      faraday-net_http (>= 2.0, < 3.5)
+      json
+      logger
+    faraday-net_http (3.4.2)
+      net-http (~> 0.5)
+    faraday-retry (2.4.0)
+      faraday (~> 2.0)
     fast-stemmer (1.0.2)
     feedjira (4.0.1)
       logger (>= 1.0, < 2)
@@ -215,6 +223,8 @@ GEM
       bigdecimal (>= 3.1, < 5)
     namae (1.2.0)
       racc (~> 1.7)
+    net-http (0.9.1)
+      uri (>= 0.11.1)
     nokogiri (1.19.0-aarch64-linux-gnu)
       racc (~> 1.4)
     nokogiri (1.19.0-aarch64-linux-musl)
@@ -299,6 +309,7 @@ PLATFORMS
 DEPENDENCIES
   classifier-reborn
   css_parser
+  faraday-retry
   feedjira
   httparty
   jekyll
