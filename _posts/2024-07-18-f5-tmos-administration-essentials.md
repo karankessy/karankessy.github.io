@@ -3,7 +3,7 @@ layout: post
 title: "F5 TMOS Administration Essentials: Critical Concepts to be Remembered"
 date: 2024-07-18 10:30:00
 description: Explore crucial aspects of F5 TMOS administration, from packet processing flow to advanced troubleshooting techniques. A comprehensive guide for network administrators and DevOps professionals.
-tags: [F5, TMOS, Network Administration, Load Balancing, Technical Infrastructure, DevOps]
+tags: [f5, TMOS, Network Administration, Load Balancing, Technical Infrastructure, DevOps]
 ---
 
 Ever wondered what happens when a packet arrives at your F5 device? Let's demystify the complex world of F5 TMOS administration and explore the crucial aspects that every administrator should have at their fingertips.
