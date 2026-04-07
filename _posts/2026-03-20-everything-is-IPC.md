@@ -10,9 +10,9 @@ mermaid:
   zoomable: true
 ---
 
-Repository for this article: [benchmarkIPC](https://github.com/karankessy/benchmarkIPC).
+Actual IPC, syscalls, or kernel code repository for this article: [benchmarkIPC](https://github.com/karankessy/benchmarkIPC).
 
-> Disclaimer: the visualizer below is a client-side-only teaching aid. It does not run real IPC, syscalls, or kernel code. The behavior is mimicked entirely in JavaScript so the flow is easy to follow.
+> Disclaimer: the visualizer below is a client-side-only teaching aid. It does not run real IPC, syscalls, or kernel code. The behavior is mimicked entirely in JavaScript so the flow is easy to follow. Actual 
 
 ### Client-Side Visualizer
 
@@ -277,7 +277,7 @@ If A writes while B reads, you get a race condition. B might see half-old, half-
 
 The two-semaphore handshake solves this:
 
-```c
+```
 Writer                           Reader
 ───────                          ──────
 sem_wait(sem_reader)   ←──────┐
@@ -321,7 +321,7 @@ NGINX workers are separate OS processes, not threads. Each runs its own event lo
 
 ### The Data Path
 
-```c
+```
 Process A
    |
    | send()
@@ -519,7 +519,7 @@ The difference is stark. Message passing pays kernel transition cost on every si
 
 ### Expected Results
 
-```c
+```
 Shared Memory:   ~7.6M msgs/sec   (baseline)
 Pipe:            ~1.7M msgs/sec   (~4.5x slower)
 Unix Socket:     ~1.3M msgs/sec   (~5.8x slower)
