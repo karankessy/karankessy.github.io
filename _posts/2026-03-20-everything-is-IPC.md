@@ -12,7 +12,7 @@ mermaid:
 
 Actual IPC, syscalls, or kernel code repository for this article: [benchmarkIPC](https://github.com/karankessy/benchmarkIPC).
 
-> Disclaimer: the visualizer below is a client-side-only teaching aid. It does not run real IPC, syscalls, or kernel code. The behavior is mimicked entirely in JavaScript so the flow is easy to follow. Actual 
+> Disclaimer: the visualizer below is a client-side-only teaching aid. It does not run real IPC, syscalls, or kernel code. The behavior is mimicked entirely in JavaScript so the flow is easy to follow. Actual
 
 ### Client-Side Visualizer
 
@@ -222,7 +222,7 @@ After `mmap`, every read and write is just a CPU load or store instruction. No s
 
 ### Syscall Sequence
 
-```c
+```
 Writer:                           Reader:
   shm_open(O_CREAT|O_RDWR)         shm_open(O_RDWR)
   ftruncate(sizeof(SharedRegion))
