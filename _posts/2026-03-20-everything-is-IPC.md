@@ -222,7 +222,7 @@ After `mmap`, every read and write is just a CPU load or store instruction. No s
 
 ### Syscall Sequence
 
-```
+```c
 Writer:                           Reader:
   shm_open(O_CREAT|O_RDWR)         shm_open(O_RDWR)
   ftruncate(sizeof(SharedRegion))
@@ -277,7 +277,7 @@ If A writes while B reads, you get a race condition. B might see half-old, half-
 
 The two-semaphore handshake solves this:
 
-```
+```c
 Writer                           Reader
 ───────                          ──────
 sem_wait(sem_reader)   ←──────┐
@@ -321,7 +321,7 @@ NGINX workers are separate OS processes, not threads. Each runs its own event lo
 
 ### The Data Path
 
-```
+```c
 Process A
    |
    | send()
@@ -366,7 +366,7 @@ Some kernels support **zero-copy**: instead of copying the message twice, the ke
 
 A kernel-managed byte stream between file descriptors.
 
-```
+```c
 pipe(pipefd) → fork() →
   Parent: close(pipefd[0]), write(pipefd[1], &msg, sizeof(msg))
   Child:  close(pipefd[1]), read(pipefd[0], &buf, sizeof(buf))
@@ -408,7 +408,7 @@ The isolation is the point. If a renderer crashes, the browser process keeps run
 
 Like pipes but richer: full-duplex, connection-oriented, works between unrelated processes.
 
-```
+```c
 Server: socket(AF_UNIX, SOCK_STREAM) → bind("/tmp/ipc.sock")
         → listen() → accept() → send()/recv()
 Client: socket(AF_UNIX, SOCK_STREAM) → connect("/tmp/ipc.sock")
@@ -448,7 +448,7 @@ The performance difference is measurable and the configuration change is one lin
 
 Same socket API but routable across hosts.
 
-```
+```c
 Server: socket(AF_INET) → bind(IP:port) → listen() → accept() → send()/recv()
 Client: socket(AF_INET) → connect(IP:port) → send()/recv()
 ```
@@ -519,7 +519,7 @@ The difference is stark. Message passing pays kernel transition cost on every si
 
 ### Expected Results
 
-```
+```c
 Shared Memory:   ~7.6M msgs/sec   (baseline)
 Pipe:            ~1.7M msgs/sec   (~4.5x slower)
 Unix Socket:     ~1.3M msgs/sec   (~5.8x slower)
