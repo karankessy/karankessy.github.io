@@ -87,6 +87,14 @@
               {% endfor %}
             </nav>
           </d-contents>
+
+        {% elsif page.toc == true %}
+          <d-contents>
+            <nav class="l-text figcaption">
+              <h3>Contents</h3>
+              {% toc %}
+            </nav>
+          </d-contents>
         {% endif %}
 
         {{ content }}
