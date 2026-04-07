@@ -94,6 +94,10 @@ jobs:
             echo "Unsupported Liquid tag '{% toc %}' detected. Use supported TOC structures only."
             exit 1
           fi
+          if grep -R -n "{%[[:space:]]*bibliography\b" _layouts _includes; then
+            echo "Unsupported Liquid tag '{% bibliography %}' detected in shared templates."
+            exit 1
+          fi
       - name: Install and Build 🔧
         run: |
           sudo apt-get update && sudo apt-get install -y imagemagick
