@@ -1,186 +1,748 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en"><generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator><link href="https://karankessy.github.io/feed.xml" rel="self" type="application/atom+xml"/><link href="https://karankessy.github.io/" rel="alternate" type="text/html" hreflang="en"/><updated>2026-03-23T07:20:32+00:00</updated><id>https://karankessy.github.io/feed.xml</id><title type="html">Karan Kc</title><subtitle>Here I try exploring the philosophy behind how systems work; from system internals and application security to the patterns behind internet communication. </subtitle><entry><title type="html">Why Your API Works in Postman but Fails in the Browser</title><link href="https://karankessy.github.io/blog/2026/understanding-cors/" rel="alternate" type="text/html" title="Why Your API Works in Postman but Fails in the Browser"/><published>2026-03-15T10:00:00+00:00</published><updated>2026-03-15T10:00:00+00:00</updated><id>https://karankessy.github.io/blog/2026/understanding-cors</id><content type="html" xml:base="https://karankessy.github.io/blog/2026/understanding-cors/"><![CDATA[<p>If you’ve ever built a modern web application, you’ve probably stared at a CORS error in your browser console wondering why your perfectly fine API call works in Postman but dies in the browser. This article breaks down exactly what’s happening under the hood - from the Same-Origin Policy’s origins in 1995, through preflight mechanics, credentials, common misconfigurations, and real-world deployment patterns.</p> <p>I’ve also put together a hands-on demo project - <a href="https://github.com/karankessy/demoCORS"><strong>demoCORS</strong></a> - that you can clone and run locally to see every concept in action.</p> <hr/> <h2 id="1-the-same-origin-policy-sop">1. The Same-Origin Policy (SOP)</h2> <h3 id="why-it-exists">Why it exists</h3> <p>The year is 1995. Netscape Navigator 2.0 introduces JavaScript into the browser. For the first time, code running in one browser tab can manipulate the DOM, read form data, and make HTTP requests. Immediately, a problem emerges: if a user has two tabs open - their bank at <code class="language-plaintext highlighter-rouge">bank.com</code> and a malicious site at <code class="language-plaintext highlighter-rouge">evil.com</code> - the malicious site’s JavaScript could read data from the bank tab.</p> <p>The <strong>Same-Origin Policy</strong> was introduced to prevent this. It is the foundational security boundary of the web platform: <strong>code from one origin cannot read data from a different origin.</strong></p> <p>It’s important to understand what SOP does NOT do: it does not prevent requests from being <em>sent</em>. It prevents responses from being <em>read</em>. A page on <code class="language-plaintext highlighter-rouge">evil.com</code> can trigger a GET request to <code class="language-plaintext highlighter-rouge">bank.com</code>, and that request will arrive at the bank’s server (potentially with cookies). What SOP prevents is <code class="language-plaintext highlighter-rouge">evil.com</code>’s JavaScript from reading the bank’s response.</p> <h3 id="what-is-an-origin">What is an “origin”?</h3> <p>An origin is defined by three components:</p> <blockquote> <p><strong>Origin = scheme + host + port</strong></p> </blockquote> <p>Let’s examine concrete examples:</p> <table> <thead> <tr> <th>URL</th> <th>Scheme</th> <th>Host</th> <th>Port</th> <th>Origin</th> </tr> </thead> <tbody> <tr> <td><code class="language-plaintext highlighter-rouge">https://example.com</code></td> <td><code class="language-plaintext highlighter-rouge">https</code></td> <td><code class="language-plaintext highlighter-rouge">example.com</code></td> <td><code class="language-plaintext highlighter-rouge">443</code> (implicit)</td> <td><code class="language-plaintext highlighter-rouge">https://example.com</code></td> </tr> <tr> <td><code class="language-plaintext highlighter-rouge">https://api.example.com</code></td> <td><code class="language-plaintext highlighter-rouge">https</code></td> <td><code class="language-plaintext highlighter-rouge">api.example.com</code></td> <td><code class="language-plaintext highlighter-rouge">443</code></td> <td><code class="language-plaintext highlighter-rouge">https://api.example.com</code></td> </tr> <tr> <td><code class="language-plaintext highlighter-rouge">http://example.com</code></td> <td><code class="language-plaintext highlighter-rouge">http</code></td> <td><code class="language-plaintext highlighter-rouge">example.com</code></td> <td><code class="language-plaintext highlighter-rouge">80</code></td> <td><code class="language-plaintext highlighter-rouge">http://example.com</code></td> </tr> <tr> <td><code class="language-plaintext highlighter-rouge">https://example.com:8080</code></td> <td><code class="language-plaintext highlighter-rouge">https</code></td> <td><code class="language-plaintext highlighter-rouge">example.com</code></td> <td><code class="language-plaintext highlighter-rouge">8080</code></td> <td><code class="language-plaintext highlighter-rouge">https://example.com:8080</code></td> </tr> </tbody> </table> <p>Every single one of these is a <strong>different origin</strong>:</p> <ul> <li>Row 1 vs Row 2: different <strong>host</strong> (<code class="language-plaintext highlighter-rouge">example.com</code> vs <code class="language-plaintext highlighter-rouge">api.example.com</code> - subdomains are different hosts)</li> <li>Row 1 vs Row 3: different <strong>scheme</strong> (<code class="language-plaintext highlighter-rouge">https</code> vs <code class="language-plaintext highlighter-rouge">http</code>)</li> <li>Row 1 vs Row 4: different <strong>port</strong> (<code class="language-plaintext highlighter-rouge">443</code> vs <code class="language-plaintext highlighter-rouge">8080</code>)</li> </ul> <p>This is exactly the principle at work in the <a href="https://github.com/karankessy/demoCORS">demoCORS</a> project: <code class="language-plaintext highlighter-rouge">http://localhost:3000</code> and <code class="language-plaintext highlighter-rouge">http://localhost:4000</code> differ in port, making them cross-origin.</p> <h3 id="what-sop-blocks">What SOP blocks</h3> <p>SOP restricts JavaScript’s ability to read cross-origin responses from:</p> <ul> <li><code class="language-plaintext highlighter-rouge">fetch()</code> and <code class="language-plaintext highlighter-rouge">XMLHttpRequest</code></li> <li>Reading <code class="language-plaintext highlighter-rouge">&lt;canvas&gt;</code> pixels painted from cross-origin images</li> <li>Accessing <code class="language-plaintext highlighter-rouge">contentDocument</code> of cross-origin <code class="language-plaintext highlighter-rouge">&lt;iframe&gt;</code>s</li> <li>Reading responses from cross-origin <code class="language-plaintext highlighter-rouge">EventSource</code> (SSE)</li> </ul> <p>SOP does <strong>NOT</strong> block:</p> <ul> <li><code class="language-plaintext highlighter-rouge">&lt;img src="..."&gt;</code> - images load cross-origin (but you can’t read their pixels)</li> <li><code class="language-plaintext highlighter-rouge">&lt;script src="..."&gt;</code> - scripts load and execute cross-origin (the origin of JSONP and supply-chain attacks)</li> <li><code class="language-plaintext highlighter-rouge">&lt;link rel="stylesheet" href="..."&gt;</code> - stylesheets load cross-origin</li> <li><code class="language-plaintext highlighter-rouge">&lt;form action="..."&gt;</code> - forms can submit cross-origin (the origin of CSRF attacks)</li> <li><code class="language-plaintext highlighter-rouge">&lt;iframe src="..."&gt;</code> - iframes load cross-origin (but parent can’t read content)</li> </ul> <hr/> <h2 id="2-why-cors-exists">2. Why CORS Exists</h2> <p>SOP was designed for a 1990s web where pages were self-contained documents. The modern web is fundamentally different:</p> <ul> <li><strong>Single-Page Applications (SPAs)</strong> serve a static frontend from <code class="language-plaintext highlighter-rouge">app.example.com</code> and call APIs at <code class="language-plaintext highlighter-rouge">api.example.com</code></li> <li><strong>Microservices</strong> expose multiple APIs on different domains or ports</li> <li><strong>Third-party integrations</strong> require calling payment processors, analytics services, CDNs</li> <li><strong>Development environments</strong> run frontends and backends on different ports (exactly like <a href="https://github.com/karankessy/demoCORS">demoCORS</a>: port 3000 and port 4000)</li> </ul> <p>Without any mechanism to relax SOP, none of these architectures would work. You’d be forced to same-origin-proxy every API call through your frontend server.</p> <p><strong>CORS (Cross-Origin Resource Sharing)</strong> is that mechanism. It is a <strong>protocol</strong> - a set of HTTP headers - that allows a server to declare: “I trust requests from these specific origins.”</p> <p>The key insight is: <strong>CORS is not a way to add security. It’s a controlled way to remove a security restriction.</strong> SOP is the default. CORS is the opt-out.</p> <hr/> <h2 id="3-cors-request-types">3. CORS Request Types</h2> <p>The CORS specification divides cross-origin requests into two categories based on their potential to cause side effects.</p> <h3 id="simple-requests">Simple Requests</h3> <p>A request is “simple” (formally a request that doesn’t trigger a preflight) when ALL of these conditions are met:</p> <p><strong>Method</strong> is one of:</p> <ul> <li><code class="language-plaintext highlighter-rouge">GET</code></li> <li><code class="language-plaintext highlighter-rouge">HEAD</code></li> <li><code class="language-plaintext highlighter-rouge">POST</code></li> </ul> <p><strong>Headers</strong> are limited to the CORS-safelisted set:</p> <ul> <li><code class="language-plaintext highlighter-rouge">Accept</code></li> <li><code class="language-plaintext highlighter-rouge">Accept-Language</code></li> <li><code class="language-plaintext highlighter-rouge">Content-Language</code></li> <li><code class="language-plaintext highlighter-rouge">Content-Type</code> (with restrictions, see below)</li> <li><code class="language-plaintext highlighter-rouge">Range</code> (with restrictions)</li> </ul> <p><strong>Content-Type</strong> (if present) is one of:</p> <ul> <li><code class="language-plaintext highlighter-rouge">application/x-www-form-urlencoded</code></li> <li><code class="language-plaintext highlighter-rouge">multipart/form-data</code></li> <li><code class="language-plaintext highlighter-rouge">text/plain</code></li> </ul> <p><strong>No</strong> <code class="language-plaintext highlighter-rouge">ReadableStream</code> body is used. <strong>No</strong> event listeners are registered on the <code class="language-plaintext highlighter-rouge">XMLHttpRequest.upload</code> object.</p> <p><strong>Why these conditions?</strong> Because a simple request is no more dangerous than what an HTML <code class="language-plaintext highlighter-rouge">&lt;form&gt;</code> can already do. Forms can POST with <code class="language-plaintext highlighter-rouge">application/x-www-form-urlencoded</code> or <code class="language-plaintext highlighter-rouge">multipart/form-data</code> to any URL. SOP never blocked form submissions. So a “simple” CORS request adds no new attack surface - the browser just needs to check whether the server wants the <em>response</em> shared.</p> <p>In the <a href="https://github.com/karankessy/demoCORS">demoCORS</a> project, the <code class="language-plaintext highlighter-rouge">fetch()</code> calls are simple GET requests with no custom headers:</p> <div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">await</span> <span class="nf">fetch</span><span class="p">(</span><span class="dl">"</span><span class="s2">http://localhost:4000/api/data</span><span class="dl">"</span><span class="p">);</span>
-</code></pre></div></div> <p>This meets all simple request criteria, so <strong>no preflight occurs</strong>.</p> <h3 id="preflighted-requests">Preflighted Requests</h3> <p>Any request that doesn’t meet the “simple” criteria triggers a <strong>preflight</strong>. Common triggers include:</p> <ul> <li>Methods: <code class="language-plaintext highlighter-rouge">PUT</code>, <code class="language-plaintext highlighter-rouge">DELETE</code>, <code class="language-plaintext highlighter-rouge">PATCH</code></li> <li>Headers: <code class="language-plaintext highlighter-rouge">Authorization</code>, <code class="language-plaintext highlighter-rouge">X-Custom-Header</code>, any custom header</li> <li>Content-Type: <code class="language-plaintext highlighter-rouge">application/json</code></li> </ul> <p>Before sending the actual request, the browser sends an <code class="language-plaintext highlighter-rouge">OPTIONS</code> request asking the server: “Will you accept this kind of request?”</p> <p>The reason for preflight is safety: methods like <code class="language-plaintext highlighter-rouge">DELETE</code> or headers like <code class="language-plaintext highlighter-rouge">Authorization</code> can cause <strong>side effects</strong> on the server. The browser needs to verify the server actually expects these cross-origin requests <em>before</em> sending them, because unlike simple requests, these operations couldn’t be triggered by a plain HTML <code class="language-plaintext highlighter-rouge">&lt;form&gt;</code>.</p> <h3 id="full-http-flow---preflighted-request">Full HTTP Flow - Preflighted Request</h3> <p><strong>Scenario:</strong> A frontend at <code class="language-plaintext highlighter-rouge">https://app.example.com</code> sends a JSON POST to <code class="language-plaintext highlighter-rouge">https://api.example.com</code>.</p> <h4 id="step-1-preflight-request-browser--server">Step 1: Preflight Request (Browser → Server)</h4> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>OPTIONS /api/users HTTP/1.1
-Host: api.example.com
-Origin: https://app.example.com
-Access-Control-Request-Method: POST
-Access-Control-Request-Headers: content-type, authorization
-</code></pre></div></div> <h4 id="step-2-preflight-response-server--browser">Step 2: Preflight Response (Server → Browser)</h4> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>HTTP/1.1 204 No Content
-Access-Control-Allow-Origin: https://app.example.com
-Access-Control-Allow-Methods: GET, POST, PUT, DELETE
-Access-Control-Allow-Headers: content-type, authorization
-Access-Control-Max-Age: 86400
-</code></pre></div></div> <h4 id="step-3-actual-request-browser--server">Step 3: Actual Request (Browser → Server)</h4> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>POST /api/users HTTP/1.1
-Host: api.example.com
-Origin: https://app.example.com
-Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en"><generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator><link href="https://alshedivat.github.io/al-folio/feed.xml" rel="self" type="application/atom+xml"/><link href="https://alshedivat.github.io/al-folio/" rel="alternate" type="text/html" hreflang="en"/><updated>2026-04-07T16:13:47+00:00</updated><id>https://alshedivat.github.io/al-folio/feed.xml</id><title type="html">blank</title><subtitle>A simple, whitespace theme for academics. Based on [*folio](https://github.com/bogoli/-folio) design. </subtitle><entry><title type="html">a post with plotly.js</title><link href="https://alshedivat.github.io/al-folio/blog/2025/plotly/" rel="alternate" type="text/html" title="a post with plotly.js"/><published>2025-03-26T14:24:00+00:00</published><updated>2025-03-26T14:24:00+00:00</updated><id>https://alshedivat.github.io/al-folio/blog/2025/plotly</id><content type="html" xml:base="https://alshedivat.github.io/al-folio/blog/2025/plotly/"><![CDATA[<p>This is an example post with some <a href="https://plotly.com/javascript/">plotly</a> code.</p> <div class="language-markdown highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">```</span><span class="nl">plotly
+</span><span class="sb">{
+  "data": [
+    {
+      "x": [1, 2, 3, 4],
+      "y": [10, 15, 13, 17],
+      "type": "scatter"
+    },
+    {
+      "x": [1, 2, 3, 4],
+      "y": [16, 5, 11, 9],
+      "type": "scatter"
+    }
+  ]
+}</span>
+<span class="p">```</span>
+</code></pre></div></div> <p>Which generates:</p> <pre><code class="language-plotly">{
+  "data": [
+    {
+      "x": [1, 2, 3, 4],
+      "y": [10, 15, 13, 17],
+      "type": "scatter"
+    },
+    {
+      "x": [1, 2, 3, 4],
+      "y": [16, 5, 11, 9],
+      "type": "scatter"
+    }
+  ]
+}
+</code></pre> <p>Also another example chart.</p> <div class="language-markdown highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">```</span><span class="nl">plotly
+</span><span class="sb">{
+  "data": [
+    {
+      "x": [1, 2, 3, 4],
+      "y": [10, 15, 13, 17],
+      "mode": "markers"
+    },
+    {
+      "x": [2, 3, 4, 5],
+      "y": [16, 5, 11, 9],
+      "mode": "lines"
+    },
+    {
+      "x": [1, 2, 3, 4],
+      "y": [12, 9, 15, 12],
+      "mode": "lines+markers"
+    }
+  ],
+  "layout": {
+    "title": {
+      "text": "Line and Scatter Plot"
+    }
+  }
+}</span>
+<span class="p">```</span>
+</code></pre></div></div> <p>This is how it looks like:</p> <pre><code class="language-plotly">{
+  "data": [
+    {
+      "x": [1, 2, 3, 4],
+      "y": [10, 15, 13, 17],
+      "mode": "markers"
+    },
+    {
+      "x": [2, 3, 4, 5],
+      "y": [16, 5, 11, 9],
+      "mode": "lines"
+    },
+    {
+      "x": [1, 2, 3, 4],
+      "y": [12, 9, 15, 12],
+      "mode": "lines+markers"
+    }
+  ],
+  "layout": {
+    "title": {
+      "text": "Line and Scatter Plot"
+    }
+  }
+}
+</code></pre>]]></content><author><name></name></author><category term="sample-posts"/><category term="formatting"/><category term="charts"/><summary type="html"><![CDATA[this is what included plotly.js code could look like]]></summary></entry><entry><title type="html">a post with image galleries</title><link href="https://alshedivat.github.io/al-folio/blog/2024/photo-gallery/" rel="alternate" type="text/html" title="a post with image galleries"/><published>2024-12-04T01:59:00+00:00</published><updated>2024-12-04T01:59:00+00:00</updated><id>https://alshedivat.github.io/al-folio/blog/2024/photo-gallery</id><content type="html" xml:base="https://alshedivat.github.io/al-folio/blog/2024/photo-gallery/"><![CDATA[<p>The images in this post are all zoomable, arranged into different mini-galleries using different libraries.</p> <h2 id="lightbox2"><a href="https://lokeshdhakar.com/projects/lightbox2/">Lightbox2</a></h2> <p><a href="https://cdn.photoswipe.com/photoswipe-demo-images/photos/1/img-2500.jpg" data-lightbox="roadtrip"><img src="https://cdn.photoswipe.com/photoswipe-demo-images/photos/1/img-200.jpg"/></a> <a href="https://cdn.photoswipe.com/photoswipe-demo-images/photos/2/img-2500.jpg" data-lightbox="roadtrip"><img src="https://cdn.photoswipe.com/photoswipe-demo-images/photos/2/img-200.jpg"/></a> <a href="https://cdn.photoswipe.com/photoswipe-demo-images/photos/3/img-2500.jpg" data-lightbox="roadtrip"><img src="https://cdn.photoswipe.com/photoswipe-demo-images/photos/3/img-200.jpg"/></a></p> <hr/> <h2 id="photoswipe"><a href="https://photoswipe.com/">PhotoSwipe</a></h2> <div class="pswp-gallery pswp-gallery--single-column" id="gallery--getting-started"> <a href="https://cdn.photoswipe.com/photoswipe-demo-images/photos/2/img-2500.jpg" data-pswp-width="1669" data-pswp-height="2500" target="_blank"> <img src="https://cdn.photoswipe.com/photoswipe-demo-images/photos/2/img-200.jpg" alt=""/> </a> <a href="https://cdn.photoswipe.com/photoswipe-demo-images/photos/7/img-2500.jpg" data-pswp-width="1875" data-pswp-height="2500" data-cropped="true" target="_blank"> <img src="https://cdn.photoswipe.com/photoswipe-demo-images/photos/7/img-200.jpg" alt=""/> </a> <a href="https://unsplash.com" data-pswp-src="https://cdn.photoswipe.com/photoswipe-demo-images/photos/3/img-2500.jpg" data-pswp-width="2500" data-pswp-height="1666" target="_blank"> <img src="https://cdn.photoswipe.com/photoswipe-demo-images/photos/3/img-200.jpg" alt=""/> </a> <div> <a href="https://cdn.photoswipe.com/photoswipe-demo-images/photos/6/img-2500.jpg" data-pswp-width="2500" data-pswp-height="1667" target="_blank"> <img src="https://cdn.photoswipe.com/photoswipe-demo-images/photos/6/img-200.jpg" alt=""/> </a> </div> </div> <hr/> <h2 id="spotlight-js"><a href="https://nextapps-de.github.io/spotlight/">Spotlight JS</a></h2> <div class="spotlight-group"> <a class="spotlight" href="https://cdn.photoswipe.com/photoswipe-demo-images/photos/1/img-2500.jpg"> <img src="https://cdn.photoswipe.com/photoswipe-demo-images/photos/1/img-200.jpg"/> </a> <a class="spotlight" href="https://cdn.photoswipe.com/photoswipe-demo-images/photos/2/img-2500.jpg"> <img src="https://cdn.photoswipe.com/photoswipe-demo-images/photos/2/img-200.jpg"/> </a> <a class="spotlight" href="https://cdn.photoswipe.com/photoswipe-demo-images/photos/3/img-2500.jpg"> <img src="https://cdn.photoswipe.com/photoswipe-demo-images/photos/3/img-200.jpg"/> </a> </div> <div class="spotlight-group"> <a class="spotlight" href="https://cdn.photoswipe.com/photoswipe-demo-images/photos/4/img-2500.jpg"> <img src="https://cdn.photoswipe.com/photoswipe-demo-images/photos/4/img-200.jpg"/> </a> <a class="spotlight" href="https://cdn.photoswipe.com/photoswipe-demo-images/photos/5/img-2500.jpg"> <img src="https://cdn.photoswipe.com/photoswipe-demo-images/photos/5/img-200.jpg"/> </a> <a class="spotlight" href="https://cdn.photoswipe.com/photoswipe-demo-images/photos/6/img-2500.jpg"> <img src="https://cdn.photoswipe.com/photoswipe-demo-images/photos/6/img-200.jpg"/> </a> </div> <hr/> <h2 id="venobox"><a href="https://veno.es/venobox/">Venobox</a></h2> <p><a class="venobox" data-gall="myGallery" href="https://cdn.photoswipe.com/photoswipe-demo-images/photos/1/img-2500.jpg"><img src="https://cdn.photoswipe.com/photoswipe-demo-images/photos/1/img-200.jpg"/></a> <a class="venobox" data-gall="myGallery" href="https://cdn.photoswipe.com/photoswipe-demo-images/photos/2/img-2500.jpg"><img src="https://cdn.photoswipe.com/photoswipe-demo-images/photos/2/img-200.jpg"/></a> <a class="venobox" data-gall="myGallery" href="https://cdn.photoswipe.com/photoswipe-demo-images/photos/3/img-2500.jpg"><img src="https://cdn.photoswipe.com/photoswipe-demo-images/photos/3/img-200.jpg"/></a></p>]]></content><author><name></name></author><category term="sample-posts"/><category term="formatting"/><category term="images"/><summary type="html"><![CDATA[this is what included image galleries could look like]]></summary></entry><entry><title type="html">Google Gemini updates: Flash 1.5, Gemma 2 and Project Astra</title><link href="https://alshedivat.github.io/al-folio/blog/2024/google-gemini-updates-flash-15-gemma-2-and-project-astra/" rel="alternate" type="text/html" title="Google Gemini updates: Flash 1.5, Gemma 2 and Project Astra"/><published>2024-05-14T00:00:00+00:00</published><updated>2024-05-14T00:00:00+00:00</updated><id>https://alshedivat.github.io/al-folio/blog/2024/google-gemini-updates-flash-15-gemma-2-and-project-astra</id><content type="html" xml:base="https://alshedivat.github.io/al-folio/blog/2024/google-gemini-updates-flash-15-gemma-2-and-project-astra/"><![CDATA[<p>Learn more:Learn more:Learn more:Learn more:Learn more:Learn more:May 14, 2024 We’re introducing a series of updates across the Gemini family of models, including the new 1.5 Flash, our lightweight model for speed and efficiency, and Project Astra, our vision for the future of AI assistants. In December, we launched our first natively multimodal model Gemini 1.0 in three sizes: Ultra, Pro and Nano. Just a few months later we released 1.5 Pro, with enhanced performance and a breakthrough long context window of 1 million tokens.Developers and enterprise customers have been putting 1.5 Pro to use in incredible ways and finding its long context window, multimodal reasoning capabilities and impressive overall performance incredibly useful.We know from user feedback that some applications need lower latency and a lower cost to serve. This inspired us to keep innovating, so today, we’re introducing Gemini 1.5 Flash: a model that’s lighter-weight than 1.5 Pro, and designed to be fast and efficient to serve at scale.Both 1.5 Pro and 1.5 Flash are available in public preview with a 1 million token context window in Google AI Studio and Vertex AI. And now, 1.5 Pro is also available with a 2 million token context window via waitlist to developers using the API and to Google Cloud customers.We’re also introducing updates across the Gemini family of models, announcing our next generation of open models, Gemma 2, and sharing progress on the future of AI assistants, with Project Astra.Context lengths of leading foundation models compared with Gemini 1.5’s 2 million token capability1.5 Flash is the newest addition to the Gemini model family and the fastest Gemini model served in the API. It’s optimized for high-volume, high-frequency tasks at scale, is more cost-efficient to serve and features our breakthrough long context window.While it’s a lighter weight model than 1.5 Pro, it’s highly capable of multimodal reasoning across vast amounts of information and delivers impressive quality for its size.The new Gemini 1.5 Flash model is optimized for speed and efficiency, is highly capable of multimodal reasoning and features our breakthrough long context window.1.5 Flash excels at summarization, chat applications, image and video captioning, data extraction from long documents and tables, and more. This is because it’s been trained by 1.5 Pro through a process called “distillation,” where the most essential knowledge and skills from a larger model are transferred to a smaller, more efficient model.Read more about 1.5 Flash in our updated Gemini 1.5 technical report, on the Gemini technology page, and learn about 1.5 Flash’s availability and pricing.Over the last few months, we’ve significantly improved 1.5 Pro, our best model for general performance across a wide range of tasks.Beyond extending its context window to 2 million tokens, we’ve enhanced its code generation, logical reasoning and planning, multi-turn conversation, and audio and image understanding through data and algorithmic advances. We see strong improvements on public and internal benchmarks for each of these tasks.1.5 Pro can now follow increasingly complex and nuanced instructions, including ones that specify product-level behavior involving role, format and style. We’ve improved control over the model’s responses for specific use cases, like crafting the persona and response style of a chat agent or automating workflows through multiple function calls. And we’ve enabled users to steer model behavior by setting system instructions.We added audio understanding in the Gemini API and Google AI Studio, so 1.5 Pro can now reason across image and audio for videos uploaded in Google AI Studio. And we’re now integrating 1.5 Pro into Google products, including Gemini Advanced and in Workspace apps.Read more about 1.5 Pro in our updated Gemini 1.5 technical report and on the Gemini technology page.Gemini Nano is expanding beyond text-only inputs to include images as well. Starting with Pixel, applications using Gemini Nano with Multimodality will be able to understand the world the way people do — not just through text, but also through sight, sound and spoken language.Read more about Gemini 1.0 Nano on Android.Today, we’re also sharing a series of updates to Gemma, our family of open models built from the same research and technology used to create the Gemini models.We’re announcing Gemma 2, our next generation of open models for responsible AI innovation. Gemma 2 has a new architecture designed for breakthrough performance and efficiency, and will be available in new sizes.The Gemma family is also expanding with PaliGemma, our first vision-language model inspired by PaLI-3. And we’ve upgraded our Responsible Generative AI Toolkit with LLM Comparator for evaluating the quality of model responses.Read more on the Developer blog.As part of Google DeepMind’s mission to build AI responsibly to benefit humanity, we’ve always wanted to develop universal AI agents that can be helpful in everyday life. That’s why today, we’re sharing our progress in building the future of AI assistants with Project Astra (advanced seeing and talking responsive agent).To be truly useful, an agent needs to understand and respond to the complex and dynamic world just like people do — and take in and remember what it sees and hears to understand context and take action. It also needs to be proactive, teachable and personal, so users can talk to it naturally and without lag or delay.While we’ve made incredible progress developing AI systems that can understand multimodal information, getting response time down to something conversational is a difficult engineering challenge. Over the past few years, we’ve been working to improve how our models perceive, reason and converse to make the pace and quality of interaction feel more natural.Building on Gemini, we’ve developed prototype agents that can process information faster by continuously encoding video frames, combining the video and speech input into a timeline of events, and caching this information for efficient recall.By leveraging our leading speech models, we also enhanced how they sound, giving the agents a wider range of intonations. These agents can better understand the context they’re being used in, and respond quickly, in conversation.With technology like this, it’s easy to envision a future where people could have an expert AI assistant by their side, through a phone or glasses. And some of these capabilities are coming to Google products, like the Gemini app and web experience, later this year.We’ve made incredible progress so far with our family of Gemini models, and we’re always striving to advance the state-of-the-art even further. By investing in a relentless production line of innovation, we’re able to explore new ideas at the frontier, while also unlocking the possibility of new and exciting Gemini use cases.Learn more about Gemini and its capabilities. Your information will be used in accordance with Google’s privacy policy.</p> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>      Done. Just one step more.
+    
+      Check your inbox to confirm your subscription.
+    You are already subscribed to our newsletter.
+    You can also subscribe with a
+    different email address
+    
+    .
+    
+  Let’s stay in touch. Get the latest news from Google in your inbox.
+          Follow Us
+</code></pre></div></div>]]></content><author><name></name></author><category term="external-posts"/><category term="google"/><summary type="html"><![CDATA[We’re sharing updates across our Gemini family of models and a glimpse of Project Astra, our vision for the future of AI assistants.]]></summary></entry><entry><title type="html">a post with tabs</title><link href="https://alshedivat.github.io/al-folio/blog/2024/tabs/" rel="alternate" type="text/html" title="a post with tabs"/><published>2024-05-01T00:32:13+00:00</published><updated>2024-05-01T00:32:13+00:00</updated><id>https://alshedivat.github.io/al-folio/blog/2024/tabs</id><content type="html" xml:base="https://alshedivat.github.io/al-folio/blog/2024/tabs/"><![CDATA[<p>This is how a post with <a href="https://github.com/Ovski4/jekyll-tabs">tabs</a> looks like. Note that the tabs could be used for different purposes, not only for code.</p> <h2 id="first-tabs">First tabs</h2> <p>To add tabs, use the following syntax:</p> <div class="language-liquid highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">{%</span><span class="w"> </span><span class="nt">tabs</span><span class="w"> </span><span class="nv">group-name</span><span class="w"> </span><span class="cp">%}</span>
 
-{"name": "Karan", "role": "Developer"}
-</code></pre></div></div> <h4 id="step-4-actual-response-server--browser">Step 4: Actual Response (Server → Browser)</h4> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>HTTP/1.1 201 Created
-Access-Control-Allow-Origin: https://app.example.com
-Content-Type: application/json
+<span class="cp">{%</span><span class="w"> </span><span class="nt">tab</span><span class="w"> </span><span class="nv">group-name</span><span class="w"> </span><span class="nv">tab-name-1</span><span class="w"> </span><span class="cp">%}</span>
 
-{"id": 42, "name": "Karan", "role": "Developer"}
-</code></pre></div></div> <p>If the preflight response at Step 2 were missing <code class="language-plaintext highlighter-rouge">authorization</code> in <code class="language-plaintext highlighter-rouge">Access-Control-Allow-Headers</code>, the browser would <strong>never send Step 3</strong>. The actual request is completely blocked before it leaves the browser.</p> <hr/> <h2 id="4-cors-request-flow---step-by-step">4. CORS Request Flow - Step by Step</h2> <p>Here’s the complete decision tree the browser follows for every <code class="language-plaintext highlighter-rouge">fetch()</code> call:</p> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>JavaScript calls fetch(url, options)
-         │
-         ▼
-┌─────────────────────────┐
-│ Is the target origin the │
-│ same as the page origin? │
-└───────┬─────────┬────────┘
-        │ Yes     │ No
-        ▼         ▼
-  [Normal HTTP  ┌──────────────────────┐
-   request,     │ Is this a "simple"   │
-   no CORS]     │ request?             │
-                └──────┬────────┬──────┘
-                       │ Yes    │ No
-                       ▼        ▼
-               [Send request  [Send OPTIONS
-                directly with  preflight first]
-                Origin header]       │
-                       │             ▼
-                       │      ┌───────────────────┐
-                       │      │ Does preflight     │
-                       │      │ response approve?  │
-                       │      └──┬──────────┬──────┘
-                       │         │ Yes      │ No
-                       │         ▼          ▼
-                       │    [Send actual  [Block. TypeError
-                       │     request]      in JavaScript]
-                       │         │
-                       ▼         ▼
-               ┌───────────────────────┐
-               │ Does response contain │
-               │ valid CORS headers?   │
-               └──────┬─────────┬──────┘
-                      │ Yes     │ No
-                      ▼         ▼
-              [Expose response  [Block response.
-               to JavaScript]   TypeError in
-                                JavaScript]
-</code></pre></div></div> <h3 id="the-critical-misconception">The critical misconception</h3> <blockquote> <p><strong>CORS does not prevent the request from reaching the server. It only controls whether the browser exposes the response to JavaScript.</strong></p> </blockquote> <p>For simple requests, the server always receives and processes the request. The <code class="language-plaintext highlighter-rouge">Origin</code> header is present, but the server responds normally. Only then does the browser decide whether to hand the response to JavaScript.</p> <p>This means <strong>CORS is not a substitute for server-side authorization</strong>. If your server processes a <code class="language-plaintext highlighter-rouge">DELETE /api/users/42</code> and only then sends back a response missing CORS headers, the record is already deleted - the browser just won’t show the confirmation to the attacker’s JavaScript.</p> <p>For preflighted requests, the protection is stronger: the browser’s OPTIONS preflight happens first, and if it fails, the actual <code class="language-plaintext highlighter-rouge">DELETE</code> is never sent. But you should <strong>never</strong> rely on preflight as your security boundary.</p> <hr/> <h2 id="5-preflight-mechanism---deep-dive">5. Preflight Mechanism - Deep Dive</h2> <h3 id="the-options-request">The OPTIONS request</h3> <p>When a browser determines that a request requires preflight, it constructs an <code class="language-plaintext highlighter-rouge">OPTIONS</code> request automatically. JavaScript code has <strong>no control</strong> over this - no ability to modify, suppress, or intercept the preflight.</p> <p><strong>Example preflight request:</strong></p> <div class="language-http highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">OPTIONS</span> <span class="nn">/api/data</span> <span class="k">HTTP</span><span class="o">/</span><span class="m">1.1</span>
-<span class="na">Host</span><span class="p">:</span> <span class="s">api.example.com</span>
-<span class="na">Origin</span><span class="p">:</span> <span class="s">https://app.example.com</span>
-<span class="na">Access-Control-Request-Method</span><span class="p">:</span> <span class="s">POST</span>
-<span class="na">Access-Control-Request-Headers</span><span class="p">:</span> <span class="s">authorization, content-type</span>
-</code></pre></div></div> <p>Key headers:</p> <ul> <li><code class="language-plaintext highlighter-rouge">Origin</code>: The requesting page’s origin (always present)</li> <li><code class="language-plaintext highlighter-rouge">Access-Control-Request-Method</code>: The HTTP method the <em>actual</em> request will use</li> <li><code class="language-plaintext highlighter-rouge">Access-Control-Request-Headers</code>: The non-safelisted headers the <em>actual</em> request will include</li> </ul> <h3 id="expected-server-response">Expected server response</h3> <p>The server must respond to the OPTIONS request with:</p> <div class="language-http highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">204</span> <span class="ne">No Content</span>
-<span class="na">Access-Control-Allow-Origin</span><span class="p">:</span> <span class="s">https://app.example.com</span>
-<span class="na">Access-Control-Allow-Methods</span><span class="p">:</span> <span class="s">GET, POST, PUT, DELETE</span>
-<span class="na">Access-Control-Allow-Headers</span><span class="p">:</span> <span class="s">authorization, content-type</span>
-<span class="na">Access-Control-Max-Age</span><span class="p">:</span> <span class="s">86400</span>
-</code></pre></div></div> <h3 id="what-happens-when-headers-are-missing">What happens when headers are missing</h3> <table> <thead> <tr> <th>Missing header</th> <th>Result</th> </tr> </thead> <tbody> <tr> <td><code class="language-plaintext highlighter-rouge">Access-Control-Allow-Origin</code></td> <td>Preflight fails. Actual request never sent.</td> </tr> <tr> <td><code class="language-plaintext highlighter-rouge">Access-Control-Allow-Methods</code> (doesn’t include requested method)</td> <td>Preflight fails.</td> </tr> <tr> <td><code class="language-plaintext highlighter-rouge">Access-Control-Allow-Headers</code> (doesn’t include requested header)</td> <td>Preflight fails.</td> </tr> <tr> <td><code class="language-plaintext highlighter-rouge">Access-Control-Max-Age</code></td> <td>Preflight succeeds but browser repeats OPTIONS for every request.</td> </tr> </tbody> </table> <h3 id="preflight-caching">Preflight caching</h3> <p><code class="language-plaintext highlighter-rouge">Access-Control-Max-Age</code> tells the browser how many seconds to cache the preflight result. During that window, subsequent requests to the same URL with compatible methods and headers skip the OPTIONS check entirely.</p> <p><strong>Without caching, every single API call generates two HTTP requests</strong> - a significant performance tax. In the <a href="https://github.com/karankessy/demoCORS">demoCORS</a> project, <code class="language-plaintext highlighter-rouge">Max-Age</code> is not configured, meaning every preflight is re-sent. In production, values of <code class="language-plaintext highlighter-rouge">86400</code> (24 hours) or <code class="language-plaintext highlighter-rouge">3600</code> (1 hour) are typical.</p> <p>Note: Browsers impose their own maximum. Chrome caps at 7200 seconds (2 hours), regardless of what the server sends.</p> <hr/> <h2 id="6-cors-headers-explained---in-depth">6. CORS Headers Explained - In Depth</h2> <h3 id="access-control-allow-origin"><code class="language-plaintext highlighter-rouge">Access-Control-Allow-Origin</code></h3> <p><strong>Purpose:</strong> The single most important CORS header. Declares which origin(s) may read the response.</p> <p><strong>Valid values:</strong></p> <ul> <li><code class="language-plaintext highlighter-rouge">*</code> - Any origin (but cannot be used with credentials)</li> <li><code class="language-plaintext highlighter-rouge">https://specific-origin.com</code> - Exactly one origin</li> <li>(There is <strong>no</strong> native support for multiple origins in a single header value)</li> </ul> <p><strong>The multiple-origin problem:</strong> You cannot write:</p> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Access-Control-Allow-Origin: https://a.com, https://b.com   ❌ INVALID
-</code></pre></div></div> <p>The spec only allows a single origin or <code class="language-plaintext highlighter-rouge">*</code>. To support multiple origins, the server must:</p> <ol> <li>Read the <code class="language-plaintext highlighter-rouge">Origin</code> request header</li> <li>Check it against an allowlist</li> <li>If approved, reflect that specific origin in the response</li> <li>Set <code class="language-plaintext highlighter-rouge">Vary: Origin</code> to prevent cache poisoning</li> </ol> <p>This is exactly what the <code class="language-plaintext highlighter-rouge">cors</code> npm middleware does when given an array or function for the <code class="language-plaintext highlighter-rouge">origin</code> option.</p> <p><strong>Edge case:</strong> If the server sets <code class="language-plaintext highlighter-rouge">Access-Control-Allow-Origin: null</code>, the browser will match it against the <code class="language-plaintext highlighter-rouge">null</code> origin (used by sandboxed iframes, <code class="language-plaintext highlighter-rouge">file://</code> URLs, and redirected requests). This is dangerous because an attacker can craft a sandboxed iframe with <code class="language-plaintext highlighter-rouge">Origin: null</code> and exploit this match.</p> <h3 id="access-control-allow-methods"><code class="language-plaintext highlighter-rouge">Access-Control-Allow-Methods</code></h3> <p><strong>Purpose:</strong> Sent only in preflight responses. Lists the HTTP methods the server accepts.</p> <p><strong>Note:</strong> For simple requests (GET, HEAD, POST), this header is not checked - the browser already knows those methods are inherently acceptable at the CORS level.</p> <p><strong>Example:</strong></p> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH
-</code></pre></div></div> <h3 id="access-control-allow-headers"><code class="language-plaintext highlighter-rouge">Access-Control-Allow-Headers</code></h3> <p><strong>Purpose:</strong> Sent only in preflight responses. Lists the request headers the server accepts beyond the CORS-safelisted set.</p> <p><strong>Example:</strong></p> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Access-Control-Allow-Headers: Authorization, Content-Type, X-Request-ID
-</code></pre></div></div> <p><strong>Important:</strong> As of the 2023 Fetch specification, <code class="language-plaintext highlighter-rouge">*</code> is a valid value for this header (and <code class="language-plaintext highlighter-rouge">Access-Control-Allow-Methods</code>), meaning “all headers/methods are allowed.” However, this wildcard <strong>does not apply</strong> when <code class="language-plaintext highlighter-rouge">credentials: true</code> - in that case, every header must be explicitly listed.</p> <h3 id="access-control-allow-credentials"><code class="language-plaintext highlighter-rouge">Access-Control-Allow-Credentials</code></h3> <p><strong>Purpose:</strong> Tells the browser to include cookies, <code class="language-plaintext highlighter-rouge">Authorization</code> headers, and TLS client certificates in cross-origin requests.</p> <p><strong>The cardinal rule:</strong></p> <blockquote> <p>When <code class="language-plaintext highlighter-rouge">Access-Control-Allow-Credentials: true</code> is set, <code class="language-plaintext highlighter-rouge">Access-Control-Allow-Origin</code> <strong>MUST NOT</strong> be <code class="language-plaintext highlighter-rouge">*</code>.</p> </blockquote> <p>Browsers enforce this strictly. If a server sends both <code class="language-plaintext highlighter-rouge">Access-Control-Allow-Origin: *</code> and <code class="language-plaintext highlighter-rouge">Access-Control-Allow-Credentials: true</code>, the browser rejects the response. This prevents a server from accidentally exposing authenticated data to every site on the internet.</p> <p><strong>Client side:</strong> The <code class="language-plaintext highlighter-rouge">fetch()</code> call must also opt in:</p> <div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">fetch</span><span class="p">(</span><span class="nx">url</span><span class="p">,</span> <span class="p">{</span> <span class="na">credentials</span><span class="p">:</span> <span class="dl">"</span><span class="s2">include</span><span class="dl">"</span> <span class="p">});</span>
-</code></pre></div></div> <p>Without <code class="language-plaintext highlighter-rouge">credentials: 'include'</code>, the browser won’t send cookies even if the server allows them.</p> <h3 id="access-control-max-age"><code class="language-plaintext highlighter-rouge">Access-Control-Max-Age</code></h3> <p><strong>Purpose:</strong> Duration (in seconds) the browser may cache the preflight response.</p> <p><strong>Example:</strong></p> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Access-Control-Max-Age: 86400
-</code></pre></div></div> <p><strong>Browser limits:</strong></p> <ul> <li>Chrome: max 7200 (2 hours)</li> <li>Firefox: max 86400 (24 hours)</li> <li>Safari: max 604800 (7 days)</li> </ul> <h3 id="access-control-expose-headers"><code class="language-plaintext highlighter-rouge">Access-Control-Expose-Headers</code></h3> <p><strong>Purpose:</strong> By default, JavaScript can only access these response headers: <code class="language-plaintext highlighter-rouge">Cache-Control</code>, <code class="language-plaintext highlighter-rouge">Content-Language</code>, <code class="language-plaintext highlighter-rouge">Content-Length</code>, <code class="language-plaintext highlighter-rouge">Content-Type</code>, <code class="language-plaintext highlighter-rouge">Expires</code>, <code class="language-plaintext highlighter-rouge">Pragma</code>. All other headers are hidden.</p> <p>To expose custom response headers (e.g., <code class="language-plaintext highlighter-rouge">X-Request-ID</code>, <code class="language-plaintext highlighter-rouge">X-RateLimit-Remaining</code>), the server must include:</p> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Access-Control-Expose-Headers: X-Request-ID, X-RateLimit-Remaining
-</code></pre></div></div> <hr/> <h2 id="7-credentials-and-cookies">7. Credentials and Cookies</h2> <h3 id="the-problem">The problem</h3> <p>By default, <code class="language-plaintext highlighter-rouge">fetch()</code> does not send cookies or auth headers cross-origin. To include them:</p> <p><strong>Client:</strong></p> <div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">fetch</span><span class="p">(</span><span class="dl">"</span><span class="s2">https://api.example.com/me</span><span class="dl">"</span><span class="p">,</span> <span class="p">{</span>
-  <span class="na">credentials</span><span class="p">:</span> <span class="dl">"</span><span class="s2">include</span><span class="dl">"</span><span class="p">,</span> <span class="c1">// Send cookies cross-origin</span>
-<span class="p">});</span>
-</code></pre></div></div> <p><strong>Server must respond with:</strong></p> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Access-Control-Allow-Origin: https://app.example.com  (NOT *)
-Access-Control-Allow-Credentials: true
-</code></pre></div></div> <h3 id="why--cannot-work-with-credentials">Why <code class="language-plaintext highlighter-rouge">*</code> cannot work with credentials</h3> <p>If <code class="language-plaintext highlighter-rouge">Access-Control-Allow-Origin: *</code> were allowed with credentials, any website could:</p> <ol> <li>Make a credentialed request to your API</li> <li>The browser would send the user’s cookies</li> <li>The <code class="language-plaintext highlighter-rouge">*</code> would allow any origin to read the response</li> <li>The attacker reads authenticated data</li> </ol> <p>This is why browsers enforce the rule: <strong>wildcard + credentials = rejected</strong>.</p> <h3 id="how-samesite-cookies-interact">How <code class="language-plaintext highlighter-rouge">SameSite</code> cookies interact</h3> <p>Modern browsers also enforce <code class="language-plaintext highlighter-rouge">SameSite</code> cookie attributes:</p> <ul> <li><code class="language-plaintext highlighter-rouge">SameSite=Strict</code>: Cookie is <strong>never</strong> sent cross-site</li> <li><code class="language-plaintext highlighter-rouge">SameSite=Lax</code>: Cookie sent only for top-level navigations (GET), not for <code class="language-plaintext highlighter-rouge">fetch()</code></li> <li><code class="language-plaintext highlighter-rouge">SameSite=None; Secure</code>: Cookie is sent cross-site (required for CORS with credentials)</li> </ul> <p>Even if CORS is correctly configured, a cookie with <code class="language-plaintext highlighter-rouge">SameSite=Lax</code> won’t be included in a cross-origin <code class="language-plaintext highlighter-rouge">fetch()</code>. The cookie must be <code class="language-plaintext highlighter-rouge">SameSite=None; Secure</code>.</p> <hr/> <h2 id="8-common-cors-misconfigurations">8. Common CORS Misconfigurations</h2> <h3 id="1-origin-reflection-without-validation">1. Origin Reflection Without Validation</h3> <div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">app</span><span class="p">.</span><span class="nf">use</span><span class="p">((</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
-  <span class="nx">res</span><span class="p">.</span><span class="nf">setHeader</span><span class="p">(</span><span class="dl">"</span><span class="s2">Access-Control-Allow-Origin</span><span class="dl">"</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">origin</span><span class="p">);</span>
-  <span class="nx">res</span><span class="p">.</span><span class="nf">setHeader</span><span class="p">(</span><span class="dl">"</span><span class="s2">Access-Control-Allow-Credentials</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">true</span><span class="dl">"</span><span class="p">);</span>
-  <span class="nf">next</span><span class="p">();</span>
-<span class="p">});</span>
-</code></pre></div></div> <p>This reflects whatever origin the request sends. Combined with credentials, an attacker at <code class="language-plaintext highlighter-rouge">evil.com</code> can:</p> <ul> <li>Make a credentialed request to your API</li> <li>Your server reflects <code class="language-plaintext highlighter-rouge">evil.com</code> as the allowed origin</li> <li>The browser sends cookies and allows <code class="language-plaintext highlighter-rouge">evil.com</code> to read the response</li> <li><strong>Result: full data exfiltration</strong></li> </ul> <p><strong>Severity: Critical</strong></p> <h3 id="2-null-origin-allowance">2. Null Origin Allowance</h3> <div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">cors</span><span class="p">({</span> <span class="na">origin</span><span class="p">:</span> <span class="dl">"</span><span class="s2">null</span><span class="dl">"</span> <span class="p">});</span> <span class="c1">// or checking req.headers.origin === 'null'</span>
-</code></pre></div></div> <p>The <code class="language-plaintext highlighter-rouge">null</code> origin can be crafted via:</p> <ul> <li>Sandboxed iframes: <code class="language-plaintext highlighter-rouge">&lt;iframe sandbox="allow-scripts" src="data:text/html,..."&gt;</code></li> <li><code class="language-plaintext highlighter-rouge">file://</code> URLs</li> <li>Cross-origin redirects</li> </ul> <p>An attacker embeds their exploit in a sandboxed iframe, which sends <code class="language-plaintext highlighter-rouge">Origin: null</code>, and the server approves it.</p> <h3 id="3-regex-mistakes">3. Regex Mistakes</h3> <div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">cors</span><span class="p">({</span> <span class="na">origin</span><span class="p">:</span> <span class="sr">/example</span><span class="se">\.</span><span class="sr">com/</span> <span class="p">});</span>
-</code></pre></div></div> <p>This matches <code class="language-plaintext highlighter-rouge">malicious-example.com</code>, <code class="language-plaintext highlighter-rouge">example.com.evil.com</code>, etc. The regex is not anchored.</p> <p><strong>Correct:</strong></p> <div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">cors</span><span class="p">({</span> <span class="na">origin</span><span class="p">:</span> <span class="sr">/^https:</span><span class="se">\/\/([</span><span class="sr">a-z</span><span class="se">]</span><span class="sr">+</span><span class="se">\.)?</span><span class="sr">example</span><span class="se">\.</span><span class="sr">com$/</span> <span class="p">});</span>
-</code></pre></div></div> <h3 id="4-pre-domain-matching">4. Pre-domain Matching</h3> <div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">allowed</span> <span class="o">=</span> <span class="p">[</span><span class="dl">'</span><span class="s1">https://app.example.com</span><span class="dl">'</span><span class="p">];</span>
-<span class="kd">const</span> <span class="nx">origin</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">origin</span><span class="p">;</span>
-<span class="k">if </span><span class="p">(</span><span class="nx">allowed</span><span class="p">.</span><span class="nf">some</span><span class="p">(</span><span class="nx">a</span> <span class="o">=&gt;</span> <span class="nx">origin</span><span class="p">.</span><span class="nf">includes</span><span class="p">(</span><span class="nx">a</span><span class="p">)))</span> <span class="p">{</span> <span class="p">...</span> <span class="p">}</span>
-</code></pre></div></div> <p>An attacker registers <code class="language-plaintext highlighter-rouge">https://app.example.com.evil.com</code> - the <code class="language-plaintext highlighter-rouge">includes()</code> check passes.</p> <p><strong>Correct approach:</strong> Use exact string matching or properly anchored regexes.</p> <h3 id="5-wildcard-subdomain-trust">5. Wildcard Subdomain Trust</h3> <div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">cors</span><span class="p">({</span> <span class="na">origin</span><span class="p">:</span> <span class="sr">/^https:</span><span class="se">\/\/</span><span class="sr">.*</span><span class="se">\.</span><span class="sr">example</span><span class="se">\.</span><span class="sr">com$/</span> <span class="p">});</span>
-</code></pre></div></div> <p>This trusts every subdomain. If any subdomain has an XSS vulnerability (say, <code class="language-plaintext highlighter-rouge">user-content.example.com</code>), the attacker can leverage that XSS to make credentialed requests from a trusted origin.</p> <hr/> <h2 id="9-cors-vs-other-browser-protections">9. CORS vs Other Browser Protections</h2> <h3 id="cors-vs-csrf">CORS vs CSRF</h3> <table> <thead> <tr> <th> </th> <th>CORS</th> <th>CSRF</th> </tr> </thead> <tbody> <tr> <td><strong>What it protects</strong></td> <td>Reading responses</td> <td>Performing unauthorized actions</td> </tr> <tr> <td><strong>Mechanism</strong></td> <td>Response headers</td> <td>Tokens, <code class="language-plaintext highlighter-rouge">SameSite</code> cookies</td> </tr> <tr> <td><strong>Who enforces</strong></td> <td>Browser (blocks response reading)</td> <td>Server (validates tokens)</td> </tr> <tr> <td><strong>Attack vector</strong></td> <td>Cross-origin data theft</td> <td>Cross-origin action execution</td> </tr> </tbody> </table> <p>CORS does not prevent CSRF. A form submission or a simple POST from an attacker’s site will reach your server regardless of CORS settings. You need CSRF tokens or <code class="language-plaintext highlighter-rouge">SameSite</code> cookies separately.</p> <h3 id="cors-vs-corb-cross-origin-read-blocking">CORS vs CORB (Cross-Origin Read Blocking)</h3> <p>CORB is a <strong>browser-side</strong> defense (introduced in Chrome 68) that blocks certain cross-origin responses from even entering the renderer process - before CORS checks. It protects against Spectre-style side-channel attacks.</p> <p>If a <code class="language-plaintext highlighter-rouge">&lt;script&gt;</code> tag requests an HTML or JSON resource cross-origin, CORB strips the body entirely, preventing even a Spectre attack from reading it from memory.</p> <p>CORB is transparent and automatic. It does not replace CORS - it adds defense-in-depth.</p> <h3 id="cors-vs-csp-content-security-policy">CORS vs CSP (Content Security Policy)</h3> <table> <thead> <tr> <th> </th> <th>CORS</th> <th>CSP</th> </tr> </thead> <tbody> <tr> <td><strong>Direction</strong></td> <td>Controls who can <strong>read from</strong> me</td> <td>Controls what my page can <strong>load</strong></td> </tr> <tr> <td><strong>Configured by</strong></td> <td>The server being called</td> <td>The server serving the page</td> </tr> <tr> <td><strong>Mechanism</strong></td> <td><code class="language-plaintext highlighter-rouge">Access-Control-*</code> response headers</td> <td><code class="language-plaintext highlighter-rouge">Content-Security-Policy</code> header</td> </tr> <tr> <td><strong>Example</strong></td> <td>“Only <code class="language-plaintext highlighter-rouge">app.example.com</code> can read my API”</td> <td>“My page can only load scripts from <code class="language-plaintext highlighter-rouge">cdn.example.com</code>”</td> </tr> </tbody> </table> <p>They protect from opposite directions. CSP says “I restrict what my page can do.” CORS says “I restrict who can read my responses.”</p> <h3 id="interaction">Interaction</h3> <p>In a well-configured system:</p> <ul> <li><strong>CSP</strong> prevents XSS by restricting script sources</li> <li><strong>CORS</strong> prevents data theft by restricting response access</li> <li><strong>SameSite cookies</strong> prevent CSRF by restricting cookie sending</li> <li><strong>CORB</strong> prevents side-channel data leaks</li> </ul> <p>These are layers of a defense-in-depth strategy, not alternatives to each other.</p> <hr/> <h2 id="10-practical-debugging">10. Practical Debugging</h2> <h3 id="browser-devtools---the-cors-debugging-workflow">Browser DevTools - The CORS Debugging Workflow</h3> <p><strong>Step 1: Open Network Tab</strong> Open DevTools (F12) → Network tab → reproduce the request.</p> <p><strong>Step 2: Look for the OPTIONS request</strong> If preflight is involved, you’ll see two requests:</p> <ol> <li><code class="language-plaintext highlighter-rouge">OPTIONS /api/data</code> - the preflight</li> <li><code class="language-plaintext highlighter-rouge">GET /api/data</code> (or POST, etc.) - the actual request</li> </ol> <p>If only the OPTIONS appears and the actual request is missing, the preflight failed.</p> <p><strong>Step 3: Inspect the preflight response headers</strong> Click the OPTIONS request and check Response Headers:</p> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Access-Control-Allow-Origin: https://app.example.com   ← present?
-Access-Control-Allow-Methods: GET, POST                 ← includes your method?
-Access-Control-Allow-Headers: Authorization              ← includes your headers?
-</code></pre></div></div> <p><strong>Step 4: Check the Console</strong> Chrome provides detailed CORS error messages:</p> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Access to fetch at 'http://localhost:4000/api/data' from origin
-'http://localhost:3000' has been blocked by CORS policy: No
-'Access-Control-Allow-Origin' header is present on the requested resource.
-</code></pre></div></div> <p><strong>Step 5: Common mistakes to check</strong></p> <ul> <li>Is the <code class="language-plaintext highlighter-rouge">Origin</code> being sent? (Check request headers)</li> <li>Is the server responding with the correct <code class="language-plaintext highlighter-rouge">Access-Control-Allow-Origin</code>?</li> <li>Is there a redirect? (Redirects during CORS can fail)</li> <li>Are credentials being sent? (Check if <code class="language-plaintext highlighter-rouge">Access-Control-Allow-Credentials: true</code> is present)</li> <li>Is the status code 200/204 for the preflight? (Some servers return 403 for OPTIONS)</li> </ul> <p><strong>Step 6: <code class="language-plaintext highlighter-rouge">curl</code> to isolate client vs server</strong> Test from the command line to determine if it’s a server configuration issue:</p> <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl <span class="nt">-v</span> <span class="nt">-X</span> OPTIONS <span class="se">\</span>
-  <span class="nt">-H</span> <span class="s2">"Origin: http://localhost:3000"</span> <span class="se">\</span>
-  <span class="nt">-H</span> <span class="s2">"Access-Control-Request-Method: GET"</span> <span class="se">\</span>
-  http://localhost:4000/api/data
-</code></pre></div></div> <p>If the response includes correct CORS headers, the server is fine - the issue is in the browser-side code. If not, the server needs fixing.</p> <hr/> <h2 id="11-real-world-deployment-patterns">11. Real-World Deployment Patterns</h2> <h3 id="nodejs--express">Node.js / Express</h3> <p>The <a href="https://github.com/karankessy/demoCORS">demoCORS</a> project uses the <code class="language-plaintext highlighter-rouge">cors</code> npm package, which is the standard for Express:</p> <div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">cors</span> <span class="o">=</span> <span class="nf">require</span><span class="p">(</span><span class="dl">"</span><span class="s2">cors</span><span class="dl">"</span><span class="p">);</span>
+Content 1
 
-<span class="c1">// Production configuration</span>
-<span class="nx">app</span><span class="p">.</span><span class="nf">use</span><span class="p">(</span>
-  <span class="nf">cors</span><span class="p">({</span>
-    <span class="na">origin</span><span class="p">:</span> <span class="p">[</span><span class="dl">"</span><span class="s2">https://app.example.com</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">https://staging.example.com</span><span class="dl">"</span><span class="p">],</span>
-    <span class="na">methods</span><span class="p">:</span> <span class="p">[</span><span class="dl">"</span><span class="s2">GET</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">POST</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">PUT</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">DELETE</span><span class="dl">"</span><span class="p">],</span>
-    <span class="na">allowedHeaders</span><span class="p">:</span> <span class="p">[</span><span class="dl">"</span><span class="s2">Content-Type</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">Authorization</span><span class="dl">"</span><span class="p">],</span>
-    <span class="na">credentials</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
-    <span class="na">maxAge</span><span class="p">:</span> <span class="mi">86400</span><span class="p">,</span>
-  <span class="p">})</span>
-<span class="p">);</span>
-</code></pre></div></div> <p><strong>Common mistake:</strong> Using <code class="language-plaintext highlighter-rouge">cors()</code> with no options (allows <code class="language-plaintext highlighter-rouge">*</code>), then wondering why credentials don’t work.</p> <h3 id="nginx">Nginx</h3> <p>CORS is frequently handled at the reverse proxy level:</p> <div class="language-nginx highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">server</span> <span class="p">{</span>
-    <span class="kn">location</span> <span class="n">/api/</span> <span class="p">{</span>
-        <span class="kn">if</span> <span class="s">(</span><span class="nv">$request_method</span> <span class="p">=</span> <span class="s">'OPTIONS')</span> <span class="p">{</span>
-            <span class="kn">add_header</span> <span class="s">'Access-Control-Allow-Origin'</span> <span class="nv">$http_origin</span><span class="p">;</span>
-            <span class="kn">add_header</span> <span class="s">'Access-Control-Allow-Methods'</span> <span class="s">'GET,</span> <span class="s">POST,</span> <span class="s">PUT,</span> <span class="s">DELETE'</span><span class="p">;</span>
-            <span class="kn">add_header</span> <span class="s">'Access-Control-Allow-Headers'</span> <span class="s">'Authorization,</span> <span class="s">Content-Type'</span><span class="p">;</span>
-            <span class="kn">add_header</span> <span class="s">'Access-Control-Allow-Credentials'</span> <span class="s">'true'</span><span class="p">;</span>
-            <span class="kn">add_header</span> <span class="s">'Access-Control-Max-Age'</span> <span class="mi">86400</span><span class="p">;</span>
-            <span class="kn">return</span> <span class="mi">204</span><span class="p">;</span>
-        <span class="p">}</span>
+<span class="cp">{%</span><span class="w"> </span><span class="nt">endtab</span><span class="w"> </span><span class="cp">%}</span>
 
-        <span class="kn">add_header</span> <span class="s">'Access-Control-Allow-Origin'</span> <span class="nv">$http_origin</span> <span class="s">always</span><span class="p">;</span>
-        <span class="kn">add_header</span> <span class="s">'Access-Control-Allow-Credentials'</span> <span class="s">'true'</span> <span class="s">always</span><span class="p">;</span>
+<span class="cp">{%</span><span class="w"> </span><span class="nt">tab</span><span class="w"> </span><span class="nv">group-name</span><span class="w"> </span><span class="nv">tab-name-2</span><span class="w"> </span><span class="cp">%}</span>
 
-        <span class="kn">proxy_pass</span> <span class="s">http://backend</span><span class="p">;</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-</code></pre></div></div> <p><strong>Common mistakes:</strong></p> <ul> <li>Forgetting the <code class="language-plaintext highlighter-rouge">always</code> directive (headers are not sent on error responses like 500)</li> <li>Using <code class="language-plaintext highlighter-rouge">$http_origin</code> without validation (origin reflection vulnerability)</li> <li>Not handling OPTIONS separately (the proxy forwards it to the backend, which may return 404)</li> </ul> <h3 id="cloud-apis-aws-api-gateway">Cloud APIs (AWS API Gateway)</h3> <p>AWS API Gateway has built-in CORS support:</p> <ul> <li>Configured per endpoint via console or CloudFormation/SAM</li> <li>Automatically generates OPTIONS responses</li> <li>Easy to misconfigure by enabling “allow all origins” during development and forgetting to restrict in production</li> </ul> <p><strong>Common mistake:</strong> Setting <code class="language-plaintext highlighter-rouge">Access-Control-Allow-Origin: *</code> on API Gateway and adding <code class="language-plaintext highlighter-rouge">Authorization</code> headers. This works without credentials but breaks when <code class="language-plaintext highlighter-rouge">credentials: 'include'</code> is added.</p> <h3 id="api-gateways-kong-envoy-traefik">API Gateways (Kong, Envoy, Traefik)</h3> <p>Most API gateways provide CORS as a plugin or middleware:</p> <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Kong CORS plugin</span>
-<span class="na">plugins</span><span class="pi">:</span>
-  <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">cors</span>
-    <span class="na">config</span><span class="pi">:</span>
-      <span class="na">origins</span><span class="pi">:</span>
-        <span class="pi">-</span> <span class="s">https://app.example.com</span>
-      <span class="na">methods</span><span class="pi">:</span>
-        <span class="pi">-</span> <span class="s">GET</span>
-        <span class="pi">-</span> <span class="s">POST</span>
-      <span class="na">headers</span><span class="pi">:</span>
-        <span class="pi">-</span> <span class="s">Authorization</span>
-        <span class="pi">-</span> <span class="s">Content-Type</span>
-      <span class="na">credentials</span><span class="pi">:</span> <span class="kc">true</span>
-      <span class="na">max_age</span><span class="pi">:</span> <span class="m">86400</span>
-</code></pre></div></div> <p><strong>Advantage:</strong> CORS is handled at the edge, and individual microservices don’t need to implement it.</p> <p><strong>Risk:</strong> If the gateway handles CORS but a microservice also adds CORS headers, you get <strong>duplicate headers</strong> - and browsers may reject responses with multiple <code class="language-plaintext highlighter-rouge">Access-Control-Allow-Origin</code> values.</p> <h3 id="summary-of-common-deployment-mistakes">Summary of Common Deployment Mistakes</h3> <table> <thead> <tr> <th>Mistake</th> <th>Consequence</th> </tr> </thead> <tbody> <tr> <td><code class="language-plaintext highlighter-rouge">Access-Control-Allow-Origin: *</code> with auth APIs</td> <td>Credentials cannot be used</td> </tr> <tr> <td>Reflecting origin without validation</td> <td>Data theft via any malicious site</td> </tr> <tr> <td>CORS on application but not on error responses</td> <td>CORS errors mask 500 errors, making debugging impossible</td> </tr> <tr> <td>Duplicate CORS headers (gateway + app)</td> <td>Browser sees two <code class="language-plaintext highlighter-rouge">Allow-Origin</code> values and rejects</td> </tr> <tr> <td>Not handling OPTIONS at the proxy</td> <td>Preflight returns 404, all non-simple requests fail</td> </tr> <tr> <td>Allowing <code class="language-plaintext highlighter-rouge">null</code> origin</td> <td>Exploitable via sandboxed iframes</td> </tr> <tr> <td>Missing <code class="language-plaintext highlighter-rouge">Vary: Origin</code></td> <td>CDN/cache serves wrong origin header to wrong client</td> </tr> </tbody> </table> <hr/> <h2 id="conclusion-a-mental-model-for-cors">Conclusion: A Mental Model for CORS</h2> <p>CORS is often perceived as an obstacle - an annoying error that appears in the console during development. But understanding it deeply reveals that it is an elegantly simple protocol:</p> <ol> <li><strong>The browser is the enforcer.</strong> Not the server, not JavaScript - the browser’s security engine.</li> <li><strong>The server is the policy declarer.</strong> It communicates trust via response headers.</li> <li><strong>JavaScript is the subject.</strong> It can initiate requests but has no power to override CORS.</li> <li><strong>CORS protects the response, not the request.</strong> The server always receives the request (except when preflight fails).</li> <li><strong>Preflight is an optimization for safety.</strong> It prevents dangerous requests from being sent, not just their responses from being read.</li> </ol> <p>When you encounter a CORS error, the debugging approach is mechanical:</p> <ol> <li>What is my origin?</li> <li>What origin does the server allow?</li> <li>Do they match?</li> <li>Am I triggering preflight? Does the server handle OPTIONS?</li> <li>Am I sending credentials? Is the server configured for credentials?</li> </ol> <p>If you can answer these five questions, you can debug any CORS issue.</p> <hr/> <h2 id="try-it-yourself">Try It Yourself</h2> <p>Clone the <a href="https://github.com/karankessy/demoCORS"><strong>demoCORS</strong></a> project to see these concepts in action:</p> <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>git clone https://github.com/karankessy/demoCORS.git
-<span class="nb">cd </span>demoCORS
-npm <span class="nb">install
-</span>npm start
-</code></pre></div></div> <p>Open <code class="language-plaintext highlighter-rouge">http://localhost:3000</code> and watch the <strong>Network</strong> tab in DevTools to see CORS headers and preflight requests in real time.</p> <hr/> <h2 id="further-reading">Further Reading</h2> <ul> <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS">MDN - Cross-Origin Resource Sharing (CORS)</a></li> <li><a href="https://fetch.spec.whatwg.org/#http-cors-protocol">Fetch Standard - CORS Protocol</a></li> <li><a href="https://web.dev/articles/cross-origin-resource-sharing">web.dev - Cross-Origin Resource Sharing</a></li> <li><a href="https://portswigger.net/web-security/cors">PortSwigger - CORS Misconfigurations</a></li> <li><a href="https://cheatsheetseries.owasp.org/cheatsheets/CORS_Cheat_Sheet.html">OWASP - CORS Cheat Sheet</a></li> </ul>]]></content><author><name></name></author><category term="security-internals"/><category term="web-security"/><category term="browsers"/><category term="networking"/><summary type="html"><![CDATA[An in-depth exploration of Cross-Origin Resource Sharing (CORS), preflight requests, and common pitfalls, accompanied by a hands-on demo.]]></summary></entry><entry><title type="html">F5 BIG-IP + Wazuh: Getting Logs Working After 18 Months</title><link href="https://karankessy.github.io/blog/2025/f5-bigip-wazuh-logging/" rel="alternate" type="text/html" title="F5 BIG-IP + Wazuh: Getting Logs Working After 18 Months"/><published>2025-11-08T15:46:20+00:00</published><updated>2025-11-08T15:46:20+00:00</updated><id>https://karankessy.github.io/blog/2025/f5-bigip-wazuh-logging</id><content type="html" xml:base="https://karankessy.github.io/blog/2025/f5-bigip-wazuh-logging/"><![CDATA[<p>When hope was almost gone, I decided to give the F5–Wazuh integration one more try.<br/> Its already been eighteen months since I first had the failure trying integrate it, tried more than 50 times, had nearly convinced me these two were never going to get along.</p> <p>F5 BIG-IP is a good of a solutions when it comes to Web Application Firewall and Load Balancing tasks. I’ve been working with it for over half and a year now — it does its job quite well, protecting applications through real time traffic inspection and respective response enforcement. But it comes with a very real limit when it comes to local log storage at least in this series of F5 WAF which is claimed to be fixed in newer product series. On virtual editions, it caps at 3 million records or 2 GB of database space; on physical systems, it goes to 5 GB.</p> <p>I often get surprised when I find people getting disappointed over F5 not storing logs for much longer time. It is a limit but not really a flaw — it is so by design. WAF’s main job is to process live traffic and respond to attacks instantly &amp; accordingly. Storing, indexing, and searching logs is whole another world — slow, storage-hungry, and heavy on CPU. If F5 did all that itself, it would steal power from what it’s best at: stopping attacks as they happen. That’s why offloading logs &amp; events to a SIEM is all that makes sense &amp; that is why it is made for.</p> <p>Expecting a single product to be both a WAF and a SIEM is like asking a Formula 1 car to tow a truck—technically possible, but you’ll burn the engine before the truck moves.</p> <p><strong>And that is where <a href="https://wazuh.com/?utm_source=ambassadors&amp;utm_medium=referral&amp;utm_campaign=ambassadors+program">Wazuh</a> comes in.</strong><br/> F5 does it all to guard the gate, Wazuh keeps the records. It collects logs, parses them into useful fields, stores them for months or years depends how rich you are, and even alerts you when something suspicious happens. It understands CEF, and so does F5 if you set it to ArcSight mode. On paper, this pairing looked simple.</p> <hr/> <h3 id="the-eighteen-month-standoff">The Eighteen-Month Standoff</h3> <p>The documentation looked simple enough:</p> <ul> <li>Both systems support syslog.</li> <li>Both understand CEF.</li> <li>A few settings on each side, and done.</li> </ul> <p>But the reality wasn’t so generous. Find my issue here: <a href="https://github.com/wazuh/wazuh/issues/27392">#27392</a></p> <p>I tried buffer tweaks, IP changes, subnet shuffles, protocol switches, even manual rsyslog in the middle, even version downgrades. Sometimes some part of logs came through fine but just chunked in half, sometimes as hex garbage, sometimes not at all. One day a config would work, the next it was dead for no reason I could find.</p> <hr/> <h3 id="and-the-breakthrough">And the Breakthrough</h3> <p>And then, one day, no more drama — it just worked.<br/> Maybe Wazuh’s updates fixed something. Maybe my setup finally clicked. Or maybe, after all that time, the stars just lined up. I’m really unknown what is that miracle that made it work this time. It was the most basic configuration I did, which I had repeated maybe dozens of times 18 months before.</p> <p>Anyways, moving onwards with the newly-wed couples.</p> <p><strong>Step 1 – Create the F5 Logging Profile</strong><br/> In F5:</p> <ul> <li>Go to <strong>Security → Event Logs → Logging Profiles</strong></li> <li>Give it a name</li> <li>Select the category to log (for me: <code class="language-plaintext highlighter-rouge">Application Security</code>)</li> <li>Check <strong>Storage Destination → Remote Storage</strong></li> <li>Use <strong>TCP</strong> protocol for bigger payloads</li> <li>Add your Wazuh receiver’s IP and listening port</li> </ul> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/f5logp-480.webp 480w,/assets/img/f5logp-800.webp 800w,/assets/img/f5logp-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/assets/img/f5logp.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> <p><strong>Step 2 – Attach to Virtual Server</strong><br/> In <strong>Local Traffic → Virtual Servers</strong>, pick your target server.<br/> Attach the <code class="language-plaintext highlighter-rouge">LOG-WAZUH</code> profile under <strong>Security → Policies</strong>.<br/> That’s what makes the logs actually leave F5.</p> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/f5secp-480.webp 480w,/assets/img/f5secp-800.webp 800w,/assets/img/f5secp-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/assets/img/f5secp.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> <p><strong>Step 3 – Configure Wazuh</strong><br/> In <code class="language-plaintext highlighter-rouge">ossec.conf</code>, allow the IP that F5 uses to send logs.<br/> That IP is the <strong>external self IP</strong> on F5.</p> <p>To find it:</p> <ul> <li>Go to <strong>Network → Self-IPs → External Self IPs</strong></li> <li>Or in the F5 CLI:</li> </ul> <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ip route get 192.168.180.242 <span class="c"># (Wazuh receiver IP)</span>
-</code></pre></div></div> <p>The output shows the sending IP — use that in Wazuh’s config.</p> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/wazuhconf-480.webp 480w,/assets/img/wazuhconf-800.webp 800w,/assets/img/wazuhconf-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/assets/img/wazuhconf.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> <p>Restart Wazuh, and it’s ready to receive logs.</p> <hr/> <h3 id="seeing-the-results">Seeing the results</h3> <p>I opened the Wazuh dashboard — and there they were. Clean, parsed CEF logs from F5, showing (fields are yet to have their naming ceremony, never mind):</p> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/f5wlog-480.webp 480w,/assets/img/f5wlog-800.webp 800w,/assets/img/f5wlog-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/assets/img/f5wlog.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> <p>After eighteen months of silence, they were finally speaking.</p> <p>Then I hit my DVWA with some test payloads.</p> <h3 id="xss-it-a-bit">XSS it a bit</h3> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/f5xsslog-480.webp 480w,/assets/img/f5xsslog-800.webp 800w,/assets/img/f5xsslog-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/assets/img/f5xsslog.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> <h3 id="command-injection">Command Injection</h3> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/f5ci-480.webp 480w,/assets/img/f5ci-800.webp 800w,/assets/img/f5ci-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/assets/img/f5ci.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/f5celog-480.webp 480w,/assets/img/f5celog-800.webp 800w,/assets/img/f5celog-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/assets/img/f5celog.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> <hr/> <h3 id="an-alternative-path">An alternative path</h3> <p>For high-volume production environments, F5 offers <strong>High Speed Logging (HSL)</strong> which is faster and more flexible than standard syslog. That’s a bigger story for another time; detailed guidance lives here: <a href="https://nishalrai.com.np/posts/remote-hsl-f5bigip/">Remote HSL for F5 BIG-IP</a>.</p> <hr/> <h3 id="and-the-lessons-from-the-journey">And the Lessons from the Journey</h3> <p>Just grace actually, but to know a thing is; each tool sticks to what it does best:</p> <ul> <li><strong>F5</strong> – live traffic analysis and blocking</li> <li><strong>Wazuh</strong> – storing, indexing, and digging through logs later</li> </ul> <p>Now, logs flow from F5 to Wazuh in real time. I can check months of history without worrying about F5’s storage limits.</p> <p>As I write this, logs keep coming in, each one like a little postcard from F5 saying, <em>“I caught something. Thought you should know.”</em></p> <p>It took eighteen months for them to talk. But now they do.</p> <p>Maybe it was an update, maybe a coincidence, at least my ego is not letting I was mistaken as I’ve almost given 1 month trying all the ways I could — or maybe machines just have their moods too.</p> <p>Nothing mystical about it, but after enough retries, even logic seems to respond better when you stop arguing with it.<br/> This time, it simply worked. And that was enough.</p> <hr/> <ul> <li>Be a part of Wazuh Ambassadors Program, if you believe you’re a good fit: <a href="https://wazuh.com/ambassadors-program/?utm_source=ambassadors&amp;utm_medium=referral&amp;utm_campaign=ambassadors+program">https://wazuh.com/ambassadors-program/</a></li> </ul>]]></content><author><name></name></author><category term="f5"/><category term="wazuh"/><category term="logging"/><category term="waf"/><category term="siem"/><category term="networking"/><summary type="html"><![CDATA[How I finally got F5 BIG-IP and Wazuh to exchange logs — configuration steps, troubleshooting, and lessons learned from an 18-month integration.]]></summary></entry><entry><title type="html">TOON - The New JSON</title><link href="https://karankessy.github.io/blog/2025/toon-the-new-json/" rel="alternate" type="text/html" title="TOON - The New JSON"/><published>2025-11-07T15:46:20+00:00</published><updated>2025-11-07T15:46:20+00:00</updated><id>https://karankessy.github.io/blog/2025/toon-the-new-json</id><content type="html" xml:base="https://karankessy.github.io/blog/2025/toon-the-new-json/"><![CDATA[<p>JSON is everywhere. APIs use it. So do backends and frontends. It is the basic and the default way most of the services talk.</p> <p>But JSON wasn’t made for large language models. It carries a lot of unnecessary baggage: curly braces, commas, extra spaces. All those were required for programmatic purposes, proper formatted so that it could be indexed properly, parsed properly, read properly &amp; play with all the kinds of logic we want. It help human eyes and programs, but for models they just take up too much tokens.</p> <p>And the problem is when you send JSON to an LLM, every character is a token. Each bracket be in starting-ending, each newline, each comma adds to your token count. That means higher cost, higher processing time, higher CO2 consumption and what not.</p> <p>Taking this as an example:</p> <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
-  </span><span class="nl">"user_id"</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"email"</span><span class="p">:</span><span class="w"> </span><span class="s2">"heisenberg@gmail.com"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"active"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+Content 2
+
+<span class="cp">{%</span><span class="w"> </span><span class="nt">endtab</span><span class="w"> </span><span class="cp">%}</span>
+
+<span class="cp">{%</span><span class="w"> </span><span class="nt">endtabs</span><span class="w"> </span><span class="cp">%}</span>
+</code></pre></div></div> <p>With this you can generate visualizations like:</p> <ul id="log" class="tab" data-tab="36156d36-cd44-44ee-9cea-4caddbe7eabb" data-name="log"> <li class="active" id="log-php"> <a href="#">php </a> </li> <li id="log-js"> <a href="#">js </a> </li> <li id="log-ruby"> <a href="#">ruby </a> </li> </ul> <ul class="tab-content" id="36156d36-cd44-44ee-9cea-4caddbe7eabb" data-name="log"> <li class="active"> <div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">var_dump</span><span class="p">(</span><span class="s1">'hello'</span><span class="p">);</span>
+</code></pre></div></div> </li> <li> <div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">hello</span><span class="dl">"</span><span class="p">);</span>
+</code></pre></div></div> </li> <li> <div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">pputs</span> <span class="dl">'</span><span class="s1">hello</span><span class="dl">'</span>
+</code></pre></div></div> </li> </ul> <h2 id="another-example">Another example</h2> <ul id="data-struct" class="tab" data-tab="583250de-a56f-4fcb-bcc7-43ec95c5d411" data-name="data-struct"> <li class="active" id="data-struct-yaml"> <a href="#">yaml </a> </li> <li id="data-struct-json"> <a href="#">json </a> </li> </ul> <ul class="tab-content" id="583250de-a56f-4fcb-bcc7-43ec95c5d411" data-name="data-struct"> <li class="active"> <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">hello</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s2">"</span><span class="s">whatsup"</span>
+  <span class="pi">-</span> <span class="s2">"</span><span class="s">hi"</span>
+</code></pre></div></div> </li> <li> <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"hello"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"whatsup"</span><span class="p">,</span><span class="w"> </span><span class="s2">"hi"</span><span class="p">]</span><span class="w">
 </span><span class="p">}</span><span class="w">
-</span></code></pre></div></div> <p>The data’s clear, but the format is heavy, redundant characters are too much. For models, all the extras waste tokens.</p> <p>And now what TOON (Token-Oriented Object Notation) does is, it just strips out what large language models don’t need, unnecessary curly braces, commas, extra spaces. It just keeps the data, drops the noise.</p> <p>Like this:</p> <p><code class="language-plaintext highlighter-rouge">user_id:123,email:heisenberg@gmail.com,active:true</code></p> <p>With this you allegedly reduce 40-60% of the tokens. Things run faster. It costs less to process, keeps your pocket warm &amp; also CO2 control, much needed one.</p> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/toon-480.webp 480w,/assets/img/toon-800.webp 800w,/assets/img/toon-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/assets/img/toon.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> <p>But the problem is, TOON works best on flat JSON data. If your JSON is nested—one object inside another—flatten it first. If you don’t, TOON can make things worse. You’ll use more tokens; likely 20-30% more, not fewer.</p> <p>So, we have turn this (Nested JSON):</p> <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
-    </span><span class="s2">"user"</span><span class="w">
-        </span><span class="p">{</span><span class="w">
-            </span><span class="nl">"id"</span><span class="p">:</span><span class="mi">123</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"email"</span><span class="p">:</span><span class="s2">"heisenberg@gmail.com"</span><span class="w">
-        </span><span class="p">}</span><span class="w">
-</span><span class="p">}</span><span class="w">
-</span></code></pre></div></div> <p>To this (Flat Normalized JSON):</p> <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
-  </span><span class="nl">"user.id"</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"user.email"</span><span class="p">:</span><span class="w"> </span><span class="s2">"heisenberg@gmail.com"</span><span class="w">
-</span><span class="p">}</span><span class="w">
-</span></code></pre></div></div> <p>You can make use of JSON normalizer packages if available for the respective programming languages. Then only, the TOON gives you the benefit.</p> <p>Thus, we have to make use of TOON when it fits:</p> <ul> <li>JSON is flat or you can flatten it, either manually or via normalizers.</li> <li>Token costs matter.</li> <li>You’re optimizing for models—not humans.</li> </ul> <p>And hence, If you are in need of human readability, stick with JSON. If your JSON structure is deeply nested and you can’t flatten it due to some complexities, TOON may not help.</p> <p>Which is why it asks us to measure the difference and then only test on our own data or make use of it.</p> <p>The point is simple. Better performance, lower cost, less waste. No drama. No buzzwords.</p> <p>And that’s how we tune and optimize systems to run and not just compile go, not knowing if it is the function or the disease running it.</p> <p>Know more in detail: <a href="https://github.com/toon-format/toon">TOON Github</a></p>]]></content><author><name></name></author><category term="TOON"/><category term="JSON"/><category term="AI"/><category term="LLMs"/><category term="Tokens"/><category term="Optimization"/><summary type="html"><![CDATA[TOON is about to take a wild ride in LLMs. Its going to save you money, time & power. Go through it.]]></summary></entry><entry><title type="html">Three Essential HTTP Routing Patterns</title><link href="https://karankessy.github.io/blog/2025/http-routing-patterns/" rel="alternate" type="text/html" title="Three Essential HTTP Routing Patterns"/><published>2025-04-18T12:13:30+00:00</published><updated>2025-04-18T12:13:30+00:00</updated><id>https://karankessy.github.io/blog/2025/http-routing-patterns</id><content type="html" xml:base="https://karankessy.github.io/blog/2025/http-routing-patterns/"><![CDATA[<p>HTTP routing is a fundamental concept in web development that determines how web applications handle and direct incoming requests. Let’s go through the three primary routing patterns that every web developer should understand.</p> <h2 id="1-host-based-routing">1. Host-Based Routing</h2> <p>Host-based routing, also known as VHOST (Virtual Host) routing, is a pattern where multiple domain names point to the same server or endpoint. This approach is particularly useful for managing multiple services under different domains while utilizing the same infrastructure.</p> <h3 id="key-features">Key Features:</h3> <ul> <li>Multiple domains (e.g., <strong>server.web.site.com</strong> and <strong>api.site.com</strong>) can point to the same endpoint</li> <li>Uses the publicly available IP address</li> <li>Ideal for microservices architecture</li> <li>Enables efficient resource utilization</li> </ul> <h2 id="2-path-based-routing">2. Path-Based Routing</h2> <p>Path-based routing has gained significant popularity, especially with the rise of container orchestration and ingress controllers. This pattern focuses on the URI portion of the HTTP request to determine where the traffic should be directed.</p> <h3 id="example">Example:</h3> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://api.example.com/getprofile/v1/123456
-                      └──────────────────┘
-                            path
-</code></pre></div></div> <h3 id="benefits">Benefits:</h3> <ul> <li>Granular control over request handling</li> <li>Excellent for versioning APIs</li> <li>Simplified container scaling</li> <li>Enhanced flexibility in microservices architectures</li> </ul> <h2 id="3-header-based-routing">3. Header-Based Routing</h2> <p>The third crucial pattern involves routing based on HTTP headers. While this includes cookie-based persistence, it’s important to note that the Host header is typically excluded from this category since it falls under host-based routing.</p> <h3 id="important-considerations">Important Considerations:</h3> <ul> <li>Cookie-based persistence for session management</li> <li>Custom headers for routing decisions</li> <li>Distinct from Host header routing</li> <li>Useful for A/B testing and feature flagging</li> </ul> <h2 id="best-practices">Best Practices</h2> <p>When implementing these routing patterns, consider:</p> <ul> <li>Using HTTPS for secure communication</li> <li>Implementing proper error handling</li> <li>Setting up monitoring and logging</li> <li>Ensuring scalability in your routing configuration</li> </ul> <h2 id="conclusion">Conclusion</h2> <p>Understanding these three routing patterns is essential for building better web applications. Each pattern serves specific use cases, and often, a combination of these patterns provides the most effective routing strategy for complex applications.</p>]]></content><author><name></name></author><category term="webdev"/><category term="backend"/><category term="networking"/><category term="routing"/><category term="http"/><summary type="html"><![CDATA[HTTP routing patterns - the three crucial approaches (Host-based, Path-based, and Header-based) that determine how web traffic is directed to different services, enabling efficient request handling and service management in modern web architectures.]]></summary></entry><entry><title type="html">WebAssembly: Will this replace Docker?</title><link href="https://karankessy.github.io/blog/2024/webassembly-vs-docker/" rel="alternate" type="text/html" title="WebAssembly: Will this replace Docker?"/><published>2024-12-27T15:46:20+00:00</published><updated>2024-12-27T15:46:20+00:00</updated><id>https://karankessy.github.io/blog/2024/webassembly-vs-docker</id><content type="html" xml:base="https://karankessy.github.io/blog/2024/webassembly-vs-docker/"><![CDATA[<h2 id="introduction">Introduction</h2> <p>Recently, Docker announced the integration of WebAssembly (WASM) technology in a technical preview. This news has sparked many questions in the developer community. Some even wonder if WASM might one day replace Docker or other container technologies.</p> <div class="row mt-3"> <div class="col-sm mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="https://lh5.googleusercontent.com/NUN7Qbg5Rvccm8AgvAvRtnUHzVtS3pcOWJZ24LM_zLP8ac2wBZV5RUVsKb4b7PQwict0hMmZPRp39N_ESdTv9oIuf2tQlIxSPaOa-dIZmDEk_cj8Hy1n0ZfOSElN9WYHbVm7jPIPVOk25xjjaBxGZGc" sizes="95vw"/> <img src="https://lh5.googleusercontent.com/NUN7Qbg5Rvccm8AgvAvRtnUHzVtS3pcOWJZ24LM_zLP8ac2wBZV5RUVsKb4b7PQwict0hMmZPRp39N_ESdTv9oIuf2tQlIxSPaOa-dIZmDEk_cj8Hy1n0ZfOSElN9WYHbVm7jPIPVOk25xjjaBxGZGc" class="img-fluid rounded z-depth-1" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> </div> </div> <p>In this blog post, we’ll explore what WebAssembly and Docker are, compare their key features, and look at how they might work together in the future.</p> <hr/> <h2 id="what-is-webassembly">What is WebAssembly?</h2> <p>Imagine being able to run a complex desktop application like Photoshop or Figma directly in your web browser—no downloads or installations required. That’s one of the exciting promises of WebAssembly.</p> <ul> <li><strong>Easy to Understand:</strong><br/> WebAssembly is a new type of code that lets you run applications built in languages like C, C++, or Rust right in your browser. It works alongside HTML, CSS, and JavaScript, making it possible to bring powerful, high-performance applications online.</li> </ul> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/wasm2-480.webp 480w,/assets/img/wasm2-800.webp 800w,/assets/img/wasm2-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/assets/img/wasm2.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> <ul> <li><strong>How It Works:</strong><br/> Normally, desktop programs need to be compiled into machine code that your computer can understand. With WASM, developers compile their code into a special binary format that runs quickly and securely in the browser. Tools like Emscripten help convert C programs into WASM files that can run seamlessly online.</li> </ul> <h3 id="wasm-outside-of-browsers">WASM Outside of Browsers</h3> <p>WASM isn’t just for web pages—it can also run on any system that supports a WASM runtime. Think of these runtimes like the engines that let your computer run programs written in other languages (such as the Java Virtual Machine or Python’s interpreter).</p> <ul> <li><strong>Portability:</strong><br/> WASM binaries are designed to be platform-neutral. This means they can run on different operating systems and processor types without needing major changes.</li> </ul> <div class="row mt-3"> <div class="col-sm mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="https://kodekloud.com/blog/content/images/2023/03/Screenshot-2023-03-16-at-23.43.00-480.webp 480w,https://kodekloud.com/blog/content/images/2023/03/Screenshot-2023-03-16-at-23.43.00-800.webp 800w,https://kodekloud.com/blog/content/images/2023/03/Screenshot-2023-03-16-at-23.43.00-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="https://kodekloud.com/blog/content/images/2023/03/Screenshot-2023-03-16-at-23.43.00.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> </div> </div> <ul> <li><strong>System Access:</strong><br/> Using the WebAssembly System Interface (WASI), WASM modules can access files, directories, and other system resources. This ability makes it similar to how containers work.</li> </ul> <hr/> <h2 id="what-is-docker">What is Docker?</h2> <p>Docker is a popular technology that packages your application code along with all its dependencies into a single container. This container can run anywhere—on any computer or server—without worrying about differences in operating systems or installed libraries.</p> <ul> <li><strong>The Problem It Solves:</strong><br/> Think about how many steps are involved in running a simple C program: installing the right compiler, managing libraries, and setting system paths. Docker simplifies this by bundling everything into one neat package. Now, your colleague on a different system can run your program without any setup headaches.</li> <li><strong>How It Works:</strong><br/> A Docker container uses a Docker image—a snapshot of a file system with all necessary tools, libraries, and your application. When you run the container, it behaves like a small, self-contained computer.</li> </ul> <hr/> <h2 id="docker-vs-webassembly-key-comparisons">Docker vs WebAssembly: Key Comparisons</h2> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/wasm3-480.webp 480w,/assets/img/wasm3-800.webp 800w,/assets/img/wasm3-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/assets/img/wasm3.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> <p>While Docker and WASM both help package and run applications, they work in different ways:</p> <ul> <li><strong>Architecture:</strong> <ul> <li><strong>Docker:</strong> Packages the entire file system, dependencies, and binaries into a container.</li> <li><strong>WASM:</strong> Creates a compact, precompiled binary. WASI then supplies the system resources at runtime.</li> </ul> </li> <li><strong>Portability:</strong> <ul> <li><strong>Docker:</strong> Requires matching the image with the right operating system and processor type.</li> <li><strong>WASM:</strong> Works across platforms, independent of the underlying hardware.</li> </ul> </li> <li><strong>Performance &amp; Size:</strong> <ul> <li><strong>Docker:</strong> Containers can be tens or hundreds of megabytes and may take seconds to start.</li> <li><strong>WASM:</strong> Modules are only a few megabytes and start in milliseconds, offering near-native performance.</li> </ul> </li> <li><strong>Usage Scenarios:</strong> <ul> <li><strong>Docker:</strong> Best for packaging full applications with all their dependencies in a controlled environment.</li> <li><strong>WASM:</strong> Ideal for running high-performance code on the web or in other environments where quick startup is crucial.</li> </ul> </li> </ul> <hr/> <h2 id="will-wasm-replace-docker">Will WASM Replace Docker?</h2> <p>There has been some speculation that WASM could eventually replace Docker, Kubernetes, and other container technologies. However, it’s more likely that WASM will work alongside Docker rather than replace it completely.</p> <ul> <li><strong>Integration Potential:</strong><br/> Docker’s recent technical preview shows that you can now run WASM containers alongside traditional Linux and Windows containers. This integration means you could use the fast startup and small size of WASM while still taking advantage of Docker’s powerful container management features.</li> <li><strong>Real-World Impact:</strong><br/> Combining these two technologies could lead to even more efficient, scalable, and secure web applications. Developers might soon enjoy the best of both worlds: Docker’s ease of deployment and WASM’s performance benefits.</li> </ul> <hr/> <h2 id="conclusion">Conclusion</h2> <p>Both Docker and WebAssembly offer unique strengths:</p> <ul> <li><strong>Docker</strong> provides a reliable way to package and run full applications in any environment.</li> <li><strong>WebAssembly</strong> delivers fast, secure execution with impressive portability, especially for web-based applications.</li> </ul> <p>Their integration points toward a promising future where developers can leverage the speed and efficiency of WASM together with the robust ecosystem of Docker. As technology evolves, the blend of these innovations could reshape how we build and deploy software.</p>]]></content><author><name></name></author><category term="docker"/><category term="containerization"/><category term="wasm"/><category term="webassembly"/><category term="kubernetes"/><summary type="html"><![CDATA[WebAssembly vs Docker. WASM, a technology that revamped the way we thought about containerization.]]></summary></entry><entry><title type="html">Engineering behind Mutable and Immutable in Python</title><link href="https://karankessy.github.io/blog/2024/mutable-immutable-python/" rel="alternate" type="text/html" title="Engineering behind Mutable and Immutable in Python"/><published>2024-12-27T15:46:13+00:00</published><updated>2024-12-27T15:46:13+00:00</updated><id>https://karankessy.github.io/blog/2024/mutable-immutable-python</id><content type="html" xml:base="https://karankessy.github.io/blog/2024/mutable-immutable-python/"><![CDATA[<p>If you’ve been programming in Python, you’ve probably come across the terms <em>mutable</em> and <em>immutable</em>. These words might sound casual, but have you ever wondered how mutable is actually mutable? and immutable immutable? Its quite simple once you get the hang of it. Let’s break it down and look at the “how” and “why” behind these concepts.</p> <hr/> <h3 id="what-do-mutable-and-immutable-mean">What Do Mutable and Immutable Mean?</h3> <ul> <li><strong>Mutable</strong> means <em>changeable</em>. Data types like lists, sets, and dictionaries can be modified after they are created.</li> <li><strong>Immutable</strong> means <em>unchangeable</em>. Data types like strings, integers, and tuples cannot be altered once they are created.</li> </ul> <p>Now, here’s where it gets interesting: even if a data type is immutable, it doesn’t mean you can’t assign new values to a variable. Let’s go a bit further.</p> <hr/> <h3 id="example-1-strings-are-immutable">Example 1: Strings Are Immutable</h3> <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="n">username</span> <span class="o">=</span> <span class="sh">"</span><span class="s">karan</span><span class="sh">"</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">username</span>
-<span class="sh">'</span><span class="s">karan</span><span class="sh">'</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">username</span> <span class="o">=</span> <span class="sh">"</span><span class="s">notkaran</span><span class="sh">"</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">username</span>
-<span class="sh">'</span><span class="s">notkaran</span><span class="sh">'</span>
-</code></pre></div></div> <p>Strings are immutable, so when you assign a new value to the variable <code class="language-plaintext highlighter-rouge">username</code>, Python doesn’t overwrite the old value. Instead:</p> <ol> <li>A new memory block is created for the new value <code class="language-plaintext highlighter-rouge">"notkaran"</code>.</li> <li>The variable <code class="language-plaintext highlighter-rouge">username</code> is updated to reference this new block.</li> <li>The old value <code class="language-plaintext highlighter-rouge">"karan"</code> is left behind and will be deleted later by Python’s garbage collector, but only if no other variable is using it.</li> </ol> <h4 id="memory-allocation-diagrams">Memory Allocation Diagrams</h4> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/userkaran-480.webp 480w,/assets/img/userkaran-800.webp 800w,/assets/img/userkaran-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/assets/img/userkaran.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> <p><em>when username = “karan”</em></p> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/usernotkaran-480.webp 480w,/assets/img/usernotkaran-800.webp 800w,/assets/img/usernotkaran-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/assets/img/usernotkaran.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> <p><em>after re-assigning the value when username = “notkaran”</em></p> <p>Here, the value <code class="language-plaintext highlighter-rouge">"karan"</code> is stored at a different memory location, which will be removed by the garbage collector in Python since no variable is referencing it.</p> <hr/> <h3 id="example-2-integers-and-memory-allocation">Example 2: Integers and Memory Allocation</h3> <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">10</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">y</span> <span class="o">=</span> <span class="n">x</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">20</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">x</span>
-<span class="mi">20</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">y</span>
-<span class="mi">10</span>
-</code></pre></div></div> <p>In this case:</p> <ul> <li>Initially, <code class="language-plaintext highlighter-rouge">x</code> and <code class="language-plaintext highlighter-rouge">y</code> both reference the same value <code class="language-plaintext highlighter-rouge">10</code> in memory.</li> <li>When you assign <code class="language-plaintext highlighter-rouge">20</code> to <code class="language-plaintext highlighter-rouge">x</code>, Python creates a new memory block for <code class="language-plaintext highlighter-rouge">20</code> and updates <code class="language-plaintext highlighter-rouge">x</code> to reference this new block.</li> <li>The value <code class="language-plaintext highlighter-rouge">10</code> is still in memory because <code class="language-plaintext highlighter-rouge">y</code> is referencing it.</li> </ul> <h4 id="memory-allocation-diagram">Memory Allocation Diagram</h4> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/xandy-480.webp 480w,/assets/img/xandy-800.webp 800w,/assets/img/xandy-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/assets/img/xandy.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> <p><em>In this case, the value <code class="language-plaintext highlighter-rouge">10</code> won’t be deleted as it is being referenced by <code class="language-plaintext highlighter-rouge">y</code>.</em></p> <hr/> <h3 id="why-does-this-matter">Why Does This Matter?</h3> <p>The distinction between mutable and immutable types is crucial for <strong>Performance</strong> as Immutable objects are often faster because they don’t need mechanisms to handle changes. And <strong>Data Safety</strong> is another reason as Immutable types prevent accidental modifications, making them ideal for constants and keys in dictionaries.</p> <hr/> <h3 id="the-core-engineering-behind-mutability">The Core Engineering Behind Mutability</h3> <p>At the heart of Python’s design lies its memory management system and here is how it works:</p> <ul> <li><strong>Mutable types</strong> like lists and dictionaries store data in a memory buffer that can be altered directly.</li> <li><strong>Immutable types</strong> don’t allow changes to the data in memory. Instead, new memory is allocated for any modifications.</li> </ul> <p>I didn’t explain much with examples and diagrams about mutability as it is quite easy and obvious after knowing immutability. This ability to allocate new memory or update existing memory is what makes mutability possible (or impossible) at its core.</p>]]></content><author><name></name></author><category term="Python"/><category term="Programming"/><category term="Mutable"/><category term="Immutable"/><category term="Memory Management"/><summary type="html"><![CDATA[Explore the core engineering concepts behind mutable and immutable data types in Python with simple explanations and practical examples.]]></summary></entry><entry><title type="html">A Guide to Analyzing and Evaluating Reasoning</title><link href="https://karankessy.github.io/blog/2024/analyzing-evaluating-reasoning/" rel="alternate" type="text/html" title="A Guide to Analyzing and Evaluating Reasoning"/><published>2024-12-12T12:13:30+00:00</published><updated>2024-12-12T12:13:30+00:00</updated><id>https://karankessy.github.io/blog/2024/analyzing-evaluating-reasoning</id><content type="html" xml:base="https://karankessy.github.io/blog/2024/analyzing-evaluating-reasoning/"><![CDATA[<p>In a world flooded with information, where anyone can create anything and present with or without any credibility, the ability to think analytically has become more critical than ever before. Most of the time our thinking occurs with little or no deliberate effort. In a nutshell, we could almost say we think without thinking. For instance, when offered a choice between black tea and milk tea, I can quickly and easily make a decision based on my personal preferences, without considering any other factors or engaging in critical thinking.</p> <p>Critical thinking means giving a fair and unbiased opinion of something, where being critical and thinking critically are not the same thing.</p> <p>If critical thinking were simply about making judgments, then anyone could do it by giving an opinion without any special training or practice. For instance, if I come across any debates, I may react impulsively based on my preconceived notions, biases and emotions without engaging in critical thinking to evaluate the information presented. This can lead to individuals reacting differently to the same information based on their personal biases and emotional responses.</p> <p>Taking a hypothetical situation into play, if I watch a film and think that it is boring, even though it has had good reviews, no one can really say that my judgement is wrong and the professional critics are right. Someone can disagree with me, but that is just another judgement, no better or worse, you might say, than mine. In a limited sense, this is true. But a serious critical judgement is more than just a statement of preference or taste. A critical judgement must have some basis, which usually requires a measure of knowledge or expertise on the part of the person making the judgement. Just saying “I like it” or “I don’t like it” is not enough. There have to be some grounds for a judgement before we can call it critical.</p> <p>And that very ground may start with the proper reason following the conclusion/judgement whether that might be an argument, claims, assertions or statements. Every judgement needs some legit grounds to be considered as a sound or critical judgement.</p> <p>Critical judgement of any situation firstly starts with the identification of its elements especially premises, also called reasons and the conclusion followed by the reasons. These are the very basic elements to be considered but it is not that easy as it sounds like. Sometimes, judgement might go wrong even after the proper identification of the elements of an argument or a claim and that’s what decides the level of the critical thinking applied or used during the judgement formation.</p> <p>Before judging any arguments, claims or assertions we need to know what is the exact difference between them. So, arguments are especially interesting because their primary purpose is to persuade or influence people in favor of some claim. The critical question therefore becomes whether the argument succeeds or fails: whether we should allow ourselves to be persuaded by it, or not.</p> <p>‘Assertion’ and ‘claim’ are very close in meaning. The difference is in when you use them. Assertion’ is a bit stronger and more emphatic; it is more active. A claim may be asserted, but we would not naturally say that an assertion was claimed.</p> <p>Claims are presented as expressions of truth, yet they are not always true. And critical thinking is a way of being as sure as possible about which claims to believe, and which to question or mistrust. Also, arguments consist of claims: reasons, conclusions, etc.</p> <h2 id="analyzing-argument">Analyzing Argument</h2> <h3 id="example-1">Example 1</h3> <p>Top women tennis players used to grumble that their prize money was less substantial than that paid to top male players in the same competition. They argued that they were being unequally treated. But the disparity was entirely justified and should never have been abolished. Male players just have more prowess than women. They need to win three sets out of five to take the match; the women only two. They have to play harder and faster, and expend far more energy on court than the women. But most of all, if the best woman in the tournament played any of the men, there would be no contest: the man would win.</p> <p>As mentioned before, when looking at an argument, the first things to consider are the reason and the conclusion. According to the rule, the first two sentences of the argument [1] do not function as reasons or conclusions but rather set the context for the argument(Try reading the passage without them and you will see this for yourself). Without these sentences, the argument would lack coherence. Such sentences are often referred to as the target or context of the argument.</p> <p>The purpose of the argument is to respond to the alleged claim of unfairness and inequality by women. Some may refer to parts of a text that serve as the target of an argument as a counter-argument, but this is misleading. If anything, the author’s argument should be considered the counter-argument, since the author is the one responding, not the women.</p> <p>In standard form, the argument can be represented as follows: Context (or target): Top women tennis players used to complain about the inequalities of prize money.</p> <p>In the diagram, R1 to R3 represent the reasons, IC is the intermediate conclusion, followed by the reasons R1 to R3, and the main conclusion (MC) is C, which is the main point of the argument, supported by all the reasons and intermediate conclusion (IC).</p> <p>Now let’s visualize the argument in a diagram:</p> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/thinkingskill-480.webp 480w,/assets/img/thinkingskill-800.webp 800w,/assets/img/thinkingskill-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/assets/img/thinkingskill.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> <blockquote> <h1 id="r1--r2--ic--c--r3">R1 &amp; R2 —&gt; IC —&gt; [C] &lt;— R3</h1> </blockquote> <p>In the diagram, R1 to R3 represent the reasons, IC is the intermediate conclusion, followed by the reasons R1 to R3, and the main conclusion (MC) is C, which is the main point of the argument, supported by all the reasons and intermediate conclusion (IC).</p> <p>R1 and R2 are the actual supporting reasons for the intermediate conclusion (IC). These three elements could be a separate argument on their own, but there is another missing argument, R3, which is an independent reason following the main conclusion C.</p> <p>It is important to note that credible research should support the reasons presented in the argument. For instance, is it true that men have to win three out of five sets while women only need to win two, as stated in R1? Therefore, research should support all the reasons presented, and at least one reason should be true for the argument to be sound. Finally, the main conclusion should be supported by all the IC and reasons presented, or it will make no sense. For example:</p> <p>The weather has been really nice lately. So, we should invest in renewable energy.</p> <p>Here,</p> <blockquote> <p>R1 –&gt; “The weather has been really nice lately”</p> </blockquote> <p>does not follow the conclusion,</p> <blockquote> <p>C –&gt; “So, we should invest in renewable energy.”</p> </blockquote> <p>Thus, the conclusion of an argument needs to be supported by the reasons presented.</p> <p>Understanding the structure of an argument is essential in identifying its strengths and weaknesses. By breaking down an argument into its constituent parts, we can evaluate the validity of the reasons presented and determine if the conclusion follows logically. Additionally, conducting thorough research and ensuring that the main conclusion is supported by all the reasons presented is critical in building a strong argument. By employing these techniques, we can strive better critical thinkers and more effective communicators.</p> <p>To conclude, I hope this blog has provided you with a better understanding of how to analyze and evaluate arguments. The examples used in this blog are taken from a book by Cambridge University, and I highly recommend it to those who want to delve deeper into the topic. Feel free to reach out to me via <a href="https://instagram.com/_wd.erick">Instagram</a> or <a href="https://fb.com/karankessy">Facebook</a> if you would like the book’s details.</p>]]></content><author><name></name></author><category term="Thinking Skills"/><category term="Arguments"/><category term="Logical Analysis"/><category term="Reasoning"/><summary type="html"><![CDATA[Here we explore the essential techniques for analyzing and evaluating reasoning in arguments. Learn how to identify claims, premises, and conclusions, and strengthen your critical thinking skills.]]></summary></entry><entry><title type="html">How We Fixed Critical Connectivity Issues in Our vKYC Application: A Technical Deep Dive</title><link href="https://karankessy.github.io/blog/2024/vkyc-connectivity-issues/" rel="alternate" type="text/html" title="How We Fixed Critical Connectivity Issues in Our vKYC Application: A Technical Deep Dive"/><published>2024-11-26T10:00:00+00:00</published><updated>2024-11-26T10:00:00+00:00</updated><id>https://karankessy.github.io/blog/2024/vkyc-connectivity-issues</id><content type="html" xml:base="https://karankessy.github.io/blog/2024/vkyc-connectivity-issues/"><![CDATA[<p>Ever had one of those technical problems that just keeps coming back like a persistent itch? That’s exactly what we faced with our video KYC application. Users were going through a long never-ending buffering repeatedly, and our team was determined to get to the bottom of it. Let me walk you through our journey from chaos to resolution.</p> <h2 id="the-mystery-begins">The Mystery Begins</h2> <p>Our vKYC application was acting like a finicky door that wouldn’t stay shut. Users would connect, only to be left buffering, over and over again. It was like watching a digital game of whack-a-mole, and we needed to stop it.</p> <h2 id="detective-work-the-network-trail">Detective Work: The Network Trail</h2> <p>Our first move? We went full CSI on this one. We captured and analyzed network packets under different scenarios, and that’s when things got interesting. When we bypassed our normal network path, everything worked smoothly - UDP and STUN packets were flowing like a well-orchestrated symphony. But throw our F5 load balancer into the mix? Complete silence. No UDP packets, no STUN packets, nothing.</p> <h2 id="the-plot-thickens">The Plot Thickens</h2> <p>Armed with these findings, we began our systematic investigation. Think of it as following breadcrumbs through a digital forest. Our trail led us through:</p> <ol> <li>The F5 load balancer (our first suspect)</li> <li>The Palo Alto firewall (which was looking more suspicious by the minute)</li> <li>Various network paths that could be causing this digital traffic jam</li> </ol> <h2 id="the-breakthrough-moment">The Breakthrough Moment</h2> <p>After diving deep into the Palo Alto firewall logs (yes, as exciting as it sounds), we struck gold. The packets weren’t even making it to our F5 load balancer - they were getting lost somewhere in the firewall maze.</p> <h2 id="crafting-the-solution">Crafting the Solution</h2> <p>Here’s where things get interesting. We took a multi-step approach:</p> <p>First, we basically created a clone of our existing bypass network policy in the Palo Alto firewall. Think of it as creating a new path through our digital maze, but this time with careful consideration of where it needed to go.</p> <p>Then came the clever part - we integrated our F5 WAF security zone into the policy framework. It’s like adding a new security checkpoint, but one that actually keeps traffic flowing smoothly.</p> <h2 id="the-final-twist">The Final Twist</h2> <p>The real breakthrough? It came down to the SIP protocol. Initially, we enabled the SIP protocol with the Application Layer Gateway (ALG) disabled, which acted like removing a roadblock. Later, we found we could disable the SIP protocol entirely - and surprisingly, everything worked even better!</p> <h2 id="happy-ending">Happy Ending</h2> <p>The result? Our vKYC application now runs as smooth as butter. No more constant reconnections, no more frustrated users, just a seamless experience like it should have been from the start.</p> <h2 id="key-takeaways">Key Takeaways</h2> <p>What did we learn from this adventure? Sometimes, the solution to a complex problem lies in systematic investigation and being willing to question every component in your stack. In our case, what seemed like a simple connectivity issue led us through load balancers, firewalls, and protocol configurations before we found our answer.</p> <p>Remember: in the world of technical troubleshooting, every clue counts, and sometimes the solution might be hiding in the most unexpected place.</p>]]></content><author><name></name></author><category term="Technical Troubleshooting"/><category term="vKYC"/><category term="Palo Alto"/><category term="Network Security"/><category term="F5 Load Balancer"/><category term="Firewall Configuration"/><category term="SIP Protocol"/><category term="Technical Analysis"/><summary type="html"><![CDATA[A detailed exploration of how our team diagnosed and resolved persistent connectivity issues in our video KYC application, offering valuable insights for technical teams facing similar challenges.]]></summary></entry><entry><title type="html">Threat Classification</title><link href="https://karankessy.github.io/blog/2024/threat-classification/" rel="alternate" type="text/html" title="Threat Classification"/><published>2024-09-26T15:41:15+00:00</published><updated>2024-09-26T15:41:15+00:00</updated><id>https://karankessy.github.io/blog/2024/threat-classification</id><content type="html" xml:base="https://karankessy.github.io/blog/2024/threat-classification/"><![CDATA[<h2 id="threat-classification">Threat Classification</h2> <p>Threat classification has been a go to process for categorizing security risks or potential dangers based on their level of severity and impact. This helps organizations prioritize their security measures and allocate resources effectively to mitigate the most critical threats.</p> <h3 id="threat-classification-concepts">Threat Classification Concepts</h3> <h4 id="known-knowns">Known-Knowns</h4> <p>“Known-knowns” refers to the threats that are known and understood by the organization. These threats are well documented, and mitigation strategies are in place.</p> <h4 id="known-unknowns">Known-Unknowns</h4> <p>“Known-unknowns” refers to the threats that are recognized but not fully understood by the organization. While the organization is aware of the potential risks, the exact nature of the threat and its impact remain unclear.</p> <h4 id="unknown-knowns">Unknown-Knowns</h4> <p>“Unknown-knowns” refers to situations where an organization is aware of a potential threat but chooses to ignore or dismiss it. This could be due to reasons such as complacency, lack of resources, or the belief that the threat is unlikely to occur.</p> <h4 id="unknown-unknowns">Unknown-Unknowns</h4> <p>“Unknown-unknowns” refers to threats that are completely unknown to the organization and may emerge from new or unforeseen sources. These threats can be particularly dangerous as the organization is not prepared to mitigate or defend against them.</p> <hr/> <h3 id="conclusion">Conclusion</h3> <p>Threat classification is a vital process for organizations to effectively manage their security risks. By categorizing potential threats based on their level of severity and impact, organizations can prioritize their security measures and allocate resources to mitigate the most critical risks.</p> <p>It is important for organizations to recognize all types of threats, including known-knowns, known-unknowns, unknown-knowns, and unknown-unknowns. By doing so, they can take proactive measures to reduce the likelihood and impact of security incidents, ensuring the safety and protection of their assets and stakeholders.</p>]]></content><author><name></name></author><category term="Cybersecurity"/><category term="Risk Management"/><category term="Classification"/><summary type="html"><![CDATA[Understanding the four categories of threat classification in cybersecurity - known-knowns, known-unknowns, unknown-knowns, and unknown-unknowns.]]></summary></entry><entry><title type="html">F5 TMOS Administration Essentials: Critical Concepts to be Remembered</title><link href="https://karankessy.github.io/blog/2024/f5-tmos-administration-essentials/" rel="alternate" type="text/html" title="F5 TMOS Administration Essentials: Critical Concepts to be Remembered"/><published>2024-07-18T10:30:00+00:00</published><updated>2024-07-18T10:30:00+00:00</updated><id>https://karankessy.github.io/blog/2024/f5-tmos-administration-essentials</id><content type="html" xml:base="https://karankessy.github.io/blog/2024/f5-tmos-administration-essentials/"><![CDATA[<p>Ever wondered what happens when a packet arrives at your F5 device? Let’s demystify the complex world of F5 TMOS administration and explore the crucial aspects that every administrator should have at their fingertips.</p> <h2 id="the-life-of-a-packet-a-seven-step-journey">The Life of a Packet: A Seven-Step Journey</h2> <p>Think of packet processing in F5 as a security checkpoint at an airport. Every packet goes through a specific order of processing, and understanding this flow is crucial for effective troubleshooting:</p> <ol> <li> <p><strong>First Stop: Connection Table Check</strong><br/> Like a frequent flyer getting fast-tracked, existing connections in the connection table get processed first. It’s your system’s way of saying, “Hey, I know this one!”</p> </li> <li> <p><strong>The Security Check: Packet Filter Rules</strong><br/> Just as airport security screens passengers, packet filter rules examine incoming traffic. These rules determine whether to allow or block the traffic based on predetermined criteria.</p> </li> <li> <p><strong>Virtual Server Verification</strong><br/> This is where your packet finds its destination gate. The system checks which virtual server should handle this incoming connection.</p> </li> <li> <p><strong>SNAT Investigation</strong><br/> Think of SNAT as the customs checkpoint, verifying if the incoming traffic matches with the SNAT pool of IP addresses.</p> </li> <li> <p><strong>NAT Processing</strong><br/> Like a currency exchange booth between two different zones, NAT checks if translation is needed between different VLANs.</p> </li> <li> <p><strong>Self-IP Verification</strong><br/> The final identity check - does this packet match any self-IP addresses?</p> </li> <li> <p><strong>The Drop Zone</strong><br/> If all else fails, like an unclaimed bag at the airport, the packet gets dropped.</p> </li> </ol> <h2 id="your-troubleshooting-toolkit">Your Troubleshooting Toolkit</h2> <p>When things go wrong (and they will), here’s your arsenal of diagnostic tools:</p> <ul> <li>Virtual Server stats: Your first line of investigation</li> <li>Pool/Pool member stats: For detailed performance metrics</li> <li>Logs: Your system’s black box recorder</li> <li>Connection table: To track active connections</li> <li>Routing table: For complex platform navigation</li> <li>Connectivity tests: Ping, telnet, and curl to verify pool member health</li> <li>Packet captures: When you need to see the raw truth</li> </ul> <h2 id="advanced-concepts-you-cant-ignore">Advanced Concepts You Can’t Ignore</h2> <h3 id="priority-group-activation-the-art-of-balance">Priority Group Activation: The Art of Balance</h3> <p>Imagine having six servers running two applications. Three servers primarily handle one application, while the other three handle another. PGA helps manage this delicate balance, ensuring optimal resource utilization.</p> <h3 id="persistence-and-fallback-a-different-perspective">Persistence and Fallback: A Different Perspective</h3> <p>Here’s something that might surprise you: when enabled, fallback persistence works concurrently rather than sequentially. It creates a key-value pair system (think cookie → source_IP) that operates simultaneously, not as a backup plan.</p> <h3 id="connection-mirroring-your-safety-net">Connection Mirroring: Your Safety Net</h3> <p>Think of connection mirroring as your digital backup singer - always ready to take over when needed. It ensures seamless failover by maintaining a mirror of your connections.</p> <h2 id="critical-administrative-tips">Critical Administrative Tips</h2> <h3 id="archive-management">Archive Management</h3> <p>Remember this golden rule: restoring an archive can cause downtime. Also, your private keys are in there, so treat your archives like crown jewels.</p> <h3 id="persistence-profile-configuration">Persistence Profile Configuration</h3> <p>Want to ensure each unique IP address creates a persistence record? Set your netmask to 255.255.255.255. It’s like giving each visitor their own VIP pass.</p> <h3 id="ucs-restoration-via-cli">UCS Restoration via CLI</h3> <p>Need to restore a UCS configuration through the command line? Here’s your magic spell:</p> <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>load/sys ucs &lt;filepath&gt; passphrase &lt;password&gt;
-</code></pre></div></div> <h2 id="the-bottom-line">The Bottom Line</h2> <p>F5 TMOS administration isn’t just about knowing the commands - it’s about understanding the flow, the relationships between components, and knowing where to look when things go sideways. Keep these concepts handy, and you’ll be well-equipped to handle whatever challenges come your way.</p> <p>Remember: in F5 administration, like in chess, thinking several moves ahead and understanding the relationships between different pieces is key to success.</p>]]></content><author><name></name></author><category term="F5"/><category term="TMOS"/><category term="Network Administration"/><category term="Load Balancing"/><category term="Technical Infrastructure"/><category term="DevOps"/><summary type="html"><![CDATA[Explore crucial aspects of F5 TMOS administration, from packet processing flow to advanced troubleshooting techniques. A comprehensive guide for network administrators and DevOps professionals.]]></summary></entry></feed>
+</span></code></pre></div></div> </li> </ul> <h2 id="tabs-for-something-else">Tabs for something else</h2> <ul id="something-else" class="tab" data-tab="b9bb8aa0-b78a-45ed-a40a-974a393261b3" data-name="something-else"> <li class="active" id="something-else-text"> <a href="#">text </a> </li> <li id="something-else-quote"> <a href="#">quote </a> </li> <li id="something-else-list"> <a href="#">list </a> </li> </ul> <ul class="tab-content" id="b9bb8aa0-b78a-45ed-a40a-974a393261b3" data-name="something-else"> <li class="active"> <p>Regular text</p> </li> <li> <blockquote> <p>A quote</p> </blockquote> </li> <li> <p>Hipster list</p> <ul> <li>brunch</li> <li>fixie</li> <li>raybans</li> <li>messenger bag</li> </ul> </li> </ul>]]></content><author><name></name></author><category term="sample-posts"/><category term="formatting"/><category term="code"/><summary type="html"><![CDATA[this is what included tabs in a post could look like]]></summary></entry><entry><title type="html">a post with typograms</title><link href="https://alshedivat.github.io/al-folio/blog/2024/typograms/" rel="alternate" type="text/html" title="a post with typograms"/><published>2024-04-29T23:36:10+00:00</published><updated>2024-04-29T23:36:10+00:00</updated><id>https://alshedivat.github.io/al-folio/blog/2024/typograms</id><content type="html" xml:base="https://alshedivat.github.io/al-folio/blog/2024/typograms/"><![CDATA[<p>This is an example post with some <a href="https://github.com/google/typograms/">typograms</a> code.</p> <div class="language-markdown highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">```</span><span class="nl">typograms
+</span><span class="sb">+----+
+|    |---&gt; My first diagram!
++----+</span>
+<span class="p">```</span>
+</code></pre></div></div> <p>Which generates:</p> <pre><code class="language-typograms">+----+
+|    |---&gt; My first diagram!
++----+
+</code></pre> <p>Another example:</p> <div class="language-markdown highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">```</span><span class="nl">typograms
+</span><span class="sb">.------------------------.
+|.----------------------.|
+||"https://example.com" ||
+|'----------------------'|
+| ______________________ |
+||                      ||
+||   Welcome!           ||
+||                      ||
+||                      ||
+||  .----------------.  ||
+||  | username       |  ||
+||  '----------------'  ||
+||  .----------------.  ||
+||  |"*******"       |  ||
+||  '----------------'  ||
+||                      ||
+||  .----------------.  ||
+||  |   "Sign-up"    |  ||
+||  '----------------'  ||
+||                      ||
+|+----------------------+|
+.------------------------.</span>
+<span class="p">```</span>
+</code></pre></div></div> <p>which generates:</p> <pre><code class="language-typograms">.------------------------.
+|.----------------------.|
+||"https://example.com" ||
+|'----------------------'|
+| ______________________ |
+||                      ||
+||   Welcome!           ||
+||                      ||
+||                      ||
+||  .----------------.  ||
+||  | username       |  ||
+||  '----------------'  ||
+||  .----------------.  ||
+||  |"*******"       |  ||
+||  '----------------'  ||
+||                      ||
+||  .----------------.  ||
+||  |   "Sign-up"    |  ||
+||  '----------------'  ||
+||                      ||
+|+----------------------+|
+.------------------------.
+</code></pre> <p>For more examples, check out the <a href="https://google.github.io/typograms/#examples">typograms documentation</a>.</p>]]></content><author><name></name></author><category term="sample-posts"/><category term="formatting"/><category term="diagrams"/><summary type="html"><![CDATA[this is what included typograms code could look like]]></summary></entry><entry><title type="html">a post that can be cited</title><link href="https://alshedivat.github.io/al-folio/blog/2024/post-citation/" rel="alternate" type="text/html" title="a post that can be cited"/><published>2024-04-28T15:06:00+00:00</published><updated>2024-04-28T15:06:00+00:00</updated><id>https://alshedivat.github.io/al-folio/blog/2024/post-citation</id><content type="html" xml:base="https://alshedivat.github.io/al-folio/blog/2024/post-citation/"><![CDATA[<p>This is an example post that can be cited. The content of the post ends here, while the citation information is automatically provided below. The only thing needed is for you to set the <code class="language-plaintext highlighter-rouge">citation</code> key in the front matter to <code class="language-plaintext highlighter-rouge">true</code>.</p>]]></content><author><name></name></author><category term="sample-posts"/><category term="formatting"/><category term="citation"/><summary type="html"><![CDATA[this is what a post that can be cited looks like]]></summary></entry><entry><title type="html">a post with pseudo code</title><link href="https://alshedivat.github.io/al-folio/blog/2024/pseudocode/" rel="alternate" type="text/html" title="a post with pseudo code"/><published>2024-04-15T00:01:00+00:00</published><updated>2024-04-15T00:01:00+00:00</updated><id>https://alshedivat.github.io/al-folio/blog/2024/pseudocode</id><content type="html" xml:base="https://alshedivat.github.io/al-folio/blog/2024/pseudocode/"><![CDATA[<p>This is an example post with some pseudo code rendered by <a href="https://github.com/SaswatPadhi/pseudocode.js">pseudocode</a>. The example presented here is the same as the one in the <a href="https://saswat.padhi.me/pseudocode.js/">pseudocode.js</a> documentation, with only one simple but important change: everytime you would use <code class="language-plaintext highlighter-rouge">$</code>, you should use <code class="language-plaintext highlighter-rouge">$$</code> instead. Also, note that the <code class="language-plaintext highlighter-rouge">pseudocode</code> key in the front matter is set to <code class="language-plaintext highlighter-rouge">true</code> to enable the rendering of pseudo code. As an example, using this code:</p> <div class="language-markdown highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">```</span><span class="nl">pseudocode
+</span><span class="sb">% This quicksort algorithm is extracted from Chapter 7, Introduction to Algorithms (3rd edition)
+\begin{algorithm}
+\caption{Quicksort}
+\begin{algorithmic}
+\PROCEDURE{Quicksort}{$$A, p, r$$}
+    \IF{$$p &lt; r$$}
+        \STATE $$q = $$ \CALL{Partition}{$$A, p, r$$}
+        \STATE \CALL{Quicksort}{$$A, p, q - 1$$}
+        \STATE \CALL{Quicksort}{$$A, q + 1, r$$}
+    \ENDIF
+\ENDPROCEDURE
+\PROCEDURE{Partition}{$$A, p, r$$}
+    \STATE $$x = A[r]$$
+    \STATE $$i = p - 1$$
+    \FOR{$$j = p$$ \TO $$r - 1$$}
+        \IF{$$A[j] &lt; x$$}
+            \STATE $$i = i + 1$$
+            \STATE exchange
+            $$A[i]$$ with $$A[j]$$
+        \ENDIF
+        \STATE exchange $$A[i]$$ with $$A[r]$$
+    \ENDFOR
+\ENDPROCEDURE
+\end{algorithmic}
+\end{algorithm}</span>
+<span class="p">```</span>
+</code></pre></div></div> <p>Generates:</p> <pre><code class="language-pseudocode">% This quicksort algorithm is extracted from Chapter 7, Introduction to Algorithms (3rd edition)
+\begin{algorithm}
+\caption{Quicksort}
+\begin{algorithmic}
+\PROCEDURE{Quicksort}{$$A, p, r$$}
+    \IF{$$p &lt; r$$}
+        \STATE $$q = $$ \CALL{Partition}{$$A, p, r$$}
+        \STATE \CALL{Quicksort}{$$A, p, q - 1$$}
+        \STATE \CALL{Quicksort}{$$A, q + 1, r$$}
+    \ENDIF
+\ENDPROCEDURE
+\PROCEDURE{Partition}{$$A, p, r$$}
+    \STATE $$x = A[r]$$
+    \STATE $$i = p - 1$$
+    \FOR{$$j = p$$ \TO $$r - 1$$}
+        \IF{$$A[j] &lt; x$$}
+            \STATE $$i = i + 1$$
+            \STATE exchange
+            $$A[i]$$ with $$A[j]$$
+        \ENDIF
+        \STATE exchange $$A[i]$$ with $$A[r]$$
+    \ENDFOR
+\ENDPROCEDURE
+\end{algorithmic}
+\end{algorithm}
+</code></pre>]]></content><author><name></name></author><category term="sample-posts"/><category term="formatting"/><category term="code"/><summary type="html"><![CDATA[this is what included pseudo code could look like]]></summary></entry><entry><title type="html">a post with code diff</title><link href="https://alshedivat.github.io/al-folio/blog/2024/code-diff/" rel="alternate" type="text/html" title="a post with code diff"/><published>2024-01-27T19:22:00+00:00</published><updated>2024-01-27T19:22:00+00:00</updated><id>https://alshedivat.github.io/al-folio/blog/2024/code-diff</id><content type="html" xml:base="https://alshedivat.github.io/al-folio/blog/2024/code-diff/"><![CDATA[<p>You can display diff code by using the regular markdown syntax:</p> <div class="language-markdown highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">```</span><span class="nl">diff
+</span><span class="gh">diff --git a/sample.js b/sample.js
+index 0000001..0ddf2ba
+</span><span class="gd">--- a/sample.js
+</span><span class="gi">+++ b/sample.js
+</span><span class="p">@@ -1 +1 @@</span>
+<span class="gd">-console.log("Hello World!")
+</span><span class="gi">+console.log("Hello from Diff2Html!")</span>
+<span class="p">```</span>
+</code></pre></div></div> <p>Which generates:</p> <div class="language-diff highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="gh">diff --git a/sample.js b/sample.js
+index 0000001..0ddf2ba
+</span><span class="gd">--- a/sample.js
+</span><span class="gi">+++ b/sample.js
+</span><span class="p">@@ -1 +1 @@</span>
+<span class="gd">-console.log("Hello World!")
+</span><span class="gi">+console.log("Hello from Diff2Html!")
+</span></code></pre></div></div> <p>But this is difficult to read, specially if you have a large diff. You can use <a href="https://diff2html.xyz/">diff2html</a> to display a more readable version of the diff. For this, just use <code class="language-plaintext highlighter-rouge">diff2html</code> instead of <code class="language-plaintext highlighter-rouge">diff</code> for the code block language:</p> <div class="language-markdown highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">```</span><span class="nl">diff2html
+</span><span class="sb">diff --git a/sample.js b/sample.js
+index 0000001..0ddf2ba
+--- a/sample.js
++++ b/sample.js
+@@ -1 +1 @@
+-console.log("Hello World!")
++console.log("Hello from Diff2Html!")</span>
+<span class="p">```</span>
+</code></pre></div></div> <p>If we use a longer example, for example <a href="https://github.com/rtfpessoa/diff2html/commit/c2c253d3e3f8b8b267f551e659f72b44ca2ac927">this commit from diff2html</a>, it will generate the following output:</p> <pre><code class="language-diff2html">From 2aaae31cc2a37bfff83430c2c914b140bee59b6a Mon Sep 17 00:00:00 2001
+From: Rodrigo Fernandes &lt;rtfrodrigo@gmail.com&gt;
+Date: Sun, 9 Oct 2016 16:41:54 +0100
+Subject: [PATCH 1/2] Initial template override support
+
+---
+ scripts/hulk.js                    |  4 ++--
+ src/diff2html.js                   |  3 +--
+ src/file-list-printer.js           | 11 ++++++++---
+ src/hoganjs-utils.js               | 29 +++++++++++++++++------------
+ src/html-printer.js                |  6 ++++++
+ src/line-by-line-printer.js        |  6 +++++-
+ src/side-by-side-printer.js        |  6 +++++-
+ test/file-list-printer-tests.js    |  2 +-
+ test/hogan-cache-tests.js          | 18 +++++++++++++++---
+ test/line-by-line-tests.js         |  3 +--
+ test/side-by-side-printer-tests.js |  3 +--
+ 11 files changed, 62 insertions(+), 29 deletions(-)
+
+diff --git a/scripts/hulk.js b/scripts/hulk.js
+index 5a793c18..a4b1a4d5 100755
+--- a/scripts/hulk.js
++++ b/scripts/hulk.js
+@@ -173,11 +173,11 @@ function namespace(name) {
+ // write a template foreach file that matches template extension
+ templates = extractFiles(options.argv.remain)
+   .map(function(file) {
+-    var openedFile = fs.readFileSync(file, 'utf-8');
++    var openedFile = fs.readFileSync(file, 'utf-8').trim();
+     var name;
+     if (!openedFile) return;
+     name = namespace(path.basename(file).replace(/\..*$/, ''));
+-    openedFile = removeByteOrderMark(openedFile.trim());
++    openedFile = removeByteOrderMark(openedFile);
+     openedFile = wrap(file, name, openedFile);
+     if (!options.outputdir) return openedFile;
+     fs.writeFileSync(path.join(options.outputdir, name + '.js')
+diff --git a/src/diff2html.js b/src/diff2html.js
+index 21b0119e..64e138f5 100644
+--- a/src/diff2html.js
++++ b/src/diff2html.js
+@@ -7,7 +7,6 @@
+
+ (function() {
+   var diffParser = require('./diff-parser.js').DiffParser;
+-  var fileLister = require('./file-list-printer.js').FileListPrinter;
+   var htmlPrinter = require('./html-printer.js').HtmlPrinter;
+
+   function Diff2Html() {
+@@ -43,7 +42,7 @@
+
+     var fileList = '';
+     if (configOrEmpty.showFiles === true) {
+-      fileList = fileLister.generateFileList(diffJson, configOrEmpty);
++      fileList = htmlPrinter.generateFileListSummary(diffJson, configOrEmpty);
+     }
+
+     var diffOutput = '';
+diff --git a/src/file-list-printer.js b/src/file-list-printer.js
+index e408d9b2..1e0a2c61 100644
+--- a/src/file-list-printer.js
++++ b/src/file-list-printer.js
+@@ -8,11 +8,16 @@
+ (function() {
+   var printerUtils = require('./printer-utils.js').PrinterUtils;
+
+-  var hoganUtils = require('./hoganjs-utils.js').HoganJsUtils;
++  var hoganUtils;
++
+   var baseTemplatesPath = 'file-summary';
+   var iconsBaseTemplatesPath = 'icon';
+
+-  function FileListPrinter() {
++  function FileListPrinter(config) {
++    this.config = config;
++
++    var HoganJsUtils = require('./hoganjs-utils.js').HoganJsUtils;
++    hoganUtils = new HoganJsUtils(config);
+   }
+
+   FileListPrinter.prototype.generateFileList = function(diffFiles) {
+@@ -38,5 +43,5 @@
+     });
+   };
+
+-  module.exports.FileListPrinter = new FileListPrinter();
++  module.exports.FileListPrinter = FileListPrinter;
+ })();
+diff --git a/src/hoganjs-utils.js b/src/hoganjs-utils.js
+index 9949e5fa..0dda08d7 100644
+--- a/src/hoganjs-utils.js
++++ b/src/hoganjs-utils.js
+@@ -8,18 +8,19 @@
+ (function() {
+   var fs = require('fs');
+   var path = require('path');
+-
+   var hogan = require('hogan.js');
+
+   var hoganTemplates = require('./templates/diff2html-templates.js');
+
+-  var templatesPath = path.resolve(__dirname, 'templates');
++  var extraTemplates;
+
+-  function HoganJsUtils() {
++  function HoganJsUtils(configuration) {
++    this.config = configuration || {};
++    extraTemplates = this.config.templates || {};
+   }
+
+-  HoganJsUtils.prototype.render = function(namespace, view, params, configuration) {
+-    var template = this.template(namespace, view, configuration);
++  HoganJsUtils.prototype.render = function(namespace, view, params) {
++    var template = this.template(namespace, view);
+     if (template) {
+       return template.render(params);
+     }
+@@ -27,17 +28,16 @@
+     return null;
+   };
+
+-  HoganJsUtils.prototype.template = function(namespace, view, configuration) {
+-    var config = configuration || {};
++  HoganJsUtils.prototype.template = function(namespace, view) {
+     var templateKey = this._templateKey(namespace, view);
+
+-    return this._getTemplate(templateKey, config);
++    return this._getTemplate(templateKey);
+   };
+
+-  HoganJsUtils.prototype._getTemplate = function(templateKey, config) {
++  HoganJsUtils.prototype._getTemplate = function(templateKey) {
+     var template;
+
+-    if (!config.noCache) {
++    if (!this.config.noCache) {
+       template = this._readFromCache(templateKey);
+     }
+
+@@ -53,6 +53,7 @@
+
+     try {
+       if (fs.readFileSync) {
++        var templatesPath = path.resolve(__dirname, 'templates');
+         var templatePath = path.join(templatesPath, templateKey);
+         var templateContent = fs.readFileSync(templatePath + '.mustache', 'utf8');
+         template = hogan.compile(templateContent);
+@@ -66,12 +67,16 @@
+   };
+
+   HoganJsUtils.prototype._readFromCache = function(templateKey) {
+-    return hoganTemplates[templateKey];
++    return extraTemplates[templateKey] || hoganTemplates[templateKey];
+   };
+
+   HoganJsUtils.prototype._templateKey = function(namespace, view) {
+     return namespace + '-' + view;
+   };
+
+-  module.exports.HoganJsUtils = new HoganJsUtils();
++  HoganJsUtils.prototype.compile = function(templateStr) {
++    return hogan.compile(templateStr);
++  };
++
++  module.exports.HoganJsUtils = HoganJsUtils;
+ })();
+diff --git a/src/html-printer.js b/src/html-printer.js
+index 585d5b66..13f83047 100644
+--- a/src/html-printer.js
++++ b/src/html-printer.js
+@@ -8,6 +8,7 @@
+ (function() {
+   var LineByLinePrinter = require('./line-by-line-printer.js').LineByLinePrinter;
+   var SideBySidePrinter = require('./side-by-side-printer.js').SideBySidePrinter;
++  var FileListPrinter = require('./file-list-printer.js').FileListPrinter;
+
+   function HtmlPrinter() {
+   }
+@@ -22,5 +23,10 @@
+     return sideBySidePrinter.generateSideBySideJsonHtml(diffFiles);
+   };
+
++  HtmlPrinter.prototype.generateFileListSummary = function(diffJson, config) {
++    var fileListPrinter = new FileListPrinter(config);
++    return fileListPrinter.generateFileList(diffJson);
++  };
++
+   module.exports.HtmlPrinter = new HtmlPrinter();
+ })();
+diff --git a/src/line-by-line-printer.js b/src/line-by-line-printer.js
+index b07eb53c..d230bedd 100644
+--- a/src/line-by-line-printer.js
++++ b/src/line-by-line-printer.js
+@@ -11,7 +11,8 @@
+   var utils = require('./utils.js').Utils;
+   var Rematch = require('./rematch.js').Rematch;
+
+-  var hoganUtils = require('./hoganjs-utils.js').HoganJsUtils;
++  var hoganUtils;
++
+   var genericTemplatesPath = 'generic';
+   var baseTemplatesPath = 'line-by-line';
+   var iconsBaseTemplatesPath = 'icon';
+@@ -19,6 +20,9 @@
+
+   function LineByLinePrinter(config) {
+     this.config = config;
++
++    var HoganJsUtils = require('./hoganjs-utils.js').HoganJsUtils;
++    hoganUtils = new HoganJsUtils(config);
+   }
+
+   LineByLinePrinter.prototype.makeFileDiffHtml = function(file, diffs) {
+diff --git a/src/side-by-side-printer.js b/src/side-by-side-printer.js
+index bbf1dc8d..5e3033b3 100644
+--- a/src/side-by-side-printer.js
++++ b/src/side-by-side-printer.js
+@@ -11,7 +11,8 @@
+   var utils = require('./utils.js').Utils;
+   var Rematch = require('./rematch.js').Rematch;
+
+-  var hoganUtils = require('./hoganjs-utils.js').HoganJsUtils;
++  var hoganUtils;
++
+   var genericTemplatesPath = 'generic';
+   var baseTemplatesPath = 'side-by-side';
+   var iconsBaseTemplatesPath = 'icon';
+@@ -26,6 +27,9 @@
+
+   function SideBySidePrinter(config) {
+     this.config = config;
++
++    var HoganJsUtils = require('./hoganjs-utils.js').HoganJsUtils;
++    hoganUtils = new HoganJsUtils(config);
+   }
+
+   SideBySidePrinter.prototype.makeDiffHtml = function(file, diffs) {
+diff --git a/test/file-list-printer-tests.js b/test/file-list-printer-tests.js
+index a502a46f..60ea3208 100644
+--- a/test/file-list-printer-tests.js
++++ b/test/file-list-printer-tests.js
+@@ -1,6 +1,6 @@
+ var assert = require('assert');
+
+-var fileListPrinter = require('../src/file-list-printer.js').FileListPrinter;
++var fileListPrinter = new (require('../src/file-list-printer.js').FileListPrinter)();
+
+ describe('FileListPrinter', function() {
+   describe('generateFileList', function() {
+diff --git a/test/hogan-cache-tests.js b/test/hogan-cache-tests.js
+index 190bf6f8..3bb754ac 100644
+--- a/test/hogan-cache-tests.js
++++ b/test/hogan-cache-tests.js
+@@ -1,6 +1,6 @@
+ var assert = require('assert');
+
+-var HoganJsUtils = require('../src/hoganjs-utils.js').HoganJsUtils;
++var HoganJsUtils = new (require('../src/hoganjs-utils.js').HoganJsUtils)();
+ var diffParser = require('../src/diff-parser.js').DiffParser;
+
+ describe('HoganJsUtils', function() {
+@@ -21,16 +21,28 @@ describe('HoganJsUtils', function() {
+       });
+       assert.equal(emptyDiffHtml, result);
+     });
++
+     it('should render view without cache', function() {
+       var result = HoganJsUtils.render('generic', 'empty-diff', {
+         contentClass: 'd2h-code-line',
+         diffParser: diffParser
+       }, {noCache: true});
+-      assert.equal(emptyDiffHtml + '\n', result);
++      assert.equal(emptyDiffHtml, result);
+     });
++
+     it('should return null if template is missing', function() {
+-      var result = HoganJsUtils.render('generic', 'missing-template', {}, {noCache: true});
++      var hoganUtils = new (require('../src/hoganjs-utils.js').HoganJsUtils)({noCache: true});
++      var result = hoganUtils.render('generic', 'missing-template', {});
+       assert.equal(null, result);
+     });
++
++    it('should allow templates to be overridden', function() {
++      var emptyDiffTemplate = HoganJsUtils.compile('&lt;p&gt;&lt;/p&gt;');
++
++      var config = {templates: {'generic-empty-diff': emptyDiffTemplate}};
++      var hoganUtils = new (require('../src/hoganjs-utils.js').HoganJsUtils)(config);
++      var result = hoganUtils.render('generic', 'empty-diff', {myName: 'Rodrigo Fernandes'});
++      assert.equal('&lt;p&gt;Rodrigo Fernandes&lt;/p&gt;', result);
++    });
+   });
+ });
+diff --git a/test/line-by-line-tests.js b/test/line-by-line-tests.js
+index 1cd92073..8869b3df 100644
+--- a/test/line-by-line-tests.js
++++ b/test/line-by-line-tests.js
+@@ -14,7 +14,7 @@ describe('LineByLinePrinter', function() {
+         '            File without changes\n' +
+         '        &lt;/div&gt;\n' +
+         '    &lt;/td&gt;\n' +
+-        '&lt;/tr&gt;\n';
++        '&lt;/tr&gt;';
+
+       assert.equal(expected, fileHtml);
+     });
+@@ -422,7 +422,6 @@ describe('LineByLinePrinter', function() {
+         '        &lt;/div&gt;\n' +
+         '    &lt;/td&gt;\n' +
+         '&lt;/tr&gt;\n' +
+-        '\n' +
+         '                &lt;/tbody&gt;\n' +
+         '            &lt;/table&gt;\n' +
+         '        &lt;/div&gt;\n' +
+diff --git a/test/side-by-side-printer-tests.js b/test/side-by-side-printer-tests.js
+index 76625f8e..771daaa5 100644
+--- a/test/side-by-side-printer-tests.js
++++ b/test/side-by-side-printer-tests.js
+@@ -14,7 +14,7 @@ describe('SideBySidePrinter', function() {
+         '            File without changes\n' +
+         '        &lt;/div&gt;\n' +
+         '    &lt;/td&gt;\n' +
+-        '&lt;/tr&gt;\n';
++        '&lt;/tr&gt;';
+
+       assert.equal(expectedRight, fileHtml.right);
+       assert.equal(expectedLeft, fileHtml.left);
+@@ -324,7 +324,6 @@ describe('SideBySidePrinter', function() {
+         '        &lt;/div&gt;\n' +
+         '    &lt;/td&gt;\n' +
+         '&lt;/tr&gt;\n' +
+-        '\n' +
+         '                    &lt;/tbody&gt;\n' +
+         '                &lt;/table&gt;\n' +
+         '            &lt;/div&gt;\n' +
+
+From f3cadb96677d0eb82fc2752dc3ffbf35ca9b5bdb Mon Sep 17 00:00:00 2001
+From: Rodrigo Fernandes &lt;rtfrodrigo@gmail.com&gt;
+Date: Sat, 15 Oct 2016 13:21:22 +0100
+Subject: [PATCH 2/2] Allow uncompiled templates
+
+---
+ README.md                 |  3 +++
+ src/hoganjs-utils.js      |  7 +++++++
+ test/hogan-cache-tests.js | 24 +++++++++++++++++++++++-
+ 3 files changed, 33 insertions(+), 1 deletion(-)
+
+diff --git a/README.md b/README.md
+index 132c8a28..46909f25 100644
+--- a/README.md
++++ b/README.md
+@@ -98,6 +98,9 @@ The HTML output accepts a Javascript object with configuration. Possible options
+   - `synchronisedScroll`: scroll both panes in side-by-side mode: `true` or `false`, default is `false`
+   - `matchWordsThreshold`: similarity threshold for word matching, default is 0.25
+   - `matchingMaxComparisons`: perform at most this much comparisons for line matching a block of changes, default is `2500`
++  - `templates`: object with previously compiled templates to replace parts of the html
++  - `rawTemplates`: object with raw not compiled templates to replace parts of the html
++  &gt; For more information regarding the possible templates look into [src/templates](https://github.com/rtfpessoa/diff2html/tree/master/src/templates)
+
+ ## Diff2HtmlUI Helper
+
+diff --git a/src/hoganjs-utils.js b/src/hoganjs-utils.js
+index 0dda08d7..b2e9c275 100644
+--- a/src/hoganjs-utils.js
++++ b/src/hoganjs-utils.js
+@@ -17,6 +17,13 @@
+   function HoganJsUtils(configuration) {
+     this.config = configuration || {};
+     extraTemplates = this.config.templates || {};
++
++    var rawTemplates = this.config.rawTemplates || {};
++    for (var templateName in rawTemplates) {
++      if (rawTemplates.hasOwnProperty(templateName)) {
++        if (!extraTemplates[templateName]) extraTemplates[templateName] = this.compile(rawTemplates[templateName]);
++      }
++    }
+   }
+
+   HoganJsUtils.prototype.render = function(namespace, view, params) {
+diff --git a/test/hogan-cache-tests.js b/test/hogan-cache-tests.js
+index 3bb754ac..a34839c0 100644
+--- a/test/hogan-cache-tests.js
++++ b/test/hogan-cache-tests.js
+@@ -36,7 +36,7 @@ describe('HoganJsUtils', function() {
+       assert.equal(null, result);
+     });
+
+-    it('should allow templates to be overridden', function() {
++    it('should allow templates to be overridden with compiled templates', function() {
+       var emptyDiffTemplate = HoganJsUtils.compile('&lt;p&gt;&lt;/p&gt;');
+
+       var config = {templates: {'generic-empty-diff': emptyDiffTemplate}};
+@@ -44,5 +44,27 @@ describe('HoganJsUtils', function() {
+       var result = hoganUtils.render('generic', 'empty-diff', {myName: 'Rodrigo Fernandes'});
+       assert.equal('&lt;p&gt;Rodrigo Fernandes&lt;/p&gt;', result);
+     });
++
++    it('should allow templates to be overridden with uncompiled templates', function() {
++      var emptyDiffTemplate = '&lt;p&gt;&lt;/p&gt;';
++
++      var config = {rawTemplates: {'generic-empty-diff': emptyDiffTemplate}};
++      var hoganUtils = new (require('../src/hoganjs-utils.js').HoganJsUtils)(config);
++      var result = hoganUtils.render('generic', 'empty-diff', {myName: 'Rodrigo Fernandes'});
++      assert.equal('&lt;p&gt;Rodrigo Fernandes&lt;/p&gt;', result);
++    });
++
++    it('should allow templates to be overridden giving priority to compiled templates', function() {
++      var emptyDiffTemplate = HoganJsUtils.compile('&lt;p&gt;&lt;/p&gt;');
++      var emptyDiffTemplateUncompiled = '&lt;p&gt;Not used!&lt;/p&gt;';
++
++      var config = {
++        templates: {'generic-empty-diff': emptyDiffTemplate},
++        rawTemplates: {'generic-empty-diff': emptyDiffTemplateUncompiled}
++      };
++      var hoganUtils = new (require('../src/hoganjs-utils.js').HoganJsUtils)(config);
++      var result = hoganUtils.render('generic', 'empty-diff', {myName: 'Rodrigo Fernandes'});
++      assert.equal('&lt;p&gt;Rodrigo Fernandes&lt;/p&gt;', result);
++    });
+   });
+ });
+</code></pre>]]></content><author><name></name></author><category term="sample-posts"/><category term="formatting"/><category term="code"/><summary type="html"><![CDATA[this is how you can display code diffs]]></summary></entry><entry><title type="html">a post with advanced image components</title><link href="https://alshedivat.github.io/al-folio/blog/2024/advanced-images/" rel="alternate" type="text/html" title="a post with advanced image components"/><published>2024-01-27T11:46:00+00:00</published><updated>2024-01-27T11:46:00+00:00</updated><id>https://alshedivat.github.io/al-folio/blog/2024/advanced-images</id><content type="html" xml:base="https://alshedivat.github.io/al-folio/blog/2024/advanced-images/"><![CDATA[<p>This is an example post with advanced image components.</p> <h2 id="image-slider">Image Slider</h2> <p>This is a simple image slider. It uses the <a href="https://swiperjs.com/">Swiper</a> library. Check the <a href="https://swiperjs.com/demos">examples page</a> for more information of what you can achieve with it.</p> <swiper-container keyboard="true" navigation="true" pagination="true" pagination-clickable="true" pagination-dynamic-bullets="true" rewind="true"> <swiper-slide> <figure> <picture> <source class="responsive-img-srcset" srcset="/al-folio/assets/img/9-480.webp 480w,/al-folio/assets/img/9-800.webp 800w,/al-folio/assets/img/9-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/al-folio/assets/img/9.jpg" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> </swiper-slide> <swiper-slide> <figure> <picture> <source class="responsive-img-srcset" srcset="/al-folio/assets/img/7-480.webp 480w,/al-folio/assets/img/7-800.webp 800w,/al-folio/assets/img/7-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/al-folio/assets/img/7.jpg" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> </swiper-slide> <swiper-slide> <figure> <picture> <source class="responsive-img-srcset" srcset="/al-folio/assets/img/8-480.webp 480w,/al-folio/assets/img/8-800.webp 800w,/al-folio/assets/img/8-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/al-folio/assets/img/8.jpg" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> </swiper-slide> <swiper-slide> <figure> <picture> <source class="responsive-img-srcset" srcset="/al-folio/assets/img/10-480.webp 480w,/al-folio/assets/img/10-800.webp 800w,/al-folio/assets/img/10-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/al-folio/assets/img/10.jpg" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> </swiper-slide> <swiper-slide> <figure> <picture> <source class="responsive-img-srcset" srcset="/al-folio/assets/img/12-480.webp 480w,/al-folio/assets/img/12-800.webp 800w,/al-folio/assets/img/12-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/al-folio/assets/img/12.jpg" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> </swiper-slide> </swiper-container> <h2 id="image-comparison-slider">Image Comparison Slider</h2> <p>This is a simple image comparison slider. It uses the <a href="https://img-comparison-slider.sneas.io/">img-comparison-slider</a> library. Check the <a href="https://img-comparison-slider.sneas.io/examples.html">examples page</a> for more information of what you can achieve with it.</p> <img-comparison-slider> <figure slot="first"> <picture> <source class="responsive-img-srcset" srcset="/al-folio/assets/img/prof_pic-480.webp 480w,/al-folio/assets/img/prof_pic-800.webp 800w,/al-folio/assets/img/prof_pic-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/al-folio/assets/img/prof_pic.jpg" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="lazy" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> <figure slot="second"> <picture> <source class="responsive-img-srcset" srcset="/al-folio/assets/img/prof_pic_color-480.webp 480w,/al-folio/assets/img/prof_pic_color-800.webp 800w,/al-folio/assets/img/prof_pic_color-1400.webp 1400w," type="image/webp" sizes="95vw"/> <img src="/al-folio/assets/img/prof_pic_color.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="lazy" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> </img-comparison-slider>]]></content><author><name></name></author><category term="sample-posts"/><category term="formatting"/><category term="images"/><summary type="html"><![CDATA[this is what advanced image components could look like]]></summary></entry><entry><title type="html">a post with vega lite</title><link href="https://alshedivat.github.io/al-folio/blog/2024/vega-lite/" rel="alternate" type="text/html" title="a post with vega lite"/><published>2024-01-27T00:20:00+00:00</published><updated>2024-04-14T04:30:00+00:00</updated><id>https://alshedivat.github.io/al-folio/blog/2024/vega-lite</id><content type="html" xml:base="https://alshedivat.github.io/al-folio/blog/2024/vega-lite/"><![CDATA[<p>This is an example post with some <a href="https://vega.github.io/vega-lite/">vega lite</a> code.</p> <div class="language-markdown highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">```</span><span class="nl">vega_lite
+</span><span class="sb">{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "A dot plot showing each movie in the database, and the difference from the average movie rating. The display is sorted by year to visualize everything in sequential order. The graph is for all Movies before 2019.",
+  "data": {
+    "url": "https://raw.githubusercontent.com/vega/vega/main/docs/data/movies.json"
+  },
+  "transform": [
+    {"filter": "datum['IMDB Rating'] != null"},
+    {"filter": {"timeUnit": "year", "field": "Release Date", "range": [null, 2019]}},
+    {
+      "joinaggregate": [{
+        "op": "mean",
+        "field": "IMDB Rating",
+        "as": "AverageRating"
+      }]
+    },
+    {
+      "calculate": "datum['IMDB Rating'] - datum.AverageRating",
+      "as": "RatingDelta"
+    }
+  ],
+  "mark": "point",
+  "encoding": {
+    "x": {
+      "field": "Release Date",
+      "type": "temporal"
+    },
+    "y": {
+      "field": "RatingDelta",
+      "type": "quantitative",
+      "title": "Rating Delta"
+    },
+    "color": {
+      "field": "RatingDelta",
+      "type": "quantitative",
+      "scale": {"domainMid": 0},
+      "title": "Rating Delta"
+    }
+  }
+}</span>
+<span class="p">```</span>
+</code></pre></div></div> <p>Which generates:</p> <pre><code class="language-vega_lite">{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "A dot plot showing each movie in the database, and the difference from the average movie rating. The display is sorted by year to visualize everything in sequential order. The graph is for all Movies before 2019.",
+  "data": {
+    "url": "https://raw.githubusercontent.com/vega/vega/main/docs/data/movies.json"
+  },
+  "transform": [
+    {"filter": "datum['IMDB Rating'] != null"},
+    {"filter": {"timeUnit": "year", "field": "Release Date", "range": [null, 2019]}},
+    {
+      "joinaggregate": [{
+        "op": "mean",
+        "field": "IMDB Rating",
+        "as": "AverageRating"
+      }]
+    },
+    {
+      "calculate": "datum['IMDB Rating'] - datum.AverageRating",
+      "as": "RatingDelta"
+    }
+  ],
+  "mark": "point",
+  "encoding": {
+    "x": {
+      "field": "Release Date",
+      "type": "temporal"
+    },
+    "y": {
+      "field": "RatingDelta",
+      "type": "quantitative",
+      "title": "Rating Delta"
+    },
+    "color": {
+      "field": "RatingDelta",
+      "type": "quantitative",
+      "scale": {"domainMid": 0},
+      "title": "Rating Delta"
+    }
+  }
+}
+</code></pre> <p>This plot supports both light and dark themes.</p>]]></content><author><name></name></author><category term="sample-posts"/><category term="formatting"/><category term="charts"/><summary type="html"><![CDATA[this is what included vega lite code could look like]]></summary></entry></feed>
