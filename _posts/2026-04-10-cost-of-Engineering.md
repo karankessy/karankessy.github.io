@@ -1,33 +1,23 @@
 ---
 layout: post
-title: "The Cost of Free Security, Wazuh and the Engineering Bill"
+title: "The Cost of Free Security: Wazuh and the Engineering Bill"
 date: 2026-04-10 10:00:00
-description: "CrowdStrike like solutions costs money and control. Wazuh costs engineering time. Understanding the fundamental tradeoff between a fully integrated commercial XDR platforms and an open-source security foundation you customize yourself."
+description: "CrowdStrike costs money and control. Wazuh costs engineering time. Understanding the fundamental tradeoff between a fully integrated commercial XDR platform and an open-source security foundation you customize yourself."
 tags: security siem xdr detection response wazuh crowdstrike
 categories: security
 ---
 
-The real question is not whether Wazuh has every capability out of the box. The real question is whether your team does.
-
----
-
-Starting with where the most of us start: the criticism.
+{% include figure.liquid loading="eager" path="/assets/img/wazuh-crowdstrike-comparison.png" alt="Wazuh vs CrowdStrike: Bundled vs Unbundled Security" %}
 
 The real question is not whether Wazuh has every capability out of the box. The real question is whether your team does.
 
 ---
 
-Start where most people start: the criticism.
+## Starting with the Criticism
 
 Spend any time in security forums or vendor comparison threads and you will hear the same takes. Wazuh does not have real machine learning. Its behavioral detection cannot match CrowdStrike Falcon. The response automation feels clunky. There is no native SOAR. You cannot get proper network telemetry without bolting on several other tools.
 
-And no, this isn't just a CrowdStrike or Wazuh problem. It's about every major vendor out there packaging their solutions into neat little bundles and walking away with bundles of cash.
-
-Small vendors building on top of Wazuh as a foundation, integrating things thoughtfully, and charging a fair price for that effort? That seems completely fine. That's honest work.
-
-But when costs balloon at the enterprise level, there's another side to that story too. The engineering effort, the manpower, the infrastructure behind it. That's where a big chunk of that price tag actually comes from.
-
-And the thing is. On the surface, none of that is wrong.
+And here is the thing. On the surface, none of that is wrong.
 
 The mistake is not in noticing the gaps. The mistake is in what you conclude from them. Because there is a meaningful difference between a platform that cannot do something and a platform that delegates it. That difference changes the entire conversation.
 
@@ -128,7 +118,5 @@ The criticism of Wazuh is real but incomplete. The platform does not lack capabi
 The honest question was never whether Wazuh is as good as CrowdStrike. It was always simpler than that: does your team have the skill and infrastructure to finish what Wazuh starts?
 
 If yes, you have something powerful. If no, the limitation is in the context, not the tool.
-
----
 
 - Be a part of Wazuh Ambassadors Program, if you believe you're a good fit: [https://wazuh.com/ambassadors-program/](https://wazuh.com/ambassadors-program/?utm_source=ambassadors&utm_medium=referral&utm_campaign=ambassadors+program)
