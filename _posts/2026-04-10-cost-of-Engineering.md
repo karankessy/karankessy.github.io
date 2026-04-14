@@ -9,11 +9,11 @@ categories: security
 
 {% include figure.liquid loading="eager" path="/assets/img/wazuh-crowdstrike-comparison.png" alt="Wazuh vs CrowdStrike: Bundled vs Unbundled Security" %}
 
-The real question is not whether Wazuh has every capability out of the box. The real question is whether your team does.
+The question less of whether Wazuh has every capability out of the box. But more of whether your team does.
 
 ---
 
-## Starting with the Criticism
+## Starting with the Criticism as needful
 
 Spend any time in security forums or vendor comparison threads and you will hear the same takes. Wazuh does not have real machine learning. Its behavioral detection cannot match CrowdStrike Falcon. The response automation feels clunky. There is no native SOAR. You cannot get proper network telemetry without bolting on several other tools.
 
