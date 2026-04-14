@@ -23,7 +23,18 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/books/";
           },
-        },{id: "post-everything-is-inter-process-communication-http-rest-apis-serverless-functions-what-not",
+        },{id: "post-the-cost-of-free-security-wazuh-and-the-engineering-bill",
+        
+          title: "The Cost of Free Security, Wazuh and the Engineering Bill",
+        
+        description: "CrowdStrike like solutions costs money and control. Wazuh costs engineering time. Understanding the fundamental tradeoff between a fully integrated commercial XDR platforms and an open-source security foundation you customize yourself.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/cost-of-Engineering/";
+          
+        },
+      },{id: "post-everything-is-inter-process-communication-http-rest-apis-serverless-functions-what-not",
         
           title: "Everything is Inter-Process Communication: HTTP, REST APIs, Serverless functions, what not",
         
