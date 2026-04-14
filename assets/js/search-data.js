@@ -25,9 +25,9 @@ ninja.data = [{
           },
         },{id: "post-the-cost-of-free-security-wazuh-and-the-engineering-bill",
         
-          title: "The Cost of Free Security, Wazuh and the Engineering Bill",
+          title: "The Cost of Free Security: Wazuh and the Engineering Bill",
         
-        description: "CrowdStrike like solutions costs money and control. Wazuh costs engineering time. Understanding the fundamental tradeoff between a fully integrated commercial XDR platforms and an open-source security foundation you customize yourself.",
+        description: "CrowdStrike costs money and control. Wazuh costs engineering time. Understanding the fundamental tradeoff between a fully integrated commercial XDR platform and an open-source security foundation you customize yourself.",
         section: "Posts",
         handler: () => {
           
