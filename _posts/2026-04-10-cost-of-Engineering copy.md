@@ -2,7 +2,7 @@
 layout: post
 title: "The Cost of Free Security: Wazuh and the Engineering Bill"
 date: 2026-04-10 10:00:00
-description: "CrowdStrike costs money and control. Wazuh costs engineering time. Understanding the fundamental tradeoff between a fully integrated commercial XDR platform and an open-source security foundation you customize yourself."
+description: "CrowdStrike costs money and control. Wazuh costs engineering time. Understanding the fundamental tradeoff between a fully integrated commercial XDR platforms and an open-source security foundation you customize yourself."
 tags: security siem xdr detection response wazuh crowdstrike
 categories: security
 ---
