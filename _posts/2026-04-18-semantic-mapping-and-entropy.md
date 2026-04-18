@@ -43,14 +43,14 @@ Finally, UMAP or t-SNE reduces the 384-dimensional space to 2D. That 2D layout i
 
 The repository is organized so each file handles one part of the pipeline.
 
-- [data.py](https://github.com/karankessy/semantic-map-explorer/blob/main/data.py) holds the sentence dataset and labels.
-- [embeddings.py](https://github.com/karankessy/semantic-map-explorer/blob/main/embeddings.py) turns text into vectors using a sentence-transformer model.
-- [similarity.py](https://github.com/karankessy/semantic-map-explorer/blob/main/similarity.py) builds the curated KNN graph.
-- [entropy.py](https://github.com/karankessy/semantic-map-explorer/blob/main/entropy.py) computes neighborhood entropy and summary statistics.
-- [reduce.py](https://github.com/karankessy/semantic-map-explorer/blob/main/reduce.py) performs UMAP or t-SNE projection into 2D.
-- [visualize.py](https://github.com/karankessy/semantic-map-explorer/blob/main/visualize.py) builds the Plotly figures.
-- [main.py](https://github.com/karankessy/semantic-map-explorer/blob/main/main.py) orchestrates the full pipeline.
-- [run_easy.py](https://github.com/karankessy/semantic-map-explorer/blob/main/run_easy.py) wraps the pipeline in friendly presets.
+- [data.py](https://github.com/karankessy/vectorAtlas/blob/main/data.py) holds the sentence dataset and labels.
+- [embeddings.py](https://github.com/karankessy/vectorAtlas/blob/main/embeddings.py) turns text into vectors using a sentence-transformer model.
+- [similarity.py](https://github.com/karankessy/vectorAtlas/blob/main/similarity.py) builds the curated KNN graph.
+- [entropy.py](https://github.com/karankessy/vectorAtlas/blob/main/entropy.py) computes neighborhood entropy and summary statistics.
+- [reduce.py](https://github.com/karankessy/vectorAtlas/blob/main/reduce.py) performs UMAP or t-SNE projection into 2D.
+- [visualize.py](https://github.com/karankessy/vectorAtlas/blob/main/visualize.py) builds the Plotly figures.
+- [main.py](https://github.com/karankessy/vectorAtlas/blob/main/main.py) orchestrates the full pipeline.
+- [run_easy.py](https://github.com/karankessy/vectorAtlas/blob/main/run_easy.py) wraps the pipeline in friendly presets.
 
 That split is not accidental. It keeps the engineering readable.
 
@@ -65,21 +65,21 @@ This is a useful pattern in small analytical projects: separate the semantic wor
 
 ### Why each module exists
 
-[data.py](https://github.com/karankessy/semantic-map-explorer/blob/main/data.py) exists so the example is stable and reproducible. The dataset is small on purpose, because the goal is to understand the geometry rather than chase a massive benchmark.
+[data.py](https://github.com/karankessy/vectorAtlas/blob/main/data.py) exists so the example is stable and reproducible. The dataset is small on purpose, because the goal is to understand the geometry rather than chase a massive benchmark.
 
-[embeddings.py](https://github.com/karankessy/semantic-map-explorer/blob/main/embeddings.py) exists because raw text is not directly comparable in a useful geometric way. Embeddings are the bridge from language to vector space.
+[embeddings.py](https://github.com/karankessy/vectorAtlas/blob/main/embeddings.py) exists because raw text is not directly comparable in a useful geometric way. Embeddings are the bridge from language to vector space.
 
-[similarity.py](https://github.com/karankessy/semantic-map-explorer/blob/main/similarity.py) exists because raw nearest neighbors are often too noisy if used uncritically. The graph is curated so the local structure is more meaningful.
+[similarity.py](https://github.com/karankessy/vectorAtlas/blob/main/similarity.py) exists because raw nearest neighbors are often too noisy if used uncritically. The graph is curated so the local structure is more meaningful.
 
-[entropy.py](https://github.com/karankessy/semantic-map-explorer/blob/main/entropy.py) exists because not all neighborhoods are equally focused. Some points sit in clear semantic pockets; others sit on boundary regions. Entropy helps measure that difference.
+[entropy.py](https://github.com/karankessy/vectorAtlas/blob/main/entropy.py) exists because not all neighborhoods are equally focused. Some points sit in clear semantic pockets; others sit on boundary regions. Entropy helps measure that difference.
 
-[reduce.py](https://github.com/karankessy/semantic-map-explorer/blob/main/reduce.py) exists because 384 dimensions are too many to draw directly. A projection gives us a readable layout.
+[reduce.py](https://github.com/karankessy/vectorAtlas/blob/main/reduce.py) exists because 384 dimensions are too many to draw directly. A projection gives us a readable layout.
 
-[visualize.py](https://github.com/karankessy/semantic-map-explorer/blob/main/visualize.py) exists because the end result should be inspectable, not just computed. The interactive map is where the project becomes useful to a person.
+[visualize.py](https://github.com/karankessy/vectorAtlas/blob/main/visualize.py) exists because the end result should be inspectable, not just computed. The interactive map is where the project becomes useful to a person.
 
-[main.py](https://github.com/karankessy/semantic-map-explorer/blob/main/main.py) exists because the whole workflow should run from one command and be easy to tune.
+[main.py](https://github.com/karankessy/vectorAtlas/blob/main/main.py) exists because the whole workflow should run from one command and be easy to tune.
 
-[run_easy.py](https://github.com/karankessy/semantic-map-explorer/blob/main/run_easy.py) exists because a starter should not have to remember every flag before seeing something meaningful.
+[run_easy.py](https://github.com/karankessy/vectorAtlas/blob/main/run_easy.py) exists because a starter should not have to remember every flag before seeing something meaningful.
 
 ## Dataset section
 
@@ -101,7 +101,7 @@ If every sentence belonged to one style, the project would not tell us much. But
 - where ambiguous language sits near multiple groups,
 - and how suspicious-looking strings behave compared with normal operational text.
 
-The categories in [data.py](https://github.com/karankessy/semantic-map-explorer/blob/main/data.py) are intentionally mixed because the project is trying to study structure, not just labels.
+The categories in [data.py](https://github.com/karankessy/vectorAtlas/blob/main/data.py) are intentionally mixed because the project is trying to study structure, not just labels.
 
 ## Embeddings section
 
@@ -111,7 +111,7 @@ A sentence embedding is a numeric vector that tries to represent meaning. Instea
 
 This matters because raw text is a poor geometry object. Two sentences can be semantically close while looking very different on the surface. For example, “the server returned a 502 bad gateway error” and “the API rate limiter kicked in after 1000 requests” are both technical operational messages, even though the words are not interchangeable.
 
-The project uses [sentence-transformers](https://github.com/karankessy/semantic-map-explorer/blob/main/embeddings.py) with the model `all-MiniLM-L6-v2`.
+The project uses [sentence-transformers](https://github.com/karankessy/vectorAtlas/blob/main/embeddings.py) with the model `all-MiniLM-L6-v2`.
 
 That model produces 384-dimensional vectors, so each sentence becomes a point in:
 
@@ -181,7 +181,7 @@ The graph is not the final answer. It is the local structure that the entropy ca
 
 Raw nearest-neighbor lists are often too literal. They can include weak or accidental matches. That is fine if you are doing recall-heavy retrieval, but not ideal if you want a readable semantic map.
 
-So [similarity.py](https://github.com/karankessy/semantic-map-explorer/blob/main/similarity.py) curates the neighbors using three ideas:
+So [similarity.py](https://github.com/karankessy/vectorAtlas/blob/main/similarity.py) curates the neighbors using three ideas:
 
 - a similarity threshold,
 - a mutual-neighbor requirement,
@@ -297,7 +297,7 @@ That means two points being near each other on the 2D map is informative, but it
 
 ## Visualization section
 
-[visualize.py](https://github.com/karankessy/semantic-map-explorer/blob/main/visualize.py) builds two interactive maps with Plotly.
+[visualize.py](https://github.com/karankessy/vectorAtlas/blob/main/visualize.py) builds two interactive maps with Plotly.
 
 ### Entropy map
 
@@ -337,7 +337,7 @@ In a static image, you can see the whole field at once, but you cannot easily in
 
 ## Code and engineering section
 
-The main flow in [main.py](https://github.com/karankessy/semantic-map-explorer/blob/main/main.py) is straightforward:
+The main flow in [main.py](https://github.com/karankessy/vectorAtlas/blob/main/main.py) is straightforward:
 
 1. Load sentences and labels.
 2. Optionally append a query sentence.
@@ -358,7 +358,7 @@ There is a tradeoff between strict curation and exploratory looseness:
 - looser settings keep more possible relationships and can reveal broader structure,
 - but too much looseness can make the map harder to interpret.
 
-[visualize.py](https://github.com/karankessy/semantic-map-explorer/blob/main/visualize.py) also pays attention to stability. The axes are fixed, the layout is kept readable, and the category map is set up so legend toggling does not cause the plot to jump around. That matters because a visualization should help you inspect the data, not distract you by reshuffling itself every time you click a category.
+[visualize.py](https://github.com/karankessy/vectorAtlas/blob/main/visualize.py) also pays attention to stability. The axes are fixed, the layout is kept readable, and the category map is set up so legend toggling does not cause the plot to jump around. That matters because a visualization should help you inspect the data, not distract you by reshuffling itself every time you click a category.
 
 ## Math section
 
