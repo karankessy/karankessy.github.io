@@ -8,8 +8,6 @@ categories: projects tutorials
 published: true
 ---
 
-# Semantic Map Explorer: Entropy Embedding Atlas
-
 This project is to understand & read it as a small article about text geometry.
 We have it starting with raw sentences, turn them into vectors, connect nearby sentences into a graph, measure how mixed each neighborhood is, compresse the result into 2D, and then explore the whole thing in a browser.
 
