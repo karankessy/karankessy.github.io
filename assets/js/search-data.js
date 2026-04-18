@@ -23,15 +23,26 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/books/";
           },
-        },{id: "post-the-cost-of-free-security-wazuh-and-the-engineering-bill",
+        },{id: "post-semantic-mapping-and-entropy",
         
-          title: "The Cost of Free Security: Wazuh and the Engineering Bill",
+          title: "Semantic Mapping And Entropy",
         
-        description: "CrowdStrike costs money and control. Wazuh costs engineering time. Understanding the fundamental tradeoff between a fully integrated commercial XDR platform and an open-source security foundation you customize yourself.",
+        description: "",
         section: "Posts",
         handler: () => {
           
-            window.location.href = "/blog/2026/cost-of-Engineering/";
+            window.location.href = "/blog/2026/semantic-mapping-and-entropy/";
+          
+        },
+      },{id: "post-the-cost-of-free-security-wazuh-and-the-engineering-bill",
+        
+          title: "The Cost of Free Security: Wazuh and the Engineering Bill",
+        
+        description: "CrowdStrike costs money and control. Wazuh costs engineering time. Understanding the fundamental tradeoff between a fully integrated commercial XDR platforms and an open-source security foundation you customize yourself.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/cost-of-Engineering-copy/";
           
         },
       },{id: "post-everything-is-inter-process-communication-http-rest-apis-serverless-functions-what-not",
