@@ -23,11 +23,11 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/books/";
           },
-        },{id: "post-semantic-mapping-and-entropy",
+        },{id: "post-semantic-map-explorer-entropy-embedding-atlas",
         
-          title: "Semantic Mapping And Entropy",
+          title: "Semantic Map Explorer - Entropy Embedding Atlas",
         
-        description: "",
+        description: "Understanding text geometry through embeddings, KNN graphs, entropy, and interactive visualization",
         section: "Posts",
         handler: () => {
           
