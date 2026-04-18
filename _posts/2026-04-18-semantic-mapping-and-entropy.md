@@ -8,6 +8,14 @@ categories: projects tutorials
 published: true
 ---
 
+## Project: Vector Atlas
+
+**Repository:** [karankessy/vectorAtlas](https://github.com/karankessy/vectorAtlas)
+
+This article walks through the Vector Atlas project—an interactive tool for exploring text geometry through semantic embeddings and entropy analysis.
+
+## Overview
+
 This project is to understand & read it as a small article about text geometry.
 We have it starting with raw sentences, turn them into vectors, connect nearby sentences into a graph, measure how mixed each neighborhood is, compresse the result into 2D, and then explore the whole thing in a browser.
 
