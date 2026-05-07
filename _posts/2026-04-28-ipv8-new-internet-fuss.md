@@ -1,7 +1,7 @@
 ---
 layout: post
 title: IPv8 and the Internet's Eternal Transition Problem
-date: 2026-05-08
+date: 2026-04-28
 description: A reflective breakdown of the IPv8 draft proposal — compatibility claims, zero-prefix IPv4 embedding, ASN routing limits, physics-aware routing metrics, and the risks of collapsing internet infrastructure into a centralized zone server model
 tags: ipv8 networking internet-protocols bgp asn routing ipv6 infrastructure distributed-systems network-architecture
 categories: research analysis networking
