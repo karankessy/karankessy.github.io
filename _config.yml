@@ -482,7 +482,7 @@ third_party_libraries:
     integrity:
       js: "sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
     url:
-      js: "https://cdn.jsdelivr.net/npm/jquery@{{version}}/dist/jquery.min.js"
+      js: "https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"
     version: "3.6.0"
   leaflet:
     integrity:
@@ -492,10 +492,10 @@ third_party_libraries:
     local:
       images: "images/"
     url:
-      css: "https://cdn.jsdelivr.net/npm/leaflet@{{version}}/dist/leaflet.min.css"
-      images: "https://cdn.jsdelivr.net/npm/leaflet@{{version}}/dist/images/"
-      js: "https://cdn.jsdelivr.net/npm/leaflet@{{version}}/dist/leaflet.min.js"
-      js_map: "https://cdn.jsdelivr.net/npm/leaflet@{{version}}/dist/leaflet.js.map"
+      css: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"
+      images: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/"
+      js: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"
+      js_map: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js.map"
     version: "1.9.4"
   lightbox2:
     integrity:
