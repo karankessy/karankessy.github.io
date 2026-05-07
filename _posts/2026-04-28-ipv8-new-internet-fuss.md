@@ -8,7 +8,6 @@ categories: research analysis networking
 published: true
 ---
 
-
 i found IPv8 landing in my feed last week. an internet-draft, april 2026, proposing a full replacement of the IP stack.
 
 my first reaction was confusion. not the technical kind but more of a philosophical kind. _why are we here again?_
@@ -23,6 +22,7 @@ so i happened to read it.
 
 and this is what i'm understanding.
 
+{% include figure.liquid loading="eager" path="assets/img/ipv8.png" title="IPv8 Architecture Overview" class="img-fluid rounded z-depth-1" %}
 
 ## **compatibility argument**
 
@@ -130,7 +130,6 @@ short version:
 ```text
 address compatibility ≠ infrastructure compatibility
 ```
-
 
 ## **and the zone server, which seems to be the real bet**
 
@@ -255,7 +254,6 @@ that's not a tiny adjustment.
 
 that's a mere philosophical redesign of networking itself.
 
-
 ## **routing changes — actually the most defensible part**
 
 the cost factor metric is probably the strongest idea in this draft.
@@ -355,7 +353,6 @@ at least theoretically.
 
 and honestly, one of the surprising things while reading the draft is how much of networking today feels like accumulated exception handling.
 
-
 ## **this is what's missing**
 
 the OAuth2 JWT requirement appears everywhere in the draft.
@@ -432,7 +429,6 @@ each needing independent IETF review.
 which means realistically:
 
 this is not near deployment. this is early-stage architectural provocation.
-
 
 ## **the question the draft doesn't answer**
 
