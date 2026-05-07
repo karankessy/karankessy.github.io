@@ -23,7 +23,18 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/books/";
           },
-        },{id: "post-semantic-map-explorer-entropy-embedding-atlas",
+        },{id: "post-ipv8-and-the-internet-39-s-eternal-transition-problem",
+        
+          title: "IPv8 and the Internet&#39;s Eternal Transition Problem",
+        
+        description: "A reflective breakdown of the IPv8 draft proposal — compatibility claims, zero-prefix IPv4 embedding, ASN routing limits, physics-aware routing metrics, and the risks of collapsing internet infrastructure into a centralized zone server model",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/ipv8-new-internet-fuss/";
+          
+        },
+      },{id: "post-semantic-map-explorer-entropy-embedding-atlas",
         
           title: "Semantic Map Explorer - Entropy Embedding Atlas",
         
