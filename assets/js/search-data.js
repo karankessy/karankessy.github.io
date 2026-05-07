@@ -31,6 +31,17 @@ ninja.data = [{
         section: "Posts",
         handler: () => {
           
+            window.location.href = "/blog/2026/ipv8-new-internet-fuss/";
+          
+        },
+      },{id: "post-semantic-map-explorer-entropy-embedding-atlas",
+        
+          title: "Semantic Map Explorer - Entropy Embedding Atlas",
+        
+        description: "Understanding text geometry through embeddings, KNN graphs, entropy, and interactive visualization",
+        section: "Posts",
+        handler: () => {
+          
             window.location.href = "/blog/2026/semantic-mapping-and-entropy/";
           
         },
@@ -42,7 +53,7 @@ ninja.data = [{
         section: "Posts",
         handler: () => {
           
-            window.location.href = "/blog/2026/cost-of-Engineering-copy/";
+            window.location.href = "/blog/2026/cost-of-Engineering/";
           
         },
       },{id: "post-everything-is-inter-process-communication-http-rest-apis-serverless-functions-what-not",
