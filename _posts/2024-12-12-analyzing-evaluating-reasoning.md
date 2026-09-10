@@ -9,62 +9,82 @@ og_image: /assets/img/thinkingskill.png
 thumbnail: assets/img/thinkingskill.png
 ---
 
-In a world flooded with information, where anyone can create anything and present with or without any credibility, the ability to think analytically has become more critical than ever before. Most of the time our thinking occurs with little or no deliberate effort. In a nutshell, we could almost say we think without thinking. For instance, when offered a choice between black tea and milk tea, I can quickly and easily make a decision based on my personal preferences, without considering any other factors or engaging in critical thinking.
+In a world flooded with information, where anyone can create anything and present it with or without any credibility, the ability to think analytically has become more critical than ever. Most of the time our thinking occurs with little or no deliberate effort. In a nutshell, we could almost say we think without thinking. When offered a choice between black tea and milk tea, I can make a decision quickly and easily based on my personal preferences, without considering any other factors or engaging in critical thinking.
 
-Critical thinking means giving a fair and unbiased opinion of something, where being critical and thinking critically are not the same thing.
+Critical thinking means giving a fair and unbiased opinion of something. Being critical and thinking critically are not the same thing.
 
-If critical thinking were simply about making judgments, then anyone could do it by giving an opinion without any special training or practice. For instance, if I come across any debates, I may react impulsively based on my preconceived notions, biases and emotions without engaging in critical thinking to evaluate the information presented. This can lead to individuals reacting differently to the same information based on their personal biases and emotional responses.
+If critical thinking were simply about making judgements, then anyone could do it by giving an opinion without any special training or practice. If I come across a debate, I may react impulsively based on my preconceived notions, biases and emotions without engaging in critical thinking to evaluate the information presented. This is why individuals can react so differently to the same information.
 
-Taking a hypothetical situation into play, if I watch a film and think that it is boring, even though it has had good reviews, no one can really say that my judgement is wrong and the professional critics are right. Someone can disagree with me, but that is just another judgement, no better or worse, you might say, than mine. In a limited sense, this is true. But a serious critical judgement is more than just a statement of preference or taste. A critical judgement must have some basis, which usually requires a measure of knowledge or expertise on the part of the person making the judgement. Just saying "I like it" or "I don't like it" is not enough. There have to be some grounds for a judgement before we can call it critical.
+Take a hypothetical situation. If I watch a film and think it is boring, even though it has had good reviews, no one can really say that my judgement is wrong and the professional critics are right. Someone can disagree with me, but that is just another judgement, no better or worse, you might say, than mine.
 
-And that very ground may start with the proper reason following the conclusion/judgement whether that might be an argument, claims, assertions or statements. Every judgement needs some legit grounds to be considered as a sound or critical judgement.
+In a limited sense, this is true. But a serious critical judgement is more than a statement of preference or taste. A critical judgement must have some basis, which usually requires a measure of knowledge or expertise on the part of the person making it. Just saying "I like it" or "I don't like it" is not enough. There have to be some grounds for a judgement before we can call it critical.
 
-Critical judgement of any situation firstly starts with the identification of its elements especially premises, also called reasons and the conclusion followed by the reasons. These are the very basic elements to be considered but it is not that easy as it sounds like. Sometimes, judgement might go wrong even after the proper identification of the elements of an argument or a claim and that's what decides the level of the critical thinking applied or used during the judgement formation.
+That ground starts with the reasons supporting the conclusion, whether what is being offered is an argument, a claim, an assertion or a statement. Every judgement needs legitimate grounds before it counts as a sound or critical one.
 
-Before judging any arguments, claims or assertions we need to know what is the exact difference between them. So, arguments are especially interesting because their primary purpose is to persuade or influence people in favor of some claim. The critical question therefore becomes whether the argument succeeds or fails: whether we should allow ourselves to be persuaded by it, or not.
+---
 
-'Assertion' and 'claim' are very close in meaning. The difference is in when you use them. Assertion' is a bit stronger and more emphatic; it is more active. A claim may be asserted, but we would not naturally say that an assertion was claimed.
+## Claims, Assertions, and Arguments
 
-Claims are presented as expressions of truth, yet they are not always true. And critical thinking is a way of being as sure as possible about which claims to believe, and which to question or mistrust. Also, arguments consist of claims: reasons, conclusions, etc.
+Before judging any of them we need to know the difference between them.
 
-## Analyzing Argument
+**Arguments** are especially interesting because their primary purpose is to persuade or influence people in favour of some claim. The critical question therefore becomes whether the argument succeeds or fails: whether we should allow ourselves to be persuaded by it, or not.
 
-### Example 1
+**Assertion** and **claim** are very close in meaning. The difference is in when you use them. 'Assertion' is a bit stronger and more emphatic; it is more active. A claim may be asserted, but we would not naturally say that an assertion was claimed.
 
-Top women tennis players used to grumble that their prize money was less substantial than that paid to top male players in the same competition. They argued that they were being unequally treated. But the disparity was entirely justified and should never have been abolished. Male players just have more prowess than women. They need to win three sets out of five to take the match; the women only two. They have to play harder and faster, and expend far more energy on court than the women. But most of all, if the best woman in the tournament played any of the men, there would be no contest: the man would win.
+Claims are presented as expressions of truth, yet they are not always true. Critical thinking is a way of being as sure as possible about which claims to believe, and which to question or mistrust. Arguments, in turn, are built out of claims: reasons, conclusions, and everything in between.
 
-As mentioned before, when looking at an argument, the first things to consider are the reason and the conclusion. According to the rule, the first two sentences of the argument [1] do not function as reasons or conclusions but rather set the context for the argument(Try reading the passage without them and you will see this for yourself). Without these sentences, the argument would lack coherence. Such sentences are often referred to as the target or context of the argument.
+Critical judgement of any situation starts with identifying its elements, especially the premises, also called reasons, and the conclusion that follows from them. These are the basic elements, and identifying them is not as easy as it sounds. Judgement can still go wrong after the elements have been correctly identified, and how well it survives that stage is what decides the level of critical thinking actually applied.
 
-The purpose of the argument is to respond to the alleged claim of unfairness and inequality by women. Some may refer to parts of a text that serve as the target of an argument as a counter-argument, but this is misleading. If anything, the author's argument should be considered the counter-argument, since the author is the one responding, not the women.
+---
 
-In standard form, the argument can be represented as follows: Context (or target): Top women tennis players used to complain about the inequalities of prize money.
+## Analyzing an Argument
 
-In the diagram, R1 to R3 represent the reasons, IC is the intermediate conclusion, followed by the reasons R1 to R3, and the main conclusion (MC) is C, which is the main point of the argument, supported by all the reasons and intermediate conclusion (IC).
+### Example
 
-Now let's visualize the argument in a diagram:
+> Top women tennis players used to grumble that their prize money was less substantial than that paid to top male players in the same competition. They argued that they were being unequally treated. But the disparity was entirely justified and should never have been abolished. Male players just have more prowess than women. They need to win three sets out of five to take the match; the women only two. They have to play harder and faster, and expend far more energy on court than the women. But most of all, if the best woman in the tournament played any of the men, there would be no contest: the man would win.
+
+The first things to consider are the reasons and the conclusion.
+
+The first two sentences do not function as either. They set the context for the argument. Try reading the passage without them and you will see this for yourself: the argument loses its coherence, because there is no longer anything being responded to. Sentences like these are often referred to as the target, or context, of the argument.
+
+The purpose of the argument is to respond to the alleged claim of unfairness and inequality. Some people would call the part being responded to a counter-argument, but this is misleading. If anything, the author's argument is the counter-argument, since the author is the one responding, not the women.
+
+So, in standard form:
+
+**Context (or target):** Top women tennis players used to complain about the inequalities of prize money.
 
 {% include figure.liquid loading="eager" path="assets/img/thinkingskill.png" class="img-fluid rounded z-depth-1" zoomable=true %}
 
 > # R1 & R2 ---> IC ---> [C] <--- R3
 
-In the diagram, R1 to R3 represent the reasons, IC is the intermediate conclusion, followed by the reasons R1 to R3, and the main conclusion (MC) is C, which is the main point of the argument, supported by all the reasons and intermediate conclusion (IC).
+R1 to R3 are the reasons. IC is the intermediate conclusion drawn from them. C is the main conclusion, the actual point of the argument, supported by both the reasons and the intermediate conclusion.
 
-R1 and R2 are the actual supporting reasons for the intermediate conclusion (IC). These three elements could be a separate argument on their own, but there is another missing argument, R3, which is an independent reason following the main conclusion C.
+R1 and R2 support the intermediate conclusion. Those three elements could stand as a separate argument on their own. R3 is an independent reason supporting the main conclusion directly, without passing through IC.
 
-It is important to note that credible research should support the reasons presented in the argument. For instance, is it true that men have to win three out of five sets while women only need to win two, as stated in R1? Therefore, research should support all the reasons presented, and at least one reason should be true for the argument to be sound. Finally, the main conclusion should be supported by all the IC and reasons presented, or it will make no sense. For example:
+---
 
-The weather has been really nice lately. So, we should invest in renewable energy.
+## Where This Argument Fails
 
-Here,
+Laying out the structure is only half the work. Once you can see the reasons, you can ask whether they hold.
+
+Credible research should support the reasons presented. Is it actually true, as R1 states, that men play three sets out of five while women play two? In Grand Slam tournaments, yes. That reason is factually correct, and it is worth noticing that a true reason can still be doing very little work.
+
+Because the conclusion does not follow from it. The reasons are about the format and physical demands of the matches. The conclusion is about what the players should be paid. Getting from one to the other requires an unstated assumption: that prize money should be proportional to sets played or energy expended, rather than to the revenue, audience, or status of the tournament. That assumption is never argued for. It is smuggled in.
+
+R3 has a different problem. Whether the best woman would lose to a man is a claim about a match that does not happen, in a competition organised into separate categories precisely so that it does not. It is irrelevant to the conclusion even if true.
+
+This is the more useful lesson. An argument can have true premises and still fail, because soundness depends on the reasons supporting the conclusion, not merely on the reasons being correct.
+
+A clearer version of the same failure:
 
 > R1 –> "The weather has been really nice lately"
-
-does not follow the conclusion,
-
+>
 > C –> "So, we should invest in renewable energy."
 
-Thus, the conclusion of an argument needs to be supported by the reasons presented.
+The premise may well be true. The conclusion may well be right. Neither fact makes this an argument, because nothing connects them.
 
-Understanding the structure of an argument is essential in identifying its strengths and weaknesses. By breaking down an argument into its constituent parts, we can evaluate the validity of the reasons presented and determine if the conclusion follows logically. Additionally, conducting thorough research and ensuring that the main conclusion is supported by all the reasons presented is critical in building a strong argument. By employing these techniques, we can strive better critical thinkers and more effective communicators.
+---
 
-To conclude, I hope this blog has provided you with a better understanding of how to analyze and evaluate arguments. The examples used in this blog are taken from a book by Cambridge University, and I highly recommend it to those who want to delve deeper into the topic. Feel free to reach out to me via [Instagram](https://instagram.com/_wd.erick) or [Facebook](https://fb.com/karankessy) if you would like the book's details.
+Understanding the structure of an argument is what lets you identify its strengths and weaknesses. Breaking one into its parts lets you evaluate the reasons and check whether the conclusion actually follows. Doing this consistently is most of what critical thinking is in practice, and it is a habit rather than a talent.
+
+The examples used here are taken from a Cambridge University book, which I would recommend to anyone wanting to go deeper. Feel free to reach out on [Instagram](https://instagram.com/_wd.erick) or [Facebook](https://fb.com/karankessy) if you would like the details.

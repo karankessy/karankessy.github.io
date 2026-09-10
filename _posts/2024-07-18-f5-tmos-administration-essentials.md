@@ -2,84 +2,67 @@
 layout: post
 title: "F5 TMOS Administration Essentials: Critical Concepts to be Remembered"
 date: 2024-07-18 10:30:00
-description: Explore crucial aspects of F5 TMOS administration, from packet processing flow to advanced troubleshooting techniques. A comprehensive guide for network administrators and DevOps professionals.
+description: The order TMOS evaluates an incoming packet, what to check when traffic does not arrive, and a handful of behaviours that are not obvious from the configuration screens.
 tags: f5-bigip networking
 categories: networking
 ---
 
-Ever wondered what happens when a packet arrives at your F5 device? Let's demystify the complex world of F5 TMOS administration and explore the crucial aspects that every administrator should have at their fingertips.
+Most BIG-IP troubleshooting comes down to one question: where did the packet stop. Answering it requires knowing the order TMOS evaluates things, because the order is what tells you which checks are already ruled out by the time traffic reaches the place you were looking.
 
-## The Life of a Packet: A Seven-Step Journey
+---
 
-Think of packet processing in F5 as a security checkpoint at an airport. Every packet goes through a specific order of processing, and understanding this flow is crucial for effective troubleshooting:
+## Packet processing order
 
-1. **First Stop: Connection Table Check**  
-   Like a frequent flyer getting fast-tracked, existing connections in the connection table get processed first. It's your system's way of saying, "Hey, I know this one!"
+An incoming packet is evaluated in this sequence:
 
-2. **The Security Check: Packet Filter Rules**  
-   Just as airport security screens passengers, packet filter rules examine incoming traffic. These rules determine whether to allow or block the traffic based on predetermined criteria.
+1. **Connection table.** Existing connections match here first and skip the rest of the path. This is why a change to a virtual server often has no effect on traffic already flowing, and why deleting the connection is sometimes the actual fix.
+2. **Packet filter rules.** Allow or deny based on configured criteria.
+3. **Virtual server match.** Which virtual server, if any, handles this connection. Most specific match wins.
+4. **SNAT.** Does the traffic match a SNAT configuration.
+5. **NAT.** Does it need translation between VLANs.
+6. **Self-IP.** Does the destination match a self-IP on the box.
+7. **Drop.** Nothing matched, packet discarded.
 
-3. **Virtual Server Verification**  
-   This is where your packet finds its destination gate. The system checks which virtual server should handle this incoming connection.
+The practical value is elimination. Traffic not reaching a pool member and not appearing in virtual server stats means it did not survive to step 3, so the pool is not where to look. Existing connections behaving differently from new ones points at step 1.
 
-4. **SNAT Investigation**  
-   Think of SNAT as the customs checkpoint, verifying if the incoming traffic matches with the SNAT pool of IP addresses.
+---
 
-5. **NAT Processing**  
-   Like a currency exchange booth between two different zones, NAT checks if translation is needed between different VLANs.
+## What to check, in order
 
-6. **Self-IP Verification**  
-   The final identity check - does this packet match any self-IP addresses?
+- **Virtual server stats.** Is traffic arriving at all. This splits the problem in half immediately.
+- **Pool and pool member stats.** Traffic arriving but not distributing.
+- **Connection table.** What is actually established right now.
+- **Logs.** `/var/log/ltm` first.
+- **Routing table.** Especially on multi-VLAN configurations.
+- **Ping, telnet, curl from the box.** Verifies pool member reachability from BIG-IP itself rather than from your workstation, which is a different path.
+- **Packet capture.** `tcpdump` when the stats disagree with what you believe is happening. It settles arguments.
 
-7. **The Drop Zone**  
-   If all else fails, like an unclaimed bag at the airport, the packet gets dropped.
+---
 
-## Your Troubleshooting Toolkit
+## Behaviours that are not obvious
 
-When things go wrong (and they will), here's your arsenal of diagnostic tools:
+**Fallback persistence runs concurrently, not as a backup.** This is the one that surprises people. The name suggests it engages when primary persistence fails. It does not. Both records are maintained at the same time, as a key-value pair, for example cookie mapped to source IP. If you configured it expecting a failover behaviour, it is not doing what you think.
 
-- Virtual Server stats: Your first line of investigation
-- Pool/Pool member stats: For detailed performance metrics
-- Logs: Your system's black box recorder
-- Connection table: To track active connections
-- Routing table: For complex platform navigation
-- Connectivity tests: Ping, telnet, and curl to verify pool member health
-- Packet captures: When you need to see the raw truth
+**Priority group activation.** With six servers running two applications, three primarily each, PGA lets you express that preference so traffic goes to the intended group while the others stay available underneath.
 
-## Advanced Concepts You Can't Ignore
+**Connection mirroring.** Mirrors connection state to the peer so that a failover does not drop established connections. Worth knowing it costs resources, so it is applied selectively rather than everywhere.
 
-### Priority Group Activation: The Art of Balance
+**Persistence netmask.** A netmask of `255.255.255.255` gives each unique source IP its own persistence record. Anything broader groups clients together, which is occasionally what you want and more often the cause of a persistence bug.
 
-Imagine having six servers running two applications. Three servers primarily handle one application, while the other three handle another. PGA helps manage this delicate balance, ensuring optimal resource utilization.
+---
 
-### Persistence and Fallback: A Different Perspective
+## Two administrative notes
 
-Here's something that might surprise you: when enabled, fallback persistence works concurrently rather than sequentially. It creates a key-value pair system (think cookie → source_IP) that operates simultaneously, not as a backup plan.
+Restoring an archive can cause downtime. Plan it as a maintenance activity rather than a quick fix.
 
-### Connection Mirroring: Your Safety Net
+Archives contain private keys. Treat them with the same care as the keys themselves, which means being deliberate about where they are stored and who can read them.
 
-Think of connection mirroring as your digital backup singer - always ready to take over when needed. It ensures seamless failover by maintaining a mirror of your connections.
-
-## Critical Administrative Tips
-
-### Archive Management
-
-Remember this golden rule: restoring an archive can cause downtime. Also, your private keys are in there, so treat your archives like crown jewels.
-
-### Persistence Profile Configuration
-
-Want to ensure each unique IP address creates a persistence record? Set your netmask to 255.255.255.255. It's like giving each visitor their own VIP pass.
-
-### UCS Restoration via CLI
-
-Need to restore a UCS configuration through the command line? Here's your magic spell:
+Restoring a UCS from the command line:
 
 ```bash
 load/sys ucs <filepath> passphrase <password>
 ```
 
-## The Bottom Line
+---
 
-F5 TMOS administration isn't just about knowing the commands - it's about understanding the flow, the relationships between components, and knowing where to look when things go sideways. Keep these concepts handy, and you'll be well-equipped to handle whatever challenges come your way.
-
-Remember: in F5 administration, like in chess, thinking several moves ahead and understanding the relationships between different pieces is key to success.
+None of this is difficult individually. What makes TMOS troubleshooting hard is that the components interact, and the processing order is the thing that tells you which interactions are even possible. Knowing that a packet is evaluated against the connection table before anything else eliminates entire categories of wrong theory before you start.

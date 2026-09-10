@@ -9,9 +9,9 @@ og_image: /assets/img/wasm2.png
 thumbnail: assets/img/wasm2.png
 ---
 
-## Introduction
+Docker shipped a technical preview integrating WebAssembly, and the question that followed was whether WASM eventually replaces containers.
 
-Recently, Docker announced the integration of WebAssembly (WASM) technology in a technical preview. This news has sparked many questions in the developer community. Some even wonder if WASM might one day replace Docker or other container technologies.
+I think the question is framed wrong, and the reason is that the two technologies are solving different problems that happen to look similar from a distance. Worth working through what each one actually does before comparing them.
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
@@ -19,28 +19,17 @@ Recently, Docker announced the integration of WebAssembly (WASM) technology in a
     </div>
 </div>
 
-In this blog post, we'll explore what WebAssembly and Docker are, compare their key features, and look at how they might work together in the future.
-
 ---
 
-## What is WebAssembly?
+## WebAssembly
 
-Imagine being able to run a complex desktop application like Photoshop or Figma directly in your web browser—no downloads or installations required. That's one of the exciting promises of WebAssembly.
+WASM is a binary instruction format. You compile C, C++, or Rust into it, and a runtime executes it.
 
-- **Easy to Understand:**  
-   WebAssembly is a new type of code that lets you run applications built in languages like C, C++, or Rust right in your browser. It works alongside HTML, CSS, and JavaScript, making it possible to bring powerful, high-performance applications online.
+{% include figure.liquid loading="eager" path="assets/img/wasm2.png" class="img-fluid rounded z-depth-1" zoomable=true %}
 
-  {% include figure.liquid loading="eager" path="assets/img/wasm2.png" class="img-fluid rounded z-depth-1" zoomable=true %}
+It started in the browser, alongside HTML, CSS, and JavaScript, so that heavy applications could run on a web page at close to native speed. Tools like Emscripten compile existing C codebases into it.
 
-- **How It Works:**  
-   Normally, desktop programs need to be compiled into machine code that your computer can understand. With WASM, developers compile their code into a special binary format that runs quickly and securely in the browser. Tools like Emscripten help convert C programs into WASM files that can run seamlessly online.
-
-### WASM Outside of Browsers
-
-WASM isn't just for web pages—it can also run on any system that supports a WASM runtime. Think of these runtimes like the engines that let your computer run programs written in other languages (such as the Java Virtual Machine or Python's interpreter).
-
-- **Portability:**  
-   WASM binaries are designed to be platform-neutral. This means they can run on different operating systems and processor types without needing major changes.
+The part that made it interesting outside the browser is that the format does not assume a browser. Any system with a WASM runtime can execute the binary, in the way that the JVM runs bytecode or CPython runs its own. The binary is platform-neutral: same module, different operating systems and processor architectures, no recompilation.
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
@@ -48,59 +37,44 @@ WASM isn't just for web pages—it can also run on any system that supports a WA
     </div>
 </div>
 
-- **System Access:**  
-   Using the WebAssembly System Interface (WASI), WASM modules can access files, directories, and other system resources. This ability makes it similar to how containers work.
+On its own a WASM module can do nothing but compute. It has no file access, no network, no clock. WASI is the interface that grants those capabilities explicitly, and that is what makes server-side WASM possible at all.
+
+That detail is also the security story. A container starts with broad access to a namespaced view of a system and you restrict from there. A WASM module starts with nothing and you grant from there. Deny-by-default is a meaningfully different starting position.
 
 ---
 
-## What is Docker?
+## Docker
 
-Docker is a popular technology that packages your application code along with all its dependencies into a single container. This container can run anywhere—on any computer or server—without worrying about differences in operating systems or installed libraries.
+Docker packages an application together with its dependencies into an image, and runs that image as a container.
 
-- **The Problem It Solves:**  
-   Think about how many steps are involved in running a simple C program: installing the right compiler, managing libraries, and setting system paths. Docker simplifies this by bundling everything into one neat package. Now, your colleague on a different system can run your program without any setup headaches.
-- **How It Works:**  
-   A Docker container uses a Docker image—a snapshot of a file system with all necessary tools, libraries, and your application. When you run the container, it behaves like a small, self-contained computer.
+The problem it solves is environment drift. Running a C program on someone else's machine means the right compiler, the right libraries, the right paths. The image carries all of it, so the program runs the same on a colleague's laptop as on a server.
+
+Underneath, a container is not a virtual machine. It is a process on the host kernel, isolated with namespaces and cgroups. That is why containers are cheap compared to VMs, and it is also why an image built for Linux on x86 does not run on a different kernel or architecture.
 
 ---
 
-## Docker vs WebAssembly: Key Comparisons
+## Comparing them
 
 {% include figure.liquid loading="eager" path="assets/img/wasm3.png" class="img-fluid rounded z-depth-1" zoomable=true %}
 
-While Docker and WASM both help package and run applications, they work in different ways:
+**What gets packaged.** Docker ships a filesystem: your binary plus the libraries and userland it needs. WASM ships a compiled module and nothing else, with WASI supplying system access at runtime.
 
-- **Architecture:**
-  - **Docker:** Packages the entire file system, dependencies, and binaries into a container.
-  - **WASM:** Creates a compact, precompiled binary. WASI then supplies the system resources at runtime.
-- **Portability:**
-  - **Docker:** Requires matching the image with the right operating system and processor type.
-  - **WASM:** Works across platforms, independent of the underlying hardware.
-- **Performance & Size:**
-  - **Docker:** Containers can be tens or hundreds of megabytes and may take seconds to start.
-  - **WASM:** Modules are only a few megabytes and start in milliseconds, offering near-native performance.
-- **Usage Scenarios:**
-  - **Docker:** Best for packaging full applications with all their dependencies in a controlled environment.
-  - **WASM:** Ideal for running high-performance code on the web or in other environments where quick startup is crucial.
+**Portability.** A Docker image is tied to an OS and architecture. A WASM module is not. This is the clearest advantage WASM has.
+
+**Size and startup.** Container images run tens to hundreds of megabytes and start in seconds. WASM modules are typically a few megabytes and start in milliseconds. That startup difference is what makes WASM attractive for serverless and edge workloads, where cold start is the dominant cost.
+
+**Isolation model.** Containers share the host kernel and are isolated by namespaces. WASM runs in a sandbox with no capabilities until granted. Different mechanisms, and the WASM model is the more restrictive by default.
 
 ---
 
-## Will WASM Replace Docker?
+## So, replacement?
 
-There has been some speculation that WASM could eventually replace Docker, Kubernetes, and other container technologies. However, it's more likely that WASM will work alongside Docker rather than replace it completely.
+No, and the size and startup numbers are a hint as to why.
 
-- **Integration Potential:**  
-   Docker's recent technical preview shows that you can now run WASM containers alongside traditional Linux and Windows containers. This integration means you could use the fast startup and small size of WASM while still taking advantage of Docker's powerful container management features.
-- **Real-World Impact:**  
-   Combining these two technologies could lead to even more efficient, scalable, and secure web applications. Developers might soon enjoy the best of both worlds: Docker's ease of deployment and WASM's performance benefits.
+A WASM module is small because it does not carry a userland. That is a benefit when your workload is a self-contained computation and a hard limitation when your workload is PostgreSQL, or anything that expects a filesystem, a process model, threads, and a full libc. Containers carry all of that because plenty of software genuinely needs it.
 
----
+Docker's own integration reflects this. It runs WASM containers alongside Linux and Windows containers under the same tooling, rather than as a migration path off them. You get one workflow, one registry, one orchestrator, with the right runtime per workload.
 
-## Conclusion
+The likely shape is boring and reasonable: WASM for short-lived, compute-shaped, cold-start-sensitive work at the edge and in plugin systems, containers for long-running services with real system dependencies, both under the same management layer.
 
-Both Docker and WebAssembly offer unique strengths:
-
-- **Docker** provides a reliable way to package and run full applications in any environment.
-- **WebAssembly** delivers fast, secure execution with impressive portability, especially for web-based applications.
-
-Their integration points toward a promising future where developers can leverage the speed and efficiency of WASM together with the robust ecosystem of Docker. As technology evolves, the blend of these innovations could reshape how we build and deploy software.
+The interesting thing about WASM is not that it might displace containers. It is that a portable, deny-by-default, millisecond-start execution format is a genuinely new primitive, and the useful question is what that enables rather than what it replaces.

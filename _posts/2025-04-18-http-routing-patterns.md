@@ -2,63 +2,71 @@
 layout: post
 title: Three Essential HTTP Routing Patterns
 date: 2025-04-18 12:13:30
-description: HTTP routing patterns - the three crucial approaches (Host-based, Path-based, and Header-based) that determine how web traffic is directed to different services, enabling efficient request handling and service management in modern web architectures.
+description: Host-based, path-based, and header-based routing. What each one reads from the request, what that costs you, and why the Host header sits in its own category.
 tags: http networking
 categories: networking
 ---
 
-HTTP routing is a fundamental concept in web development that determines how web applications handle and direct incoming requests. Let's go through the three primary routing patterns that every web developer should understand.
+Every reverse proxy, ingress controller, and load balancer is answering the same question: given this request, which backend gets it. There are only really three places to look for the answer, and which one you pick has consequences beyond routing.
 
-## 1. Host-Based Routing
+---
 
-Host-based routing, also known as VHOST (Virtual Host) routing, is a pattern where multiple domain names point to the same server or endpoint. This approach is particularly useful for managing multiple services under different domains while utilizing the same infrastructure.
+## 1. Host-based
 
-### Key Features:
+Route on the `Host` header. Several domains resolve to the same address, and the proxy separates them by the name the client asked for.
 
-- Multiple domains (e.g., **server.web.site.com** and **api.site.com**) can point to the same endpoint
-- Uses the publicly available IP address
-- Ideal for microservices architecture
-- Enables efficient resource utilization
+```
+Host: api.example.com      ──►  api service
+Host: app.example.com      ──►  frontend
+Host: admin.example.com    ──►  admin service
+```
 
-## 2. Path-Based Routing
+This is the oldest of the three, and it is what virtual hosting has meant since HTTP/1.1 made the `Host` header mandatory. Before that, a server could not tell which site a request was for and you needed an IP address per site.
 
-Path-based routing has gained significant popularity, especially with the rise of container orchestration and ingress controllers. This pattern focuses on the URI portion of the HTTP request to determine where the traffic should be directed.
+The thing that matters in practice is TLS. Each hostname needs a certificate that covers it, so you are managing a SAN certificate, a wildcard, or per-host certificates. Host-based routing pushes work into certificate management that path-based routing does not.
 
-### Example:
+What it buys you is clean separation. Different domains can have genuinely different security postures, different certificates, and can be moved to different infrastructure later without any client-visible URL change.
+
+---
+
+## 2. Path-based
+
+Route on the URI path.
 
 ```
 http://api.example.com/getprofile/v1/123456
                       └──────────────────┘
-                            path
+                              path
 ```
 
-### Benefits:
+One hostname, one certificate, requests split by prefix. `/api` to one service, `/static` to another, `/v2` to a newer deployment.
 
-- Granular control over request handling
-- Excellent for versioning APIs
-- Simplified container scaling
-- Enhanced flexibility in microservices architectures
+This is the dominant pattern in container orchestration, and the reason is that it composes well with ingress controllers. Adding a service means adding a path rule, not provisioning a hostname and a certificate.
 
-## 3. Header-Based Routing
+The catch is that the path is part of your public API. A service mounted at `/api/v1/users` has that prefix baked into every client, every bookmark, and every integration. Moving it later is a breaking change or a permanent redirect you maintain forever. Hostnames are comparatively easy to repoint via DNS; paths are not.
 
-The third crucial pattern involves routing based on HTTP headers. While this includes cookie-based persistence, it's important to note that the Host header is typically excluded from this category since it falls under host-based routing.
+Path rewriting helps, and introduces its own confusion when the path the backend sees differs from the path the client sent. That mismatch shows up in logs, in generated URLs, and in redirects, and it is a recurring source of bugs.
 
-### Important Considerations:
+---
 
-- Cookie-based persistence for session management
-- Custom headers for routing decisions
-- Distinct from Host header routing
-- Useful for A/B testing and feature flagging
+## 3. Header-based
 
-## Best Practices
+Route on any other header, or on a cookie.
 
-When implementing these routing patterns, consider:
+This is the flexible one and the one to use most sparingly.
 
-- Using HTTPS for secure communication
-- Implementing proper error handling
-- Setting up monitoring and logging
-- Ensuring scalability in your routing configuration
+It covers cookie-based session persistence, sending a client back to the backend that holds its session. It covers A/B testing and canary releases, where a header or cookie decides whether a request reaches the new version. It covers feature flags and internal-only routing on a custom header.
 
-## Conclusion
+The `Host` header is excluded from this category by convention, because host-based routing is its own well-understood thing with its own certificate implications.
 
-Understanding these three routing patterns is essential for building better web applications. Each pattern serves specific use cases, and often, a combination of these patterns provides the most effective routing strategy for complex applications.
+Two cautions. Routing on a header that a client controls is a trust decision: if a custom header sends requests to an internal or preview backend, anyone can set that header. Strip or validate it at the edge. And header-based rules are invisible in the URL, which makes them the hardest of the three to debug, because the request that failed looks identical to the one that worked.
+
+---
+
+## Choosing
+
+These are not alternatives so much as layers, and real deployments use all three at once: host to pick the environment, path to pick the service, header to pick the version.
+
+The useful instinct is to route on the most stable attribute that distinguishes the traffic. Hostnames change rarely. Paths change more often and are harder to change. Headers change constantly and are invisible.
+
+Push routing decisions toward the stable end where you can, and reserve header-based rules for the things that are genuinely dynamic, like rollouts and session affinity, rather than for structure that ought to be visible in the URL.

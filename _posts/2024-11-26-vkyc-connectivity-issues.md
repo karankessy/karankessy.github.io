@@ -2,51 +2,55 @@
 layout: post
 title: "How We Fixed Critical Connectivity Issues in Our vKYC Application: A Technical Deep Dive"
 date: 2024-11-26 10:00:00
-description: A detailed exploration of how our team diagnosed and resolved persistent connectivity issues in our video KYC application, offering valuable insights for technical teams facing similar challenges.
+description: Users stuck buffering in a video KYC application. The packets never reached the load balancer, and the fix ended up being a firewall policy and a protocol setting we expected to need.
 tags: troubleshooting networking security f5-bigip
 categories: networking
 ---
 
-Ever had one of those technical problems that just keeps coming back like a persistent itch? That's exactly what we faced with our video KYC application. Users were going through a long never-ending buffering repeatedly, and our team was determined to get to the bottom of it. Let me walk you through our journey from chaos to resolution.
+Our video KYC application had a problem that kept coming back. Users would connect and then sit buffering, repeatedly, with no clean failure to point at. Nothing in the application logs suggested the application was at fault.
 
-## The Mystery Begins
+This is the writeup of how we found it, including the part where the eventual fix was the opposite of what we first configured.
 
-Our vKYC application was acting like a finicky door that wouldn't stay shut. Users would connect, only to be left buffering, over and over again. It was like watching a digital game of whack-a-mole, and we needed to stop it.
+---
 
-## Detective Work: The Network Trail
+## Narrowing it down
 
-Our first move? We went full CSI on this one. We captured and analyzed network packets under different scenarios, and that's when things got interesting. When we bypassed our normal network path, everything worked smoothly - UDP and STUN packets were flowing like a well-orchestrated symphony. But throw our F5 load balancer into the mix? Complete silence. No UDP packets, no STUN packets, nothing.
+The useful move early was packet capture under different network paths, because it splits the problem before you start theorising.
 
-## The Plot Thickens
+Bypassing the normal network path, everything worked. UDP and STUN packets flowed and calls established. Routing the same traffic through the F5 load balancer, nothing. No UDP, no STUN.
 
-Armed with these findings, we began our systematic investigation. Think of it as following breadcrumbs through a digital forest. Our trail led us through:
+That is a clean result, and it pointed at the load balancer. It also turned out to be misleading, which is worth flagging: the comparison told us the problem was somewhere on that path, not that it was in the device at the end of it.
 
-1. The F5 load balancer (our first suspect)
-2. The Palo Alto firewall (which was looking more suspicious by the minute)
-3. Various network paths that could be causing this digital traffic jam
+---
 
-## The Breakthrough Moment
+## Where the packets actually stopped
 
-After diving deep into the Palo Alto firewall logs (yes, as exciting as it sounds), we struck gold. The packets weren't even making it to our F5 load balancer - they were getting lost somewhere in the firewall maze.
+The F5 was the obvious suspect, so we checked whether the traffic was arriving at all.
 
-## Crafting the Solution
+It was not. Working back through the path to the Palo Alto firewall and reading its logs, we found the packets were being dropped there. They never reached the load balancer, which meant every hour we might have spent on virtual server and profile configuration would have been spent in the wrong place.
 
-Here's where things get interesting. We took a multi-step approach:
+The bypass path worked because it did not traverse the same firewall policy. The failing path did.
 
-First, we basically created a clone of our existing bypass network policy in the Palo Alto firewall. Think of it as creating a new path through our digital maze, but this time with careful consideration of where it needed to go.
+---
 
-Then came the clever part - we integrated our F5 WAF security zone into the policy framework. It's like adding a new security checkpoint, but one that actually keeps traffic flowing smoothly.
+## The fix
 
-## The Final Twist
+Two parts.
 
-The real breakthrough? It came down to the SIP protocol. Initially, we enabled the SIP protocol with the Application Layer Gateway (ALG) disabled, which acted like removing a roadblock. Later, we found we could disable the SIP protocol entirely - and surprisingly, everything worked even better!
+First, the firewall policy. We cloned the existing bypass policy, which we already knew passed this traffic correctly, and adapted it for the real path rather than writing a new one from scratch. Then we brought the F5 WAF security zone into the policy so the traffic was permitted across the zones it actually crossed.
 
-## Happy Ending
+Second, SIP. Video KYC signalling runs over SIP, and the Palo Alto SIP Application Layer Gateway rewrites SIP payloads to try to help NAT traversal along. That help is frequently the problem, because the ALG rewrites addresses in ways that conflict with what the application and STUN are already negotiating.
 
-The result? Our vKYC application now runs as smooth as butter. No more constant reconnections, no more frustrated users, just a seamless experience like it should have been from the start.
+We first enabled SIP with the ALG disabled, and traffic started passing. Then we tried disabling the SIP protocol handling entirely, expecting it to be worse.
 
-## Key Takeaways
+It was better. With SIP handling off completely, the firewall stopped interpreting the signalling at all and simply forwarded it, and the application handled its own NAT traversal through STUN, which is what it was designed to do.
 
-What did we learn from this adventure? Sometimes, the solution to a complex problem lies in systematic investigation and being willing to question every component in your stack. In our case, what seemed like a simple connectivity issue led us through load balancers, firewalls, and protocol configurations before we found our answer.
+---
 
-Remember: in the world of technical troubleshooting, every clue counts, and sometimes the solution might be hiding in the most unexpected place.
+## What I took from it
+
+The first measurement gave us a true fact and a false conclusion. Traffic failed through the load balancer path, so the load balancer looked responsible. The actual failure was upstream, and the only reason we did not spend a long time in the wrong device is that we checked whether the packets were arriving before we started changing configuration.
+
+The other lesson is about protocol-aware middleboxes. SIP ALG, and the general class of firewall features that inspect and rewrite application protocols, exist to solve NAT problems from an era when endpoints could not solve them themselves. Modern WebRTC-style stacks negotiate their own paths. A middlebox helpfully rewriting that negotiation is not neutral, and turning the helpfulness off is a legitimate fix rather than a workaround.
+
+Check where the packet stops before deciding what is broken. The device you suspect is often just the first one you can see.

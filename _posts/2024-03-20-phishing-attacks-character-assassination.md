@@ -2,7 +2,7 @@
 layout: post
 title: Recent Surge in Phishing Attacks Targeting Character Assassination
 date: 2024-03-20 12:13:30
-description: Explore the deceptive tactics of Facebook phishing attacks targeting character assassination. Learn how to safeguard your digital presence and protect your reputation from these cunning cybercriminals.
+description: A Facebook phishing campaign that does not stop at stealing your password. It uses your account to damage your reputation, and it recruits every victim into spreading itself further.
 tags: security privacy
 categories: security
 ---
@@ -13,44 +13,48 @@ categories: security
     </div>
 </div>
 
-Imagine you're casually scrolling through your Facebook feed, enjoying updates from friends and family, when suddenly, a notification catches your eye. It's a post from someone you know, someone you trust — or maybe it's from that person you secretly admire from afar.
+Most phishing you read about is after your money or your data. This one is after your reputation, which makes it worth writing about separately.
 
-Intrigued, you click on it, excited to see what they've shared.
+The shape of it is ordinary. A post appears in your feed from someone you actually know. You open it. There is a video playing in the background, and before you can watch the thing, a login form asks for your email and password. The page looks close enough to Facebook that a quick glance does not catch it.
 
-But wait, something about this post seems off. When you first open it, you're welcomed by an immersing video that is playing in the background. It seems so alluring and tempting. The trick is that before you can access the content, an apparently innocent inquiry appears and requests your email and password.
+What happens after you type your password is the part that is different.
 
-Sounds legitimate, right?
+---
 
-Here's the catch, though.
+## The payload is your reputation, not your wallet
 
-Once you fall for the trick, these clever scammers instantly post a link to pornographic material through your Facebook account. And to make matters worse, they tag a bunch of your friends (and even your family members!) in the post. Such a violation could result in far-reaching consequences, harming your reputation and resulting in indisputable suffering.
+The attacker does not quietly sell the credentials. They log in as you and post links to pornographic material from your account, then tag your friends and family in it.
 
-## The Boys Are Falling More for It (But Beware, Ladies!)
+Think about who sees that. Colleagues. Relatives. People who have no context and no reason to assume your account was compromised. By the time you notice and delete the post, the notifications have already gone out.
 
-Now, we all know that boys tend to have a soft spot for adult content. It's just biology, and that's exactly what these scammers are exploiting. They know that by enticing guys with explicit material, they're more likely to get their hands on valuable passwords.
+That is the actual damage. The stolen password is just the delivery mechanism.
 
-But hold up, ladies! That doesn't mean you're off the hook. If you accidentally fall into their trap and enter your password on that dodgy link, your reputation could take a drop-dive too. The consequences of having your account compromised and subsequently tagging your contacts with explicit material can be catastrophic, jeopardizing personal and professional relationships. These scammers are ruthless, targeting anyone they can.
+---
 
-## The Never-Ending Nightmare!
+## Why it keeps spreading
 
-Think the nightmare ends with you? Think again. The scammers have designed this attack to keep spreading like wildfire. Once you've been tricked, they want you to unwittingly carry on the cycle. Unsuspecting victims perpetuate the attack by entering their passwords on the malicious link.
+The tagging is not gratuitous. It is the propagation method.
 
-This creates a devastating ripple effect, amplifying the damage inflicted upon an ever-expanding network of friends and family. The attackers thrive on the chaos and the destruction of reputations, leaving victims feeling helpless and stripped of control over their own accounts. It's a never-ending nightmare that can leave you feeling powerless and totally out of control.
+Every person tagged sees a post from someone they trust, which is exactly the condition that made you click in the first place. Some of them click. Some of those enter a password. The campaign does not need to find new victims on its own, because each round of victims recruits the next one.
 
-## Arming Yourself for the Battle & Safeguarding Your Digital World
+It is worth being clear about who this catches. The instinct is to assume the target is someone careless, or someone looking for the content being advertised. That framing is wrong and it makes people complacent. What the attack actually exploits is a post arriving from a trusted account, and everyone has trusted accounts in their feed. Curiosity is enough. So is misclicking on a phone.
 
-It's time to rise up and defend your digital realm. Knowledge and strategic thinking are our weapons of choice in this battle against scammers. Equip yourself with practical steps to stay safe and outsmart their deceptive tactics. Here's how you can fight back and protect your online presence:
+---
 
-- **Lock Down Your Passwords**: Don't make it easy for these cyber scoundrels! Arm yourself with strong, unique passwords for every online account. If you struggle to remember them all, consider using a password manager to keep your fortress secure. And remember, it's okay to forget your passwords as long as you recover them with stronger ones.
+## What actually helps
 
-- **Trust Your Instincts**: If something smells fishy, trust your gut. Don't blindly trust random links, requests, or messages that demand your personal information. Take a step back, investigate, and verify the authenticity of any suspicious pages before you take the plunge.
+Four things, roughly in order of how much they buy you.
 
-- **Reinforce Your Castle with Two-Factor Authentication (2FA)**: Add an extra layer of protection to your digital fortress by enabling 2FA wherever possible. This means you'll need an additional verification step to access your accounts, leaving those attackers scratching their heads in frustration.
+**Two-factor authentication.** This is the one that matters most, because it breaks the chain even when the password is already gone. If the attacker has your password and cannot get past the second factor, the attack stops at the theft and never reaches the reputational payload. Everything else on this list reduces the chance of losing the password. This one reduces the damage when you already have.
 
-- **Arm Others with Knowledge**: Knowledge is power, my friends. Share what you've learned about this treacherous attack with your fellow digital warriors. Let's create a united front against these scammers, ensuring ourselves and our loved ones are safe from the relentless onslaught of phishing attacks.
+**A password manager.** Not primarily for password strength. For the fact that a manager will not autofill your Facebook credentials into a page that is not Facebook. It notices the domain mismatch that your eye does not.
 
-So, the sinister Facebook phishing attack we have uncovered is a stark reminder of the ever-evolving dangers lurking within the digital landscape.
+**Checking the domain before typing a password.** Any page asking you to log in to see content is worth a second of suspicion. Look at the address bar, not the page. The page is the part the attacker controls.
 
-Share this vital information through social media, online forums, or even simple conversations. Teach others to be cautious, to question suspicious links, and to never provide sensitive information without absolute certainty. Let's join communities like [Syecon](https://discord.gg/k7nHjEuTHq) and [Pentester Nepal](https://www.facebook.com/groups/pentesternepal) to stay resilient, informed, and ready to combat the deceit that seeks to harm us.
+**Telling people.** Specifically the people in your family who are not going to read a security blog. The attack propagates through trust networks, so the counter-propagates the same way.
 
-Remember, in the face of darkness, knowledge is the light that guides us. Arm yourself, arm others, and let us triumph over the malevolent forces that threaten our digital world.
+---
+
+If you want to keep up with this kind of thing locally, [Syecon](https://discord.gg/k7nHjEuTHq) and [Pentester Nepal](https://www.facebook.com/groups/pentesternepal) are both worth joining.
+
+And if you have already been caught by this one: change the password, revoke active sessions, turn on 2FA, then post something telling your contacts what happened. The last step feels the worst and does the most good, because it is the thing that stops the people you tagged from clicking.
