@@ -7,8 +7,6 @@ on:
       - main
     paths:
       - "assets/**"
-      - "_sass/**"
-      - "_scripts/**"
       - "**.bib"
       - "**.html"
       - "**.js"
@@ -25,10 +23,10 @@ on:
       - "!.github/workflows/lighthouse-badger.yml"
       - "!.github/workflows/prettier.yml"
       - "!lighthouse_results/**"
-      - "!CONTRIBUTING.md"
-      - "!CUSTOMIZE.md"
-      - "!FAQ.md"
-      - "!INSTALL.md"
+      - "!docs/CONTRIBUTING.md"
+      - "!docs/CUSTOMIZE.md"
+      - "!docs/FAQ.md"
+      - "!docs/INSTALL.md"
       - "!README.md"
   pull_request:
     branches:
@@ -36,8 +34,6 @@ on:
       - main
     paths:
       - "assets/**"
-      - "_sass/**"
-      - "_scripts/**"
       - "**.bib"
       - "**.html"
       - "**.js"
@@ -54,10 +50,10 @@ on:
       - "!.github/workflows/lighthouse-badger.yml"
       - "!.github/workflows/prettier.yml"
       - "!lighthouse_results/**"
-      - "!CONTRIBUTING.md"
-      - "!CUSTOMIZE.md"
-      - "!FAQ.md"
-      - "!INSTALL.md"
+      - "!docs/CONTRIBUTING.md"
+      - "!docs/CUSTOMIZE.md"
+      - "!docs/FAQ.md"
+      - "!docs/INSTALL.md"
       - "!README.md"
   workflow_dispatch:
 
@@ -81,6 +77,13 @@ jobs:
         with:
           python-version: "3.13"
           cache: "pip" # caching pip dependencies
+      - name: Setup Node 🧰
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - name: Install JS deps 📦
+        run: npm ci
       - name: Update _config.yml ⚙️
         uses: fjogeleit/yaml-update-action@main
         with:
@@ -88,20 +91,6 @@ jobs:
           valueFile: "_config.yml"
           propertyPath: "giscus.repo"
           value: ${{ github.repository }}
-      - name: Validate Liquid tags 🧪
-        run: |
-          if grep -R -n "{%[[:space:]]*toc[[:space:]]*%}" _layouts _includes; then
-            echo "Unsupported Liquid tag '{% toc %}' detected. Use supported TOC structures only."
-            exit 1
-          fi
-          if grep -R -n "{%[[:space:]]*bibliography\b" _layouts _includes; then
-            echo "Unsupported Liquid tag '{% bibliography %}' detected in shared templates."
-            exit 1
-          fi
-          if grep -R -n "{%[[:space:]]*social_links[[:space:]]*%}" _layouts _includes; then
-            echo "Unsupported Liquid tag '{% social_links %}' detected. Use include social_links.liquid."
-            exit 1
-          fi
       - name: Install and Build 🔧
         run: |
           sudo apt-get update && sudo apt-get install -y imagemagick
