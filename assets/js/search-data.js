@@ -23,7 +23,18 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/books/";
           },
-        },{id: "post-ipv8-and-the-internet-39-s-eternal-transition-problem",
+        },{id: "post-a-from-scratch-tour-of-openflow-from-the-wire-up",
+        
+          title: "A From-Scratch Tour of OpenFlow, From the Wire Up",
+        
+        description: "Building a toy OpenFlow switch and controller in ~600 lines of Python, then working bottom-up through PHY, parser, TCAM, pipeline, and actions to show why the protocol&#39;s design is downstream of memory technology and a 20-cycle-per-packet budget.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/openflow-from-the-wire-up/";
+          
+        },
+      },{id: "post-ipv8-and-the-internet-39-s-eternal-transition-problem",
         
           title: "IPv8 and the Internet&#39;s Eternal Transition Problem",
         
