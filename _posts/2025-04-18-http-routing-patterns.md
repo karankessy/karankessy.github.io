@@ -3,7 +3,8 @@ layout: post
 title: Three Essential HTTP Routing Patterns
 date: 2025-04-18 12:13:30
 description: HTTP routing patterns - the three crucial approaches (Host-based, Path-based, and Header-based) that determine how web traffic is directed to different services, enabling efficient request handling and service management in modern web architectures.
-tags: [webdev, backend, networking, routing, http]
+tags: http networking
+categories: networking
 ---
 
 HTTP routing is a fundamental concept in web development that determines how web applications handle and direct incoming requests. Let's go through the three primary routing patterns that every web developer should understand.

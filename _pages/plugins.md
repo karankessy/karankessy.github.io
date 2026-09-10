@@ -1,4 +1,5 @@
 ---
+published: false
 layout: page
 title: plugins
 permalink: /plugins/

@@ -3,8 +3,8 @@ layout: post
 title: "Why Your API Works in Postman but Fails in the Browser"
 date: 2026-03-15 10:00:00
 description: "An in-depth exploration of Cross-Origin Resource Sharing (CORS), preflight requests, and common pitfalls, accompanied by a hands-on demo."
-tags: web-security browsers networking
-categories: security-internals
+tags: http security networking
+categories: networking
 mermaid:
   enabled: true
   zoomable: true

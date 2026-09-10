@@ -3,7 +3,8 @@ layout: post
 title: Threat Classification
 date: 2024-09-26 15:41:15
 description: Understanding the four categories of threat classification in cybersecurity - known-knowns, known-unknowns, unknown-knowns, and unknown-unknowns.
-tags: [Cybersecurity, Risk Management, Classification]
+tags: security
+categories: security
 ---
 
 ## Threat Classification

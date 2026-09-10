@@ -3,7 +3,10 @@ layout: post
 title: "TOON - The New JSON"
 date: 2025-11-07 15:46:20
 description: TOON is about to take a wild ride in LLMs. Its going to save you money, time & power. Go through it.
-tags: [TOON, JSON, AI, LLMs, Tokens, Optimization]
+tags: data-formats ai
+categories: ai
+og_image: /assets/img/toon.png
+thumbnail: assets/img/toon.png
 ---
 
 JSON is everywhere. APIs use it. So do backends and frontends. It is the basic and the default way most of the services talk.

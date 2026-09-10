@@ -3,7 +3,10 @@ layout: post
 title: A Guide to Analyzing and Evaluating Reasoning
 date: 2024-12-12 12:13:30
 description: Here we explore the essential techniques for analyzing and evaluating reasoning in arguments. Learn how to identify claims, premises, and conclusions, and strengthen your critical thinking skills.
-tags: [Thinking Skills, Arguments, Logical Analysis, Reasoning]
+tags: reasoning
+categories: essays
+og_image: /assets/img/thinkingskill.png
+thumbnail: assets/img/thinkingskill.png
 ---
 
 In a world flooded with information, where anyone can create anything and present with or without any credibility, the ability to think analytically has become more critical than ever before. Most of the time our thinking occurs with little or no deliberate effort. In a nutshell, we could almost say we think without thinking. For instance, when offered a choice between black tea and milk tea, I can quickly and easily make a decision based on my personal preferences, without considering any other factors or engaging in critical thinking.

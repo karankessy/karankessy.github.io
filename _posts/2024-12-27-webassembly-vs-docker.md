@@ -3,7 +3,10 @@ layout: post
 title: "WebAssembly: Will this replace Docker?"
 date: 2024-12-27 15:46:20
 description: WebAssembly vs Docker. WASM, a technology that revamped the way we thought about containerization.
-tags: [docker, containerization, wasm, webassembly, kubernetes]
+tags: containers systems
+categories: systems
+og_image: /assets/img/wasm2.png
+thumbnail: assets/img/wasm2.png
 ---
 
 ## Introduction

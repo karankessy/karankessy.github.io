@@ -3,8 +3,8 @@ layout: post
 title: "Everything is Inter-Process Communication: HTTP, REST APIs, Serverless functions, what not"
 date: 2026-03-20 10:00:00
 description: "Modern software is rarely a single process doing one thing. Browsers isolate tabs for security. Databases split query workers from storage workers. API backends offload CPU-heavy jobs to background processes. The moment you divide work across processes, you need them to talk to each other."
-tags: operating-system processes system-internals
-categories: system-internals
+tags: systems networking
+categories: systems
 mermaid:
   enabled: true
   zoomable: true

@@ -3,9 +3,11 @@ layout: post
 title: Semantic Map Explorer - Entropy Embedding Atlas
 date: 2026-04-18
 description: Understanding text geometry through embeddings, KNN graphs, entropy, and interactive visualization
-tags: embeddings semantic-analysis entropy visualization umap
-categories: projects tutorials
+tags: ai
+categories: ai
 published: true
+og_image: /assets/img/entropyEmbeddingAtlas.png
+thumbnail: assets/img/entropyEmbeddingAtlas.png
 ---
 
 ## Project: Vector Atlas

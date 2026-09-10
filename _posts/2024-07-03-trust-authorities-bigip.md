@@ -3,7 +3,8 @@ layout: post
 title: "Understanding Trust Authorities in BIG-IP Systems: A Beginner's Guide"
 date: 2024-07-03 10:00:00
 description: Dive into the fundamentals of Device Trust Authorities in BIG-IP systems, exploring their types, roles, and essential configuration tips for a secure and efficient setup.
-tags: [BIG-IP, Cybersecurity, Device Trust, Network Security, Configuration]
+tags: f5-bigip security networking
+categories: networking
 ---
 
 In the field of network security, trust isn't just a word—it's a structure, a foundation that keeps systems working seamlessly and securely. If you're new to BIG-IP systems, understanding the concept of **Device Trust Authorities** is crucial. This guide walks you through the essentials, explaining the types of trust authorities and the considerations for setting them up effectively.

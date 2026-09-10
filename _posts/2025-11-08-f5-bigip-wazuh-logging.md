@@ -3,7 +3,10 @@ layout: post
 title: "F5 BIG-IP + Wazuh: Getting Logs Working After 18 Months"
 date: 2025-11-08 15:46:20
 description: "How I finally got F5 BIG-IP and Wazuh to exchange logs — configuration steps, troubleshooting, and lessons learned from an 18-month integration."
-tags: [f5, wazuh, logging, waf, siem, networking]
+tags: f5-bigip siem security networking
+categories: security
+og_image: /assets/img/wazuhconf.png
+thumbnail: assets/img/wazuhconf.png
 ---
 
 When hope was almost gone, I decided to give the F5–Wazuh integration one more try.  

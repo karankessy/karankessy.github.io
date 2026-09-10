@@ -3,7 +3,8 @@ layout: post
 title: "Immunize Your Photos: Protecting Yourself from AI Deepfake Manipulation"
 date: 2024-04-18 12:13:30
 description: Explore how MIT's innovative PhotoGuard tool can protect your photos from malicious AI editing and deepfakes. Learn how to safeguard your digital identity and stay ahead in the evolving landscape of AI technology.
-tags: [AI, Deepfakes, Cybersecurity, Digital Identity, PhotoGuard, Online Safety]
+tags: ai privacy security
+categories: security
 ---
 
 <div class="row mt-3">

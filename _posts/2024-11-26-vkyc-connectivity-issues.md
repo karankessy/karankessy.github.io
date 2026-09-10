@@ -3,7 +3,8 @@ layout: post
 title: "How We Fixed Critical Connectivity Issues in Our vKYC Application: A Technical Deep Dive"
 date: 2024-11-26 10:00:00
 description: A detailed exploration of how our team diagnosed and resolved persistent connectivity issues in our video KYC application, offering valuable insights for technical teams facing similar challenges.
-tags: [Technical Troubleshooting, vKYC, Palo Alto, Network Security, F5 Load Balancer, Firewall Configuration, SIP Protocol, Technical Analysis]
+tags: troubleshooting networking security f5-bigip
+categories: networking
 ---
 
 Ever had one of those technical problems that just keeps coming back like a persistent itch? That's exactly what we faced with our video KYC application. Users were going through a long never-ending buffering repeatedly, and our team was determined to get to the bottom of it. Let me walk you through our journey from chaos to resolution.

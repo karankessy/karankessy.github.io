@@ -3,8 +3,8 @@ layout: post
 title: A From-Scratch Tour of OpenFlow, From the Wire Up
 date: 2026-09-10
 description: Building a toy OpenFlow switch and controller in ~600 lines of Python, then working bottom-up through PHY, parser, TCAM, pipeline, and actions to show why the protocol's design is downstream of memory technology and a 20-cycle-per-packet budget.
-tags: openflow sdn networking tcam asic p4 packet-processing network-architecture switching
-categories: research analysis networking
+tags: networking sdn
+categories: networking
 toc:
   sidebar: left
 published: true

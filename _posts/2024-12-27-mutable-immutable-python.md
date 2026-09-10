@@ -3,7 +3,10 @@ layout: post
 title: "Engineering behind Mutable and Immutable in Python"
 date: 2024-12-27 15:46:13
 description: Explore the core engineering concepts behind mutable and immutable data types in Python with simple explanations and practical examples.
-tags: [Python, Programming, Mutable, Immutable, Memory Management]
+tags: python systems
+categories: systems
+og_image: /assets/img/xandy.png
+thumbnail: assets/img/xandy.png
 ---
 
 If you've been programming in Python, you've probably come across the terms _mutable_ and _immutable_. These words might sound casual, but have you ever wondered how mutable is actually mutable? and immutable immutable? Its quite simple once you get the hang of it. Let's break it down and look at the "how" and "why" behind these concepts.

@@ -3,7 +3,8 @@ layout: post
 title: Recent Surge in Phishing Attacks Targeting Character Assassination
 date: 2024-03-20 12:13:30
 description: Explore the deceptive tactics of Facebook phishing attacks targeting character assassination. Learn how to safeguard your digital presence and protect your reputation from these cunning cybercriminals.
-tags: [Phishing, Cybersafety, Awareness]
+tags: security privacy
+categories: security
 ---
 
 <div class="row mt-3">
