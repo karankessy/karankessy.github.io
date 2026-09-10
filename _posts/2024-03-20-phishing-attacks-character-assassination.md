@@ -9,7 +9,7 @@ categories: security
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
-        {% include figure.liquid loading="eager" path="https://miro.medium.com/v2/resize:fit:828/format:webp/1*DtXqLJvAh5A2TXxhyjR8Aw.jpeg" class="img-fluid rounded z-depth-1" zoomable=true %}
+        {% include figure.liquid loading="eager" path="assets/img/phishing-facebook-hero.jpg" alt="Facebook phishing post used to harvest credentials" class="img-fluid rounded z-depth-1" zoomable=true %}
     </div>
 </div>
 

@@ -15,7 +15,7 @@ I think the question is framed wrong, and the reason is that the two technologie
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
-        {% include figure.liquid loading="eager" path="https://lh5.googleusercontent.com/NUN7Qbg5Rvccm8AgvAvRtnUHzVtS3pcOWJZ24LM_zLP8ac2wBZV5RUVsKb4b7PQwict0hMmZPRp39N_ESdTv9oIuf2tQlIxSPaOa-dIZmDEk_cj8Hy1n0ZfOSElN9WYHbVm7jPIPVOk25xjjaBxGZGc" class="img-fluid rounded z-depth-1" zoomable=true %}
+        {% include figure.liquid loading="eager" path="assets/img/wasm-docker-hero.png" alt="WebAssembly and Docker side by side" class="img-fluid rounded z-depth-1" zoomable=true %}
     </div>
 </div>
 
@@ -33,7 +33,7 @@ The part that made it interesting outside the browser is that the format does no
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
-        {% include figure.liquid loading="eager" path="https://kodekloud.com/blog/content/images/2023/03/Screenshot-2023-03-16-at-23.43.00.png" class="img-fluid rounded z-depth-1" zoomable=true %}
+        {% include figure.liquid loading="eager" path="assets/img/wasm-runtime-diagram.png" alt="WASM runtime executing modules outside the browser" class="img-fluid rounded z-depth-1" zoomable=true %}
     </div>
 </div>
 
