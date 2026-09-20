@@ -1,8 +1,8 @@
 ---
 layout: post
-title: "A Number Line, 100 TB of RAM, and the Square Root That Saved It"
+title: "Consistent Hashing from Scratch, and Why Cloudflare Deleted 90% of It"
 date: 2026-09-20
-description: "Consistent hashing explained from zero — number line, virtual nodes, weights, and the coefficient of variation — then a walk through how Cloudflare used that math to cut ~90% of its hash-ring entries and recover roughly 100 TB of RAM globally."
+description: "I built a consistent-hash ring in 40 lines of Python and measured everything — load imbalance, 32-bit collisions, what moves when a server dies — to understand how Cloudflare recovered ~100 TB of RAM by asking how much randomness they actually needed."
 tags: systems distributed-systems
 categories: systems
 toc:
@@ -10,91 +10,44 @@ toc:
 published: true
 ---
 
-> **TL;DR** — Consistent hashing puts servers and requests on the same number line and sends each request to the nearest server on its left. Random placement makes that unfair, so you give each server many positions and let the randomness average out. The imbalance shrinks like $$1/\sqrt{k}$$ in the number of positions per server — which means past a few hundred positions you are buying almost nothing and paying full price in RAM. Cloudflare noticed, cut roughly 90% of its ring entries, compacted the struct from 8 bytes to 6, and got back about **100 TB of RAM** across its fleet. ([Cloudflare blog](https://blog.cloudflare.com/saving-100-tb-of-ram-with-math/))
+> _"What I cannot create, I do not understand."_ — Feynman
+
+I read Cloudflare's [_Saving another 100TB of RAM with math (and Rust)_](https://blog.cloudflare.com/saving-100-tb-of-ram-with-math/) twice and came away with the uneasy feeling I get whenever I've read something rather than understood it. I could recite the shape of it — consistent hashing, too many virtual nodes, they cut them, 100 TB back — but I couldn't have told you _how many is too many_, or how you'd know. So I wrote the ring in 40 lines of Python with no dependencies, routed 200,000 keys through it, and measured everything. Every number below is either from that script or from Cloudflare's post, and I've marked which is which.
+
+The punchline, for the impatient: the imbalance you're fighting shrinks like $$1/\sqrt{k}$$ in the number of positions per server, which means the 90,000th position is worth roughly a ten-thousandth of what the 10th was worth. Cloudflare was paying for those positions across a global fleet. That's the whole story, and you can watch it happen in a table.
 
 ---
 
-## Key takeaways
+## The setup, which takes one paragraph
 
-- **The algorithm is one sentence.** Hash the key, hash the servers, walk left, wrap around at the end. Everything else is bookkeeping.
-- **One hash per server is badly unbalanced.** For 100 servers, the coefficient of variation of the load is about **99%** — the noise is the same size as the signal.
-- **Virtual nodes fix it statistically, not structurally.** $$k$$ positions per server gives $$CV_k=\sqrt{(N-1)/(Nk+1)}$$. At $$k=160$$ and $$N=100$$ that's ~8%.
-- **Square root means diminishing returns.** 2× better balance costs 4× the memory. 10× better costs 100×.
-- **At scale the tail of that curve is a bill.** Cloudflare's weighting pushed some servers toward 100,000 positions; the last 90,000 of them bought about 0.7 percentage points of accuracy.
-- **Finite hashes bite back.** With 32-bit hashes and millions of points, collisions make the real error _worse_ than the ideal formula predicts. More points eventually hurt twice.
+You have a rack of cache servers and a stream of URLs. You want a given URL to land on the same server every time — not out of tidiness, but because a cache miss costs an origin fetch and a duplicated copy costs disk you paid for. Get it wrong and three servers each hold `/image/cat.jpg`, your effective cache is a third the size it should be, and your origin sees 3× the traffic. Cloudflare's version of this is routing by URL so a data center keeps one copy of a file instead of one per machine.
+
+So: deterministic routing. That's the requirement. Consistent hashing is one answer.
 
 ---
 
-## Why I wanted to write this down
+## Build it: servers and requests on the same line
 
-The Cloudflare post is titled _"Saving another 100TB of RAM with math (and Rust)"_ and I think the title undersells it. It reads like a math lesson but it is really a distributed-systems story, and the interesting part is not the formula — it is the **question** they asked. Not "how do we make the ring smaller" but "how much randomness do we actually need?" That is a different kind of question and it has a numeric answer.
+Here's the move that makes the whole thing click, and it took me embarrassingly long to internalize the first time I saw it: **hash the servers with the same function you hash the keys with, into the same space.**
 
-So let's rebuild the whole thing from zero. No scary math. We will earn every formula.
-
----
-
-## 1. Forget the math. Start with three servers.
-
-You have three servers:
-
-```text
-Server A
-Server B
-Server C
-```
-
-And a stream of cache requests:
-
-```text
-/image/cat.jpg
-/video/movie.mp4
-/css/style.css
-/api/user/123
-```
-
-You want the **same request to land on the same server every time**. Not because of elegance — because of disk.
-
-Suppose `/image/cat.jpg` goes to Server B. B fetches it from origin and caches it. Next request for the same URL:
-
-```text
-good:                       bad:
-req 1 → B → cache hit       req 1 → B → MISS, fetch, store
-req 2 → B → cache hit       req 2 → A → MISS, fetch, store
-req 3 → B → cache hit       req 3 → C → MISS, fetch, store
-```
-
-In the bad column you now hold three copies of one file, you burned three origin fetches, and your effective cache size just got divided by three. Cloudflare describes exactly this motivation: route by URL so a data center keeps **one** copy of a file rather than scattering copies across every machine in the rack.
-
-Deterministic routing is the requirement. Consistent hashing is one way to get it.
-
----
-
-## 2. The naive version: plain hashing
-
-Take a hash function. For teaching purposes, pretend it only produces numbers `0..99`:
+Pretend our hash only emits `0..99`.
 
 ```text
 hash("cat.jpg")   = 23
 hash("movie.mp4") = 71
-hash("style.css") = 42
+hash(Server A)    = 20
+hash(Server B)    = 50
+hash(Server C)    = 80
 ```
 
-Here is the trick that makes consistent hashing click: **hash the servers with the same function into the same space.**
-
-```text
-hash(Server A) = 20
-hash(Server B) = 50
-hash(Server C) = 80
-```
-
-Now servers and requests live on one number line:
+Servers and requests now live on one number line:
 
 ```text
 0    20        50        80       99
 |----A---------B---------C---------|
 ```
 
-Route a request by walking **left** from where it lands, to the first server you meet.
+Routing rule: walk **left** from where the key landed, take the first server you hit.
 
 ```text
 cat.jpg = 23
@@ -102,8 +55,6 @@ cat.jpg = 23
 0    20  23    50        80       99
 |----A---X-----B---------C---------|
           ↖ walk left → A
-
-23 → A
 ```
 
 ```text
@@ -112,153 +63,103 @@ movie.mp4 = 71
 0    20        50    71    80       99
 |----A---------B-----X-----C---------|
                       ↖ walk left → B
-
-71 → B
 ```
 
-And `90 → C`. That's it. That is the entire lookup.
+That's it. That is the entire lookup. There's no lookup table, no coordination, no gossip — every client that knows the server list computes the same answer independently.
 
----
+### The wrap-around is an off-by-one
 
-## 3. Why everyone draws a circle
-
-Because after 99 comes 0.
-
-```text
-0 -------------------- 99
-^                       |
-|_______________________|
-```
-
-Take the request `10`. Walk left. There is no server to its left — you run off the edge of the line. So you wrap around to the largest server position, which is C at 80:
+What about a key at `10`? Walk left and you fall off the line. So you wrap to the rightmost server:
 
 ```text
 10 → C
 ```
 
-Which means C owns two disjoint stretches:
-
-```text
-C owns: 80 → 99  and  0 → 20
-```
-
-Bend the line into a circle and those two stretches become one arc. That is the "ring" in consistent hashing, and honestly the circle is a **presentation choice, not an algorithmic one**. The number line plus a wrap rule is easier to hold in your head, and it is what the code actually does — a sorted array and a binary search that falls back to index 0.
-
-Here is the whole lookup in ten lines:
+which means C owns two stretches, `80..99` and `0..20`. Bend the line into a circle and they become one arc — which is why every diagram of this is a circle. But the circle is a **presentation choice, not an algorithm**. In code it's a sorted array, a binary search, and Python's negative indexing doing the wrap for free:
 
 ```python
 import bisect
 
 class Ring:
-    def __init__(self, points):
-        # points: list of (hash_position, server_name)
+    def __init__(self, points):            # points: [(position, server), ...]
         points.sort()
-        self.positions = [p for p, _ in points]
-        self.owners    = [s for _, s in points]
+        self.pos = [p for p, _ in points]
+        self.own = [s for _, s in points]
 
     def lookup(self, key_hash):
-        # index of the first position greater than key_hash
-        i = bisect.bisect_right(self.positions, key_hash)
-        # step left to the owner; i == 0 wraps to the last point
-        return self.owners[i - 1]
+        i = bisect.bisect_right(self.pos, key_hash)
+        return self.own[i - 1]             # i == 0 wraps to the last point
 ```
 
-That `i - 1` with Python's negative indexing _is_ the wrap-around. The circle was hiding in an off-by-one the whole time.
+`self.own[i - 1]` when `i == 0` gives `self.own[-1]`, the largest position. The ring was hiding in an off-by-one the whole time. I find that genuinely delightful.
 
 ---
 
-## 4. Now the actual problem
+## Measure it: one position per server is a catastrophe
 
-Look at a lucky layout:
+Let's run it. 100 servers, 200,000 keys, one hash position each, BLAKE2b truncated to 32 bits:
 
 ```text
-0          20                       50  80       99
-|----------A------------------------B---C--------|
+k=1:  min = 2 requests      max = 10,955 requests
 ```
 
-Shares are roughly A=30%, B=30%, C=40%. Acceptable.
+One server got **2** requests. Another got **10,955**. Same hash function, same keys, same code — a 5,000× spread.
 
-Now an unlucky one:
+My first instinct was that I'd broken something. I hadn't. This is what a good hash function does when you only take 100 samples from it. The gaps between $$N$$ uniform random points aren't each $$1/N$$; they're roughly exponentially distributed, which means lots of tiny gaps and the occasional enormous one. Randomness at small $$N$$ is _lumpy_, and our intuition that "uniform hash → uniform load" quietly assumed a law of large numbers that we never actually invoked.
+
+Here's the unlucky layout drawn out:
 
 ```text
 0       A                                      B C
 |-------|--------------------------------------|-|
-```
 
-```text
 A → 70% of requests
 B → 10%
 C → 20%
 ```
 
-A is on fire. B is idle. And here is the part people get wrong: **this is not a bad hash function.** A perfectly uniform hash function produces this. Uniformly random points on a line naturally produce wildly uneven gaps — that is what randomness looks like up close. The gaps between $$N$$ uniform random points are not each $$1/N$$; they are exponentially distributed, which means lots of small ones and occasional huge ones.
-
-So we need to quantify "how uneven, typically?" That is where probability enters, and it enters for a very practical reason: we are about to trade memory for evenness, and you cannot price a trade you cannot measure.
+Nobody made a mistake here. This is the median outcome of the design.
 
 ---
 
-## 5. The first formula, which is trivial
+## So quantify "lumpy"
 
-With $$N$$ servers, each _should_ get:
+Two numbers. The target first:
 
 $$
 \text{Expected} = \frac{1}{N}
 $$
 
-For $$N = 100$$, that's $$0.01 = 1\%$$. That is the whole first formula. It is the target, not a result.
+For 100 servers, 1%. That's not a result, it's the goal.
 
----
-
-## 6. Standard deviation, without the jargon
-
-Ask 100 people to each pick a random number from 0 to 100. You get 12, 13, 87, 41, ... The average lands near 50, but almost nobody _is_ 50. Standard deviation is the one-number answer to "how far from the average does a typical sample sit?"
-
-For one hash position per server, the standard deviation of a server's load share works out to:
+Then: how far from 1% does a typical server actually sit? That's the standard deviation, and for one position per server it works out to
 
 $$
-SD = \frac{1}{N}\sqrt{\frac{N-1}{N+1}}
+SD = \frac{1}{N}\sqrt{\frac{N-1}{N+1}} \;=\; \frac{1}{100}\sqrt{\frac{99}{101}} \;\approx\; 0.99\%
 $$
 
-Plug in $$N = 100$$:
-
-$$
-SD = \frac{1}{100}\sqrt{\frac{99}{101}} \approx 0.0099 = 0.99\%
-$$
-
-Sit with that for a second:
+Read those two side by side:
 
 ```text
-Expected load = 1.00%
-Typical wobble = 0.99%
+target load  = 1.00%
+typical miss = 0.99%
 ```
 
-The typical deviation is **the same size as the thing being measured**. A server getting 0% and a server getting 2% are both entirely ordinary outcomes. That is not a system you want to run a cache on.
+The noise is the size of the signal. A server at 0% and a server at 2% are both completely ordinary draws.
+
+Dividing one by the other gives the number worth putting on a dashboard — the **coefficient of variation**, which is unitless and therefore comparable across fleet sizes:
+
+$$
+CV = \frac{SD}{\text{Expected}} \approx 99\%
+$$
+
+I'll keep using CV for the rest of the post. Mentally: _"how big is the randomness compared to what we were aiming for."_ At 99%, the answer is "as big."
 
 ---
 
-## 7. Coefficient of variation: the number that matters
+## The fix: give every server many positions
 
-The raw SD is awkward because it shrinks as you add servers — 0.99% sounds small until you remember the target is 1%. So normalize:
-
-$$
-CV = \frac{SD}{\text{Expected}}
-$$
-
-$$
-CV = \frac{0.99\%}{1\%} \approx 99\%
-$$
-
-Read it in English:
-
-> **The random noise is 99% as large as the workload we were aiming for.**
-
-CV is unitless, so it compares across fleet sizes, across weights, across designs. It is the right dashboard number. And at $$k=1$$ it says: this design does not work.
-
----
-
-## 8. The trick: give every server many positions
-
-Instead of one position per server, give each several:
+Instead of one position per server, give each server $$k$$ of them, generated as `hash("server-7:0")`, `hash("server-7:1")`, and so on:
 
 ```text
 A1 A2 A3 A4 A5
@@ -266,639 +167,294 @@ B1 B2 B3 B4 B5
 C1 C2 C3 C4 C5
 ```
 
-All fifteen go on the same ring:
+All of them go on the same ring:
 
 ```text
 0    A1    B2  C1      A3      B1 C4     A2
 |-----|-----|---|-------|-------|-|-------|
 ```
 
-Server A no longer owns one giant random chunk. It owns five smaller ones, and its total load is:
+A's load is now a _sum_:
 
 $$
 \text{load}(A) = A_1 + A_2 + A_3 + A_4 + A_5
 $$
 
-Some of those chunks come out too big, some too small, and **they cancel**. That cancellation is the entire mechanism. Not "more positions means finer granularity" — it's "more positions means you are averaging more independent draws, and averages of independent draws concentrate."
+Some of those slices come out too fat, some too thin, and they cancel. That cancellation is the whole mechanism — not "finer granularity," but "you're now averaging $$k$$ independent draws, and averages concentrate."
 
-### The candy version
+The candy version, which is the analogy I'll use once and then drop: throw candy into three bags and one kid gets 70%. Throw it into 300 tiny bags, 100 per kid, and everyone lands near 33%. Identical randomness, identical throwing. The only change is that each kid's total is a sum of many small independent things instead of one big one.
 
-Three kids splitting candy.
+These extra positions are called **virtual nodes** (or vnodes, or replicas). Worth being clear about what they are: a statistical device, not a topology. There is no such thing as `A3` in your infrastructure. It's a number in an array that maps back to A.
 
-**One bag each, thrown randomly:**
+### Measured, 100 servers, 200,000 keys
 
-```text
-Alice   → 70
-Bob     → 10
-Charlie → 20
-```
+| $$k$$ | ring points | measured CV | predicted CV | min load | max load |
+| ----: | ----------: | ----------: | -----------: | -------: | -------: |
+|     1 |         100 |      96.86% |       99.00% |        2 |   10,955 |
+|     2 |         200 |      79.91% |       70.18% |        2 |    8,510 |
+|    10 |       1,000 |      31.17% |       31.45% |    1,012 |    3,645 |
+|    50 |       5,000 |      13.70% |       14.07% |    1,462 |    2,717 |
+|   160 |      16,000 |       8.09% |        7.87% |    1,540 |    2,386 |
+|  1000 |     100,000 |       3.86% |        3.15% |    1,843 |    2,190 |
 
-**One hundred tiny bags each, thrown randomly:**
+Ignore the CV column for a second and just read `min` and `max`. At $$k=1$$: 2 and 10,955. At $$k=160$$: 1,540 and 2,386. The entire fleet has moved inside a factor of 1.5 of each other, and all I did was generate more numbers from the same hash function.
 
-```text
-Alice   → ~33%
-Bob     → ~33%
-Charlie → ~34%
-```
+(The 160 isn't arbitrary — it's NGINX's default for its consistent-hash balancer, and Pingora, Cloudflare's Rust proxy, inherited the same number. Hold that thought.)
 
-Same randomness, same throwing. The only change is that each kid's total is now a sum of 100 independent small things instead of one big thing. That is the law of large numbers doing all the work, and it is exactly why virtual nodes exist.
+### An honest aside about that last row
 
----
+At $$k=1000$$ the measured CV is 3.86% but the formula says 3.15%. I stared at this for a while assuming collisions. It isn't collisions — it's my measurement.
 
-## 9. These are called virtual nodes
-
-Standard terminology, so worth naming:
-
-```text
-Physical server
-      ↓
-many virtual positions (vnodes / replicas / hash points)
-      ↓
-one consistent-hash ring
-```
-
-```text
-Server A                  Server B
- ├── hash A1               ├── hash B1
- ├── hash A2               ├── hash B2
- ├── hash A3               ├── hash B3
- ├── hash A4               ├── hash B4
- └── hash A5               └── hash B5
-```
-
-Usually generated as `hash(server_id + ":" + i)` for `i in 0..k`. The client never sees these identities — every one of them resolves back to a physical `A` or `B`. They are a **statistical device, not a topology**.
-
----
-
-## 10. Cloudflare's starting number: 160
-
-NGINX's consistent-hash implementation uses **160 hash positions per server** as its baseline, and Pingora — Cloudflare's Rust proxy — inherited the same default.
-
-For 100 servers:
+200,000 keys over 100 servers is ~2,000 keys per server, and counting 2,000 random events has its own Poisson noise of about $$1/\sqrt{2000} = 2.2\%$$. Two independent sources of variance add in quadrature:
 
 $$
-100 \times 160 = 16{,}000 \text{ positions}
+\sqrt{3.15^2 + 2.24^2} = 3.86\%
 $$
 
-Sixteen thousand points instead of a hundred. And the payoff is exactly what you'd hope:
-
-```text
-k = 1    →  CV ≈ 99%
-k = 160  →  CV ≈ 8%
-```
-
-From "noise equals signal" to "±8%." That is a good trade and it is why 160 became folklore. The problem is that folklore does not come with a derivative, so nobody asked what 161 was worth.
+Which is exactly what I measured. So the ring is fine; my experiment has a noise floor, and at $$k=1000$$ I've pushed the ring's imbalance _below_ the resolution of the thing I'm measuring it with. That is its own kind of answer to "how many positions do I need," and I didn't expect to get it for free from a discrepancy I initially read as a bug.
 
 ---
 
-## 11. But servers are not identical
+## Servers aren't identical, so weights
 
-Real fleets are heterogeneous:
+Real fleets are archaeological:
 
 ```text
 Server A → 1 TB disk
 Server B → 2 TB disk
-Server C → 4 TB disk
+Server C → 10 TB disk
 ```
 
-Equal shares would be actively wrong. A thrashes while C idles with empty disk. You want share proportional to capacity:
+Equal shares would be actively wrong — A thrashes while C sits half empty. The Ketama-style answer is pleasingly dumb:
+
+> more weight → proportionally more positions.
+
+Measured, using 160 positions per unit of weight:
+
+| server | weight | positions | target | measured |
+| ------ | -----: | --------: | -----: | -------: |
+| A      |      1 |       160 |  7.69% |    7.60% |
+| B      |      2 |       320 | 15.38% |   15.86% |
+| C      |     10 |     1,600 | 76.92% |   76.54% |
+
+Weighting works, and the causal chain is clean:
 
 ```text
-A → 1 part      A = 1/7 ≈ 14%
-B → 2 parts     B = 2/7 ≈ 29%
-C → 4 parts     C = 4/7 ≈ 57%
+disk capacity → weight → position count → arc of the ring → share of requests
 ```
 
-This is **weighted consistent hashing**.
+But look at the bottom line of that experiment:
+
+```text
+total ring points for THREE servers: 2,080
+```
+
+Two thousand entries for three machines. **Weighting doesn't redistribute a fixed budget of positions — it multiplies the budget.** The baseline is set by the _smallest_ server and the largest one drags the total up behind it. Cloudflare weights by disk capacity for cache; other workloads weight by cores or GPUs. The math doesn't care what the weight means, only that some servers are 10× others.
 
 ---
 
-## 12. Ketama: weight becomes position count
+## And then it multiplies again
 
-The Ketama-style answer is beautifully dumb, which is why it works:
-
-> More weight → more hash positions.
+Servers have capabilities: PCI-compliant storage, a GPU, a particular cache tier, a region restriction. Requests have eligibility:
 
 ```text
-A weight 1 → 10 positions
-B weight 2 → 20 positions
-C weight 4 → 40 positions
-            ───────────────
-            70 positions
+request X needs PCI  →  eligible: {A, B, D}
+request Y needs nothing →  eligible: {A, B, C, D, E}
 ```
+
+You can't serve both from one ring, because a ring _is_ a server list. Different eligible sets need different rings, and eligible sets are subsets, so they multiply: $$2^{10} = 1{,}024$$, $$2^{20} \approx 10^6$$. In practice most combinations never occur — Cloudflare reports "dozens" of rings, not millions — but dozens of rings, each holding a weight-multiplied, 160×-inflated position list, is how you end up here:
 
 ```text
-A → 10/70 = 14%
-B → 20/70 = 29%
-C → 40/70 = 57%
+servers × weights × 160 × dozens of rings = millions of entries per process
 ```
 
-Exactly the target. The causal chain:
+Cloudflare measured PBR processes spending as much as **6 GB** on consistent-hashing structures. The index had become one of the larger tenants on the box.
 
-```text
-SERVER CAPACITY
-      ↓
-    WEIGHT
-      ↓
-NUMBER OF HASH POSITIONS
-      ↓
-PORTION OF RING
-      ↓
-SHARE OF REQUESTS
-```
-
-Cloudflare weights its cache tier by **disk capacity**, since that is what determines how much of the working set a machine can hold. Other workloads weight by CPU cores, GPU count, or memory — the framework does not care what the weight _means_, only that it is a number.
+Every multiplication was individually defensible. The 160 came from NGINX. The weights came from real disks. The rings came from real eligibility rules. Nobody was careless; the product just got expensive, and products of defensible decisions are exactly the kind of thing nobody re-audits.
 
 ---
 
-## 13. Where it goes wrong
+## The question nobody had asked
 
-Now make the spread realistic. Fleets accumulate hardware generations:
+Not "how do we compress the ring." This one:
 
-```text
-Server A = 1 TB
-Server B = 2 TB
-Server C = 10 TB
-```
+> **How much randomness do we actually need?**
 
-Keep 160 as the _baseline for the smallest_ server and scale up:
-
-```text
-A →  160 positions
-B →  320 positions
-C → 1600 positions
-     ───────────────
-     2080 positions  (for three servers)
-```
-
-Notice what happened. Weighting does not redistribute a fixed budget of positions — it **multiplies** the budget. The largest machine in the fleet sets the ceiling and everything is denominated against the smallest.
-
-Cloudflare is not doing this for three servers. They are doing it across a global fleet, and some PBR (policy-based routing) processes were spending as much as **6 GB** on consistent-hashing structures alone. The data structure that was supposed to be an index had become one of the larger tenants of the box.
-
----
-
-## 14. And then: one ring is not enough
-
-Servers have capabilities:
-
-```text
-PCI-compliant storage
-GPU present
-special cache tier
-region restriction
-```
-
-Some requests are only eligible for some servers.
-
-```text
-Request X needs PCI  →  eligible: {A, B, D}
-Request Y needs nothing → eligible: {A, B, C, D, E}
-```
-
-You cannot route both off one ring, because the ring encodes _which servers exist_. Different eligible sets need different rings.
-
-And eligible sets are subsets, so they multiply:
-
-$$
-2^4 = 16 \qquad 2^{10} = 1{,}024 \qquad 2^{20} = 1{,}048{,}576
-$$
-
-Classic combinatorial explosion. In practice it is nowhere near the theoretical bound — most combinations never occur — but Cloudflare reports that feature combinations produced **dozens of separate rings** in their system. Dozens of rings, each holding a weighted, 160×-multiplied position list.
-
----
-
-## 15. The bill, assembled
-
-```text
-Servers
-   ↓
-× weights (biggest disk sets the multiplier)
-   ↓
-× 160 positions per weight unit
-   ↓
-× dozens of rings for feature combinations
-   ↓
-millions of hash entries per process
-   ↓
-RAM
-```
-
-Every multiplication was locally defensible. Nobody made a mistake. The 160 was inherited from NGINX, the weighting was needed for heterogeneous disks, the multiple rings were needed for eligibility. The product is what got expensive.
-
-So Cloudflare asked the question that had gone unasked for the entire history of that code:
-
-> **Do we actually need this many positions?**
-
----
-
-## 16. Diminishing returns, and why square roots are brutal
-
-This is the core idea of the whole story. The error behaves like:
-
-$$
-\text{Error} \propto \frac{1}{\sqrt{k}}
-$$
-
-where $$k$$ is positions per server. Ignore the derivation; look at what it costs to improve:
-
-```text
-    100 positions →  some error E
-    400 positions →  E/2
-  1,600 positions →  E/4
-  6,400 positions →  E/8
- 25,600 positions →  E/16
-```
-
-Each halving of the error costs **four times** the memory. The curve is a sponge: the first squeeze gets you most of the water, and after that you are squeezing very hard for drops.
-
-The reason is not mysterious. Averaging $$k$$ independent things reduces their spread by $$\sqrt{k}$$ — same reason polling 4,000 people is only twice as precise as polling 1,000. It is the most universal cost curve in applied probability, and here it is deciding a memory budget.
-
----
-
-## 17. The formula Cloudflare derived
-
-For $$N$$ servers and $$k$$ positions each:
-
-$$
-\text{Expected}_k = \frac{1}{N}
-$$
-
-$$
-SD_k = \sqrt{\frac{k+1}{N(kN+1)} - \frac{1}{N^2}}
-$$
-
-and dividing through:
+That has a numeric answer. For $$N$$ servers with $$k$$ positions each:
 
 $$
 \boxed{\;CV_k = \sqrt{\frac{N-1}{Nk+1}}\;}
 $$
 
-Do not memorize it. Read it. There are only two things in it:
+Don't memorize it — there are only two things in it. $$k$$ sits under a square root in the denominator, so **halving the error costs 4× the memory, forever**. And $$N$$ appears top and bottom, so a bigger fleet doesn't save you; balance is governed by $$k$$.
 
-- **$$k$$ is under a square root in the denominator.** Doubling accuracy costs 4× the positions. Forever.
-- **$$N$$ appears on top and bottom.** Add servers and both the numerator and the $$Nk$$ term grow, so a bigger fleet does not rescue you — the balance is governed by $$k$$, not by how many machines you own.
+Sanity check at $$k=1$$, $$N=100$$: $$\sqrt{99/101} = 99\%$$, which is the one-position case from earlier. Good.
 
-Sanity check at $$k = 1$$, $$N = 100$$:
+Now the part that made me sit up. Here's every doubling of $$k$$ and what it buys:
 
-$$
-CV_1 = \sqrt{\frac{99}{101}} \approx 0.99 = 99\% \;\checkmark
-$$
+|  $$k$$ |     CV | memory/server (6 B entries) | gain over previous row |
+| -----: | -----: | --------------------------: | ---------------------: |
+|     10 | 31.45% |                     0.1 KiB |                      — |
+|     20 | 22.24% |                     0.1 KiB |                9.21 pp |
+|     40 | 15.73% |                     0.2 KiB |                6.51 pp |
+|     80 | 11.12% |                     0.5 KiB |                4.61 pp |
+|    160 |  7.87% |                     0.9 KiB |                3.26 pp |
+|    320 |  5.56% |                     1.9 KiB |                2.30 pp |
+|    640 |  3.93% |                     3.8 KiB |                1.63 pp |
+|  1,280 |  2.78% |                     7.5 KiB |                1.15 pp |
+|  2,560 |  1.97% |                    15.0 KiB |                0.81 pp |
+|  5,120 |  1.39% |                    30.0 KiB |                0.58 pp |
+| 10,240 |  0.98% |                    60.0 KiB |                0.41 pp |
 
-It agrees with the one-hash case from §7, which is how you know you read it right.
+Every row doubles the memory. The rightmost column — what you got for it — shrinks by a factor of $$\sqrt{2}$$ each time. It's a sponge: the first squeeze gets the water, and after that you're squeezing very hard for drops.
 
-### Run it yourself
+Nothing exotic is happening. Averaging $$k$$ independent things tightens them by $$\sqrt{k}$$ — same reason polling 4,000 people is only twice as precise as polling 1,000. It's the most universal cost curve in applied probability and here it is quietly setting a memory budget.
 
-```python
-import math
+### Reproducing Cloudflare's number
 
-def cv(N, k):
-    return math.sqrt((N - 1) / (N * k + 1))
-
-N = 100
-for k in (1, 10, 100, 160, 1000, 10_000, 100_000):
-    print(f"k={k:>7,}  positions={N*k:>9,}  CV={cv(N,k)*100:6.2f}%")
-```
-
-```text
-k=      1  positions=      100  CV= 99.00%
-k=     10  positions=    1,000  CV= 31.45%
-k=    100  positions=   10,000  CV=  9.95%
-k=    160  positions=   16,000  CV=  7.87%
-k=  1,000  positions=  100,000  CV=  3.15%
-k= 10,000  positions=1,000,000  CV=  0.99%
-k=100,000  positions=10,000,000  CV=  0.31%
-```
-
-Look at the last three rows. Going from 1,000 to 100,000 positions per server — a **100× increase in memory** — moves CV from 3.15% to 0.31%. You spent 99,000 extra entries per server — 9.9 million across a 100-server fleet — to remove under three percentage points of imbalance that nobody could measure in production anyway.
-
----
-
-## 18. The concrete waste
-
-Cloudflare's own example: a base of 160 positions multiplied by a weighting factor of 625 gives
+Their post gives a concrete case: a base of 160 positions times a weighting factor of 625, so
 
 $$
 160 \times 625 = 100{,}000
 $$
 
-positions for a single server. They measured what the tail of that was worth: the last **90,000 positions** bought roughly a **0.7 percentage-point** reduction in error.
+positions for one server. They say cutting that back cost about **0.7 percentage points** of accuracy. I plugged their setup into $$CV_k$$ at $$N=100$$:
 
 ```text
-90,000 extra entries per server
-        ↓
-0.7 percentage points of balance
+k = 100,000   CV = 0.315%   586 KiB/server
+k =  10,000   CV = 0.995%    59 KiB/server
+                ───────────
+delta = 0.68 percentage points, for 90,000 fewer positions per server
 ```
 
-That is the trade, stated plainly. Once you see it written as a ratio it stops being a judgement call.
+0.68, against their stated 0.7. I don't know that $$N=100$$ is their fleet size — I'd guess the figure is fairly insensitive to it, since $$N$$ mostly cancels — but the reproduction landed close enough that I believe I'm looking at the same calculation they were. Which is the first moment in this whole exercise where the blog post stopped being a story about someone else's infrastructure and turned into something I could check.
+
+That's the trade, stated as a ratio: **90,000 entries per server, per ring, for 0.68 points of balance that no dashboard was ever going to resolve.**
 
 ---
 
-## 19. Where math meets a 32-bit integer
+## Where the clean math stops being true
 
-Here is the twist that makes this an engineering story instead of a math one.
-
-The formula in §17 assumes positions are drawn from a continuous space. Real hashes are integers. Cloudflare uses **32-bit** hashes:
-
-$$
-2^{32} = 4{,}294{,}967{,}296
-$$
-
-4.3 billion slots. Enormous — until you start putting millions of points into it.
-
-### Collisions, quickly
-
-Shrink the space to `0..9`:
-
-```text
-A → 3
-B → 7
-C → 3      ← A and C collide
-```
-
-Two servers claiming the same position means one of them effectively owns a zero-width slice. A wasted entry: full memory cost, zero balancing benefit.
-
-This is the **birthday paradox**. With $$M$$ slots you start seeing collisions around $$\sqrt{M}$$ points, not $$M$$ points. For 32-bit hashes:
+The formula assumes positions are drawn from a continuous space. They're not — Cloudflare uses 32-bit hashes, so there are $$2^{32} = 4{,}294{,}967{,}296$$ slots. Sounds infinite. It isn't, and the birthday paradox says you start seeing repeats around $$\sqrt{M}$$, which here is:
 
 $$
 \sqrt{2^{32}} = 65{,}536
 $$
 
-Sixty-five thousand. That is a _small_ ring. By the time you have millions of points, collisions are not an edge case — they are a steady drag, and every collided point is memory you bought and got nothing for.
+Sixty-five thousand. That's a _small_ ring. I measured it:
 
-Cloudflare found exactly this: past a certain density, measured error was **worse than the ideal formula predicted**, because the formula assumes distinct positions and reality was not supplying them.
+| points inserted |  distinct | collided | birthday prediction |
+| --------------: | --------: | -------: | ------------------: |
+|           1,000 |     1,000 |        0 |                   0 |
+|          65,536 |    65,535 |        1 |                   0 |
+|         500,000 |   499,953 |       47 |                  29 |
+|       2,000,000 | 1,999,504 |      496 |                 466 |
+|       8,000,000 | 7,992,514 |    7,486 |               7,446 |
 
-So the tail of the curve is worse than "diminishing returns." It is:
+At 8 million points, 7,486 of them landed on a position someone else already owned. Each one is an entry you allocated, sorted, and searched, that contributes exactly nothing to balance — a zero-width slice. 0.09% waste is not catastrophic on its own, but note which direction it points: you paid linearly for the entries and got sublinear benefit back, _and then_ lost a slice of even that.
+
+So the tail of the curve is worse than diminishing returns:
 
 ```text
 more positions
       ↓
-tiny accuracy gain (√k)
+gain shrinks as 1/√k
       +
-more RAM (linear)
+memory grows linearly
       +
-more collisions (which give back some of the gain)
-      ↓
-you can make it worse by trying harder
+collisions claw back part of the gain
 ```
+
+Cloudflare found the same thing empirically — past a certain density their measured error was worse than the ideal model predicted. Which is the kind of detail that only shows up if you go and measure the thing you already have a formula for.
 
 ---
 
-## 20. What they actually did
+## The two bytes that weren't data
 
-Two changes.
-
-**One — stop earlier.** Cut positions by roughly **90%**, with no appreciable accuracy loss in their measurements. Not a heuristic; a decision priced against $$CV_k$$ and validated against real traffic.
-
-**Two — stop paying for padding.** Each ring entry is a hash plus a server index:
+Second change they made, and my favourite because it deletes nothing. A ring entry is a hash and a server index:
 
 ```text
 hash  = 4 bytes
 index = 2 bytes
-      = 6 bytes of actual data
+        ────────
+        6 bytes of actual information
 ```
 
-But a naive struct gets aligned to 8:
+What the compiler gives you:
+
+```c
+struct entry        { uint32_t hash; uint16_t idx; };
+struct packed_entry { uint32_t hash; uint16_t idx; } __attribute__((packed));
+```
 
 ```text
-┌────────────┬──────────┬──────────┐
-│ hash       │ index    │ padding  │
-│ 4 bytes    │ 2 bytes  │ 2 bytes  │
-└────────────┴──────────┴──────────┘
-              8 bytes
+naive  sizeof=8  align=4
+packed sizeof=6  align=1
+array of 3: naive=24 packed=18 bytes
 ```
 
-Store it packed instead:
-
-```text
-┌────────────┬──────────┐
-│ hash       │ index    │
-│ 4 bytes    │ 2 bytes  │
-└────────────┴──────────┘
-        6 bytes
-```
+Eight bytes for six bytes of data. The struct's alignment is 4 (from the `uint32_t`), so its size gets rounded up to a multiple of 4 — and in an array of a hundred million of these, that trailing padding is 25% of your allocation holding nothing at all.
 
 $$
-\frac{8 - 6}{8} = 25\%
+\frac{8-6}{8} = 25\%
 $$
 
-A 25% reduction from deleting nothing at all. The two bytes were never data — they were alignment. That is the "(and Rust)" half of the title: a language where you can lay out and iterate a packed representation without giving up the safety or the speed.
-
-### The arithmetic of why this is 100 TB
-
-```text
-1 entry × 8 bytes
-1,000,000,000 entries × 8 bytes  =   8 GB
-100,000,000,000 entries × 8 bytes = 800 GB
-```
-
-Now multiply by processes per machine, machines per data center, and data centers per planet. Cloudflare's reported total: about **100 TB of RAM recovered globally**.
-
-Nothing about that came from a clever algorithm. It came from noticing that a constant inherited from NGINX had been multiplied by a weight factor, then by a ring count, then by a fleet — and that nobody had ever differentiated the accuracy curve to see what the last 90% was buying.
+A quarter of the structure recovered without removing a single entry. This is the "(and Rust)" half of Cloudflare's title, and I think it's underplayed there: the win isn't that Rust is fast, it's that you can control the layout and iterate a packed representation without giving up safety. You can do this in C too, of course — people just usually don't, because nothing in the profiler says "padding."
 
 ---
 
-## 21. A small system, end to end
+## The part that makes it _consistent_
 
-Four servers, one position each:
+Everything so far has been about balance. The name is about something else, and it's the reason this algorithm exists at all.
 
-```text
-A = 10   B = 30   C = 70   D = 90
-```
+Naive routing is `server = hash(key) % len(servers)`. Take a server out and the modulus changes for every key. I measured both, 100 servers down to 99, 200,000 keys:
 
 ```text
-0----10---------30----------------70---------90----100
-     A           B                 C          D
+consistent hashing: moved 2,154 / 200,000 = 1.08%   (the dead server owned 1.08%)
+modulo hashing:     moved 198,016 / 200,000 = 99.01%
 ```
 
-```text
-request        hash    server
-------------------------------
-cat.jpg          12      A
-dog.jpg          35      B
-movie.mp4        72      C
-logo.png         95      D
-index.html        5      D   ← wrapped around
-```
-
-Now three positions each:
-
-```text
-A = 10, 45, 83
-B = 20, 55, 96
-C = 30, 61, 74
-D = 40, 68, 88
-```
-
-Sorted:
-
-```text
-10 A   20 B   30 C   40 D   45 A   55 B
-61 C   68 D   74 C   83 A   88 D   96 B
-```
-
-Ownership goes from this:
-
-```text
-A → ███████████████
-B → ███
-C → ███████
-D → █████
-```
-
-to this:
-
-```text
-A → ███ ███ ███
-B → ███ ███ ███
-C → ███ ███ ███
-D → ███ ███ ███
-```
-
-Same hash function. Same randomness. Different variance.
-
-### Simulate it
-
-```python
-import bisect, hashlib, collections
-
-def h32(s):
-    return int.from_bytes(hashlib.blake2b(s.encode(), digest_size=4).digest(), "big")
-
-def build(servers, k):
-    ring = sorted((h32(f"{s}:{i}"), s) for s in servers for i in range(k))
-    return [p for p, _ in ring], [s for _, s in ring]
-
-def route(positions, owners, key):
-    i = bisect.bisect_right(positions, h32(key))
-    return owners[i - 1]          # negative index = wrap-around
-
-servers = [f"server-{i}" for i in range(100)]
-keys = [f"/asset/{i}.jpg" for i in range(1_000_000)]
-
-for k in (1, 10, 160, 1000):
-    pos, own = build(servers, k)
-    counts = collections.Counter(route(pos, own, key) for key in keys)
-    loads = [counts.get(s, 0) for s in servers]
-    mean = sum(loads) / len(loads)
-    var = sum((x - mean) ** 2 for x in loads) / len(loads)
-    print(f"k={k:>5}  CV={var**0.5/mean*100:6.2f}%  "
-          f"min={min(loads):>6,}  max={max(loads):>6,}")
-```
-
-Measured against predicted, on 200,000 keys and 100 servers:
-
-```text
-k=    1  measCV= 96.86%  predCV= 99.00%  min=    2  max=10,955
-k=   10  measCV= 31.17%  predCV= 31.45%  min=1,012  max= 3,645
-k=  160  measCV=  8.09%  predCV=  7.87%  min=1,540  max= 2,386
-```
-
-Look at the `min`/`max` columns, not just the CV. At $$k=1$$ one server got **2 requests** and another got **10,955** — a 5,000× spread, from a perfectly good hash function. At $$k=160$$ the whole fleet sits inside 1,540–2,386. The formula tracks $$\sqrt{(N-1)/(Nk+1)}$$ to within noise. Worth running — watching the predicted number fall out of a million simulated requests is what makes the formula stop feeling like decoration.
-
----
-
-## 22. The part that makes it "consistent"
-
-Everything so far is about balance. The name is about something else.
-
-Naive modulo routing:
-
-```python
-server = hash(key) % len(servers)
-```
-
-Go from 4 servers to 3 and the modulus changes for **every key**. Roughly 75% of your keys move. Every moved key is a cache miss, and every miss is an origin fetch. Removing one machine stampedes your origin.
-
-With consistent hashing, when A dies:
+**99.01% versus 1.08%.** With modulo, losing one machine out of a hundred relocates essentially your entire keyspace — every relocated key is a cache miss, and every miss is an origin fetch. One machine dying stampedes your origin. With consistent hashing, the only keys that move are the ones the dead server owned, which is $$1/N$$, and my measured 1.08% is just that server's actual share.
 
 ```text
 before:  A A B B C C D D A A B B
 A dies:  · · B B C C D D · · B B
 after:   D D B B C C D D C C B B
          ↑↑                 ↑↑
-     only A's old regions moved
+     only A's old regions changed hands
 ```
 
-A's positions vanish; whoever sits to the left of each vanished region inherits it. **Every other key stays exactly where it was.** The fraction of keys that move is about $$1/N$$ — the departing server's share — instead of $$(N-1)/N$$.
-
-That is the whole point of the design, and it is why the operational story matters more than the balance story:
-
-```text
-modulo hashing:            consistent hashing:
-server added                server added
-    ↓                           ↓
-recompute everything        a few ring regions change hands
-    ↓                           ↓
-most objects move           most objects stay put
-    ↓                           ↓
-mass cache miss             small, bounded miss spike
-    ↓                           ↓
-origin traffic spike        origin barely notices
-```
-
-Adding capacity should not be an incident.
+That's the property worth paying for. Adding capacity should be a Tuesday, not an incident.
 
 ---
 
-## 23. Four things worth remembering
+## Reflections
 
-**① The target.** With $$N$$ servers, each should get
+Things that surprised me while doing this:
 
-$$
-\frac{1}{N}
-$$
+**The $$k=1$$ failure is much worse than "unbalanced."** I expected a 3–4× spread. I got 5,000×, from a hash function that is doing nothing wrong. I now think "uniformly random" and "uniform" are two words people let slide into each other, and the gap between them is this entire algorithm.
 
-**② Randomness alone does not give you that.** Few points → large gaps → uneven traffic. Uniform hashing is not uniform load.
+**The measurement floor was more instructive than the measurement.** Discovering that my 200k-key experiment couldn't resolve a $$k=1000$$ ring is, in practice, the same discovery Cloudflare made with a much bigger $$k$$ and much more expensive RAM. If your instrument can't see the improvement, neither can your SLO.
 
-**③ More points concentrate the average.**
+**Nobody in this story was careless.** 160 is a reasonable default. Weighting by disk is correct. Separate rings per eligibility set is correct. The bug, if you can call it that, was that four correct decisions were multiplied together and the product was never differentiated. I suspect this is the most common shape of large-scale waste — not bad code, just a constant that stopped being questioned once it had been inherited twice.
 
-$$
-\text{error} \sim \frac{1}{\sqrt{k}}
-$$
-
-**④ And that square root is the whole engineering story.** 2× better balance = 4× memory. 10× better = 100× memory. Somewhere on that curve is the point where you are paying real money for an improvement no dashboard can see — and past it, finite hash space starts taking the improvement back.
+**The formula was cheap and I should have written it sooner.** $$CV_k$$ is one line of Python. I spent longer building the simulation than I would have spent deriving the answer, and the simulation's main value turned out to be confirming the formula rather than replacing it.
 
 ---
 
-## 24. Why the title is better than it looks
+## Where this goes if you keep pulling
 
-_"Saving another 100TB of RAM with math (and Rust)."_
+The thing I keep turning over is that this exact analysis has an inverse, and the inverse applies to almost everyone reading it. If your ring holds 16,000 entries it occupies 96 KB packed, and you should never think about it again — the correct move at small scale is to _not_ build the weighted multi-ring machinery, because the same math that says Cloudflare was overpaying says you'd be overpaying harder for a problem you don't have. Same curve, opposite conclusion, and the only thing that decides which end of it you're on is the multiplier in front. That deserves its own post.
 
-The Rust is real but secondary — packed layouts and cheap iteration. The math is the story, and specifically this loop:
+Some threads I didn't chase, left as exercises:
 
-```text
-      build → measure → find waste → model it
-                                        ↓
-      deploy ← benchmark ←──────── change it
-```
+- **Rendezvous (HRW) hashing** drops the ring entirely — score every server per key, take the max. Excellent balance, $$O(N)$$ per lookup instead of $$O(\log Nk)$$, so it wins at small $$N$$. Worth measuring against the table above.
+- **Consistent hashing with bounded loads** (Mirrokni et al.) adds a capacity cap and forwards overflow, which gets you a hard guarantee instead of a statistical one.
+- **Jump consistent hash** (Lamping & Veach) needs no ring and no memory at all — 5 lines, perfect balance — but can't do weights or arbitrary removals. The constraints are the interesting part.
+- Rerun my tables with 64-bit hashes and watch the collision column go to zero, then ask whether 8-byte entries were worth it.
 
-They did not say "let's use fewer hashes, feels like enough." They asked _how much randomness do we actually need_, wrote down $$CV_k$$, found the knee of the curve, checked it against 32-bit reality where the clean formula stopped holding, and then cut.
-
-Which is the honest version of what "engineering at scale" means. Not heroics — noticing that a default someone inherited from NGINX in 2008 had been multiplied by four different things, and being willing to do the arithmetic on it.
+The code is all in this post; it's ~40 lines and imports nothing. If you only do one thing, do the $$k=1$$ run and look at the min and max. I don't think you get that number until you print it yourself.
 
 ---
 
-## 25. FAQ
-
-**How many virtual nodes should I use?**
-Compute it. $$CV_k=\sqrt{(N-1)/(Nk+1)}$$ — pick your tolerable imbalance and solve for $$k$$. For most fleets under a few hundred machines, 100–200 lands you under 10% and there is no reason to go further unless you have measured that 10% hurting.
-
-**Does a better hash function fix the imbalance?**
-No. The imbalance in §4 comes from uniform randomness itself, not from a defect in the hash. A "better" hash gives you the same exponentially distributed gaps. Only more points fix it.
-
-**Is this relevant below Cloudflare scale?**
-The algorithm, yes — deterministic routing and cheap rebalancing are worth having at any size. The 100 TB optimization, no. If your ring holds 16,000 entries, it is ~128 KB and you should never think about it again. The lesson at small scale is the inverse one: _don't_ build the weighted multi-ring machinery until something forces you to. Same math, opposite conclusion — which is a good subject for its own post.
-
-**Why 32-bit hashes if collisions are the problem?**
-Because for reasonable ring sizes they are not a problem, and 4 bytes per entry versus 8 is a 33% saving on a structure you are replicating everywhere. The collisions only bite at the extreme density that the §18 analysis says you should not be at anyway. The two findings point the same direction.
-
-**What about bounded-load or rendezvous hashing?**
-Different tools on the same shelf. Rendezvous (HRW) hashing skips the ring entirely — score every server per key, take the max — which gives excellent balance at $$O(N)$$ lookup instead of $$O(\log(Nk))$$, so it suits small $$N$$. Consistent hashing with bounded loads adds a capacity cap and overflow-forwarding on top of the ring. Both are worth knowing; neither changes the $$1/\sqrt{k}$$ story above.
-
----
-
-## Source
-
-Cloudflare, _Saving another 100TB of RAM with math (and Rust)_ — <https://blog.cloudflare.com/saving-100-tb-of-ram-with-math/>
-
-All figures attributed to Cloudflare in this post (the 99% and 8% CV values, 160 positions per server, the 6 GB PBR processes, the dozens of rings, the 160×625 = 100,000 example and its 0.7 percentage points, the ~90% reduction, the 25% struct saving, and the ~100 TB total) come from that post. The derivations, simulations, and the code in §3, §17, and §21 are mine.
+**Sources.** Cloudflare, [_Saving another 100TB of RAM with math (and Rust)_](https://blog.cloudflare.com/saving-100-tb-of-ram-with-math/). Theirs: the 160/625 example and its 0.7 percentage points, the ~90% reduction, the 6 GB PBR processes, the dozens of rings, the 25% struct saving, and the ~100 TB total. Mine: every table of measurements, the $$CV_k$$ reproductions, the collision counts, the C layout output, and the failure-mode experiment.
