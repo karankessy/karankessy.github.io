@@ -111,7 +111,10 @@
 } /* Operator.Word */
 .highlight .w {
   color: #bbbbbb;
-} /* Text.Whitespace */ /* Literal.Number.Float */
+} /* Text.Whitespace */
+.highlight .mf {
+  color: #009999;
+} /* Literal.Number.Float */
 .highlight .mh {
   color: #009999;
 } /* Literal.Number.Hex */
@@ -129,7 +132,10 @@
 } /* Literal.String.Escape */
 .highlight .sh {
   color: #d01040;
-} /* Literal.String.Heredoc */ /* Literal.String.Interpol */ /* Literal.String.Other */
+} /* Literal.String.Heredoc */
+.highlight .si {
+  color: #d01040;
+} /* Literal.String.Interpol */ /* Literal.String.Other */
 .highlight .sr {
   color: #009926;
 } /* Literal.String.Regex */

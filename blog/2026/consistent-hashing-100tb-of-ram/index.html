@@ -1,0 +1,716 @@
+<!DOCTYPE html> <html lang="en"> <head> <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> <meta charset="utf-8"> <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> <meta http-equiv="X-UA-Compatible" content="IE=edge"> <title> A Number Line, 100 TB of RAM, and the Square Root That Saved It | Karan Kc </title> <meta name="author" content="Karan Kc"> <meta name="description" content="Consistent hashing explained from zero — number line, virtual nodes, weights, and the coefficient of variation — then a walk through how Cloudflare used that math to cut ~90% of its hash-ring entries and recover roughly 100 TB of RAM globally."> <meta name="keywords" content="cybersecurity, web technologies, networking, infrastructure, systems"> <meta property="og:site_name" content="Karan Kc"> <meta property="og:type" content="article"> <meta property="og:title" content="Karan Kc | A Number Line, 100 TB of RAM, and the Square Root That Saved It"> <meta property="og:url" content="https://karanregmi.com.np/blog/2026/consistent-hashing-100tb-of-ram/"> <meta property="og:description" content="Consistent hashing explained from zero — number line, virtual nodes, weights, and the coefficient of variation — then a walk through how Cloudflare used that math to cut ~90% of its hash-ring entries and recover roughly 100 TB of RAM globally."> <meta property="og:image" content="https://karanregmi.com.np/assets/img/prof_pic.jpg"> <meta property="og:locale" content="en"> <meta name="twitter:card" content="summary"> <meta name="twitter:title" content="A Number Line, 100 TB of RAM, and the Square Root That Saved It"> <meta name="twitter:description" content="Consistent hashing explained from zero — number line, virtual nodes, weights, and the coefficient of variation — then a walk through how Cloudflare used that math to cut ~90% of its hash-ring entries and recover roughly 100 TB of RAM globally."> <meta name="twitter:image" content="https://karanregmi.com.np/assets/img/prof_pic.jpg"> <script type="application/ld+json">
+    {
+        "author":
+        {
+            "@type": "Person",
+            "name": "Karan Kc"
+        },
+        "url": "https://karanregmi.com.np/blog/2026/consistent-hashing-100tb-of-ram/",
+        "@type": "BlogPosting",
+        "description": "Consistent hashing explained from zero — number line, virtual nodes, weights, and the coefficient of variation — then a walk through how Cloudflare used that math to cut ~90% of its hash-ring entries and recover roughly 100 TB of RAM globally.",
+        "headline": "A Number Line, 100 TB of RAM, and the Square Root That Saved It",
+        
+        "sameAs": ["https://github.com/karankessy","https://www.linkedin.com/in/karankessy","https://facebook.com/karankessy","https://twitter.com/karankessy","https://instagram.com/karankessy"],
+        
+        "name": "Karan Kc",
+        "@context": "https://schema.org"
+    }
+  </script> <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; media-src 'self' https:; frame-src 'self' https:; connect-src 'self' https:;"> <style>
+  :root {
+    --max-content-width: 930px;
+  }
+</style> <link rel="stylesheet" href="/assets/css/tailwind.css?v=50c64c15cbb9fd1ce6056fdb8bcb4b62"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tocbot@4.36.4/dist/tocbot.css" integrity="sha256-zTN0r+0OKaIv2xqeNNIYxNk0pWJ6+IqPGc1iDgVzWF0=" crossorigin="anonymous"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css" integrity="sha256-MVopmdyC2tYTiJ8wlktf0uh0v4NgT+vNdyVFepi7Q0c=" crossorigin="anonymous"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/academicons@1.9.5/css/academicons.min.css" integrity="sha256-SzrCOBJbGVFMahewkgjwnApaV2+av1DwMAA+/QGLyZw=" crossorigin="anonymous"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/scholar-icons@1.0.3/css/scholar-icons.css" integrity="sha256-VY3hHVj/hNX3fYG6wtbA6TcKJQl7+FthzGSyIB64klY=" crossorigin="anonymous"> <link defer rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:100,300,400,500,700|Material+Icons&amp;display=swap"> <link defer rel="stylesheet" href="/assets/css/jekyll-pygments-themes-github.css?v=591dab5a4e56573bf4ef7fd332894c99" media="" id="highlight_theme_light"> <link rel="shortcut icon" href="data:image/svg+xml,&lt;svg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20100%20100%22&gt;&lt;text%20y=%22.9em%22%20font-size=%2290%22&gt;%E2%9A%9B%EF%B8%8F&lt;/text&gt;&lt;/svg&gt;"> <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png?v=2ccb27a1632d6c52f3d75bbd836ac325"> <link rel="stylesheet" href="/assets/css/main.css?v=3116ba77db9ee1581d05bb3e86fbf7f1"> <link rel="canonical" href="https://karanregmi.com.np/blog/2026/consistent-hashing-100tb-of-ram/"> <script src="/assets/js/theme.js?v=5286c3e4c334d0ecb8fc0c40ff4fa7ec"></script> <link defer rel="stylesheet" href="/assets/css/jekyll-pygments-themes-native.css?v=5847e5ed4a4568527aa6cfab446049ca" media="none" id="highlight_theme_dark"> <script>
+    initTheme();
+  </script> </head> <body class="fixed-top-nav "> <header> <nav id="navbar" class="navbar navbar-light navbar-expand-sm fixed-top" role="navigation"> <div class="container"> <a class="navbar-brand title font-weight-lighter" href="/"> Karan Kc </a> <button class="navbar-toggler collapsed navbar-toggler-main" type="button" data-nav-toggle="navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> <span class="sr-only">Toggle navigation</span> <span class="icon-bar top-bar"></span> <span class="icon-bar middle-bar"></span> <span class="icon-bar bottom-bar"></span> </button> <div class="collapse navbar-collapse navbar-collapse-main" id="navbarNav"> <ul class="navbar-nav navbar-menu-list flex-nowrap"> <li class="nav-item "> <a class="nav-link" href="/">about </a> </li> <li class="nav-item active"> <a class="nav-link" href="/blog/">blog </a> </li> <li class="nav-item "> <a class="nav-link" href="/books/">bookshelf </a> </li> <li class="nav-item"> <button id="search-toggle" type="button" title="Search" aria-label="Open search"> <span class="nav-link">ctrl k <i class="fa-solid fa-magnifying-glass"></i></span> </button> </li> <li class="toggle-container"> <button id="light-toggle" type="button" title="Change theme" aria-label="Change color theme"> <i class="fa-half-sun-moon" id="light-toggle-system"></i> <i class="fa-solid fa-moon" id="light-toggle-dark"></i> <i class="fa-solid fa-sun" id="light-toggle-light"></i> </button> </li> </ul> </div> </div> </nav> <progress id="progress" value="0"> <div class="progress-container"> <span class="progress-bar"></span> </div> </progress> </header> <div class="container mt-5" role="main"> <div class="row"> <div class="col-sm-3"> <nav id="toc-sidebar" class="sticky-top toc toc-sidebar" aria-label="Table of contents" data-toc-collapse="expanded" data-toc-collapse-depth=""></nav> </div> <div class="col-sm-9"> <div class="post"> <header class="post-header"> <h1 class="post-title">A Number Line, 100 TB of RAM, and the Square Root That Saved It</h1> <p class="post-meta"> Created on September 20, 2026 </p> <p class="post-tags"> <a href="/blog/2026"> <i class="fa-solid fa-calendar fa-sm"></i> 2026 </a>   ·   <a href="/blog/tag/systems"> <i class="fa-solid fa-hashtag fa-sm"></i> systems</a>   <a href="/blog/tag/distributed-systems"> <i class="fa-solid fa-hashtag fa-sm"></i> distributed-systems</a>   ·   <a href="/blog/category/systems"> <i class="fa-solid fa-tag fa-sm"></i> systems</a> </p> </header> <article class="post-content"> <div id="markdown-content"> <blockquote> <p><strong>TL;DR</strong> — Consistent hashing puts servers and requests on the same number line and sends each request to the nearest server on its left. Random placement makes that unfair, so you give each server many positions and let the randomness average out. The imbalance shrinks like \(1/\sqrt{k}\) in the number of positions per server — which means past a few hundred positions you are buying almost nothing and paying full price in RAM. Cloudflare noticed, cut roughly 90% of its ring entries, compacted the struct from 8 bytes to 6, and got back about <strong>100 TB of RAM</strong> across its fleet. (<a href="https://blog.cloudflare.com/saving-100-tb-of-ram-with-math/" rel="external nofollow noopener" target="_blank">Cloudflare blog</a>)</p> </blockquote> <hr> <h2 id="key-takeaways">Key takeaways</h2> <ul> <li> <strong>The algorithm is one sentence.</strong> Hash the key, hash the servers, walk left, wrap around at the end. Everything else is bookkeeping.</li> <li> <strong>One hash per server is badly unbalanced.</strong> For 100 servers, the coefficient of variation of the load is about <strong>99%</strong> — the noise is the same size as the signal.</li> <li> <strong>Virtual nodes fix it statistically, not structurally.</strong> \(k\) positions per server gives \(CV_k=\sqrt{(N-1)/(Nk+1)}\). At \(k=160\) and \(N=100\) that’s ~8%.</li> <li> <strong>Square root means diminishing returns.</strong> 2× better balance costs 4× the memory. 10× better costs 100×.</li> <li> <strong>At scale the tail of that curve is a bill.</strong> Cloudflare’s weighting pushed some servers toward 100,000 positions; the last 90,000 of them bought about 0.7 percentage points of accuracy.</li> <li> <strong>Finite hashes bite back.</strong> With 32-bit hashes and millions of points, collisions make the real error <em>worse</em> than the ideal formula predicts. More points eventually hurt twice.</li> </ul> <hr> <h2 id="why-i-wanted-to-write-this-down">Why I wanted to write this down</h2> <p>The Cloudflare post is titled <em>“Saving another 100TB of RAM with math (and Rust)”</em> and I think the title undersells it. It reads like a math lesson but it is really a distributed-systems story, and the interesting part is not the formula — it is the <strong>question</strong> they asked. Not “how do we make the ring smaller” but “how much randomness do we actually need?” That is a different kind of question and it has a numeric answer.</p> <p>So let’s rebuild the whole thing from zero. No scary math. We will earn every formula.</p> <hr> <h2 id="1-forget-the-math-start-with-three-servers">1. Forget the math. Start with three servers.</h2> <p>You have three servers:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Server A
+Server B
+Server C
+</code></pre></div></div> <p>And a stream of cache requests:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/image/cat.jpg
+/video/movie.mp4
+/css/style.css
+/api/user/123
+</code></pre></div></div> <p>You want the <strong>same request to land on the same server every time</strong>. Not because of elegance — because of disk.</p> <p>Suppose <code class="language-plaintext highlighter-rouge">/image/cat.jpg</code> goes to Server B. B fetches it from origin and caches it. Next request for the same URL:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>good:                       bad:
+req 1 → B → cache hit       req 1 → B → MISS, fetch, store
+req 2 → B → cache hit       req 2 → A → MISS, fetch, store
+req 3 → B → cache hit       req 3 → C → MISS, fetch, store
+</code></pre></div></div> <p>In the bad column you now hold three copies of one file, you burned three origin fetches, and your effective cache size just got divided by three. Cloudflare describes exactly this motivation: route by URL so a data center keeps <strong>one</strong> copy of a file rather than scattering copies across every machine in the rack.</p> <p>Deterministic routing is the requirement. Consistent hashing is one way to get it.</p> <hr> <h2 id="2-the-naive-version-plain-hashing">2. The naive version: plain hashing</h2> <p>Take a hash function. For teaching purposes, pretend it only produces numbers <code class="language-plaintext highlighter-rouge">0..99</code>:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>hash("cat.jpg")   = 23
+hash("movie.mp4") = 71
+hash("style.css") = 42
+</code></pre></div></div> <p>Here is the trick that makes consistent hashing click: <strong>hash the servers with the same function into the same space.</strong></p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>hash(Server A) = 20
+hash(Server B) = 50
+hash(Server C) = 80
+</code></pre></div></div> <p>Now servers and requests live on one number line:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0    20        50        80       99
+|----A---------B---------C---------|
+</code></pre></div></div> <p>Route a request by walking <strong>left</strong> from where it lands, to the first server you meet.</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cat.jpg = 23
+
+0    20  23    50        80       99
+|----A---X-----B---------C---------|
+          ↖ walk left → A
+
+23 → A
+</code></pre></div></div> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>movie.mp4 = 71
+
+0    20        50    71    80       99
+|----A---------B-----X-----C---------|
+                      ↖ walk left → B
+
+71 → B
+</code></pre></div></div> <p>And <code class="language-plaintext highlighter-rouge">90 → C</code>. That’s it. That is the entire lookup.</p> <hr> <h2 id="3-why-everyone-draws-a-circle">3. Why everyone draws a circle</h2> <p>Because after 99 comes 0.</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0 -------------------- 99
+^                       |
+|_______________________|
+</code></pre></div></div> <p>Take the request <code class="language-plaintext highlighter-rouge">10</code>. Walk left. There is no server to its left — you run off the edge of the line. So you wrap around to the largest server position, which is C at 80:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 → C
+</code></pre></div></div> <p>Which means C owns two disjoint stretches:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C owns: 80 → 99  and  0 → 20
+</code></pre></div></div> <p>Bend the line into a circle and those two stretches become one arc. That is the “ring” in consistent hashing, and honestly the circle is a <strong>presentation choice, not an algorithmic one</strong>. The number line plus a wrap rule is easier to hold in your head, and it is what the code actually does — a sorted array and a binary search that falls back to index 0.</p> <p>Here is the whole lookup in ten lines:</p> <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">bisect</span>
+
+<span class="k">class</span> <span class="nc">Ring</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">points</span><span class="p">):</span>
+        <span class="c1"># points: list of (hash_position, server_name)
+</span>        <span class="n">points</span><span class="p">.</span><span class="nf">sort</span><span class="p">()</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">points</span><span class="p">]</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">owners</span>    <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">points</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">lookup</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">key_hash</span><span class="p">):</span>
+        <span class="c1"># index of the first position greater than key_hash
+</span>        <span class="n">i</span> <span class="o">=</span> <span class="n">bisect</span><span class="p">.</span><span class="nf">bisect_right</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">positions</span><span class="p">,</span> <span class="n">key_hash</span><span class="p">)</span>
+        <span class="c1"># step left to the owner; i == 0 wraps to the last point
+</span>        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">owners</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+</code></pre></div></div> <p>That <code class="language-plaintext highlighter-rouge">i - 1</code> with Python’s negative indexing <em>is</em> the wrap-around. The circle was hiding in an off-by-one the whole time.</p> <hr> <h2 id="4-now-the-actual-problem">4. Now the actual problem</h2> <p>Look at a lucky layout:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0          20                       50  80       99
+|----------A------------------------B---C--------|
+</code></pre></div></div> <p>Shares are roughly A=30%, B=30%, C=40%. Acceptable.</p> <p>Now an unlucky one:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0       A                                      B C
+|-------|--------------------------------------|-|
+</code></pre></div></div> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>A → 70% of requests
+B → 10%
+C → 20%
+</code></pre></div></div> <p>A is on fire. B is idle. And here is the part people get wrong: <strong>this is not a bad hash function.</strong> A perfectly uniform hash function produces this. Uniformly random points on a line naturally produce wildly uneven gaps — that is what randomness looks like up close. The gaps between \(N\) uniform random points are not each \(1/N\); they are exponentially distributed, which means lots of small ones and occasional huge ones.</p> <p>So we need to quantify “how uneven, typically?” That is where probability enters, and it enters for a very practical reason: we are about to trade memory for evenness, and you cannot price a trade you cannot measure.</p> <hr> <h2 id="5-the-first-formula-which-is-trivial">5. The first formula, which is trivial</h2> <p>With \(N\) servers, each <em>should</em> get:</p> \[\text{Expected} = \frac{1}{N}\] <p>For \(N = 100\), that’s \(0.01 = 1\%\). That is the whole first formula. It is the target, not a result.</p> <hr> <h2 id="6-standard-deviation-without-the-jargon">6. Standard deviation, without the jargon</h2> <p>Ask 100 people to each pick a random number from 0 to 100. You get 12, 13, 87, 41, … The average lands near 50, but almost nobody <em>is</em> 50. Standard deviation is the one-number answer to “how far from the average does a typical sample sit?”</p> <p>For one hash position per server, the standard deviation of a server’s load share works out to:</p> \[SD = \frac{1}{N}\sqrt{\frac{N-1}{N+1}}\] <p>Plug in \(N = 100\):</p> \[SD = \frac{1}{100}\sqrt{\frac{99}{101}} \approx 0.0099 = 0.99\%\] <p>Sit with that for a second:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Expected load = 1.00%
+Typical wobble = 0.99%
+</code></pre></div></div> <p>The typical deviation is <strong>the same size as the thing being measured</strong>. A server getting 0% and a server getting 2% are both entirely ordinary outcomes. That is not a system you want to run a cache on.</p> <hr> <h2 id="7-coefficient-of-variation-the-number-that-matters">7. Coefficient of variation: the number that matters</h2> <p>The raw SD is awkward because it shrinks as you add servers — 0.99% sounds small until you remember the target is 1%. So normalize:</p> \[CV = \frac{SD}{\text{Expected}}\] \[CV = \frac{0.99\%}{1\%} \approx 99\%\] <p>Read it in English:</p> <blockquote> <p><strong>The random noise is 99% as large as the workload we were aiming for.</strong></p> </blockquote> <p>CV is unitless, so it compares across fleet sizes, across weights, across designs. It is the right dashboard number. And at \(k=1\) it says: this design does not work.</p> <hr> <h2 id="8-the-trick-give-every-server-many-positions">8. The trick: give every server many positions</h2> <p>Instead of one position per server, give each several:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>A1 A2 A3 A4 A5
+B1 B2 B3 B4 B5
+C1 C2 C3 C4 C5
+</code></pre></div></div> <p>All fifteen go on the same ring:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0    A1    B2  C1      A3      B1 C4     A2
+|-----|-----|---|-------|-------|-|-------|
+</code></pre></div></div> <p>Server A no longer owns one giant random chunk. It owns five smaller ones, and its total load is:</p> \[\text{load}(A) = A_1 + A_2 + A_3 + A_4 + A_5\] <p>Some of those chunks come out too big, some too small, and <strong>they cancel</strong>. That cancellation is the entire mechanism. Not “more positions means finer granularity” — it’s “more positions means you are averaging more independent draws, and averages of independent draws concentrate.”</p> <h3 id="the-candy-version">The candy version</h3> <p>Three kids splitting candy.</p> <p><strong>One bag each, thrown randomly:</strong></p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Alice   → 70
+Bob     → 10
+Charlie → 20
+</code></pre></div></div> <p><strong>One hundred tiny bags each, thrown randomly:</strong></p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Alice   → ~33%
+Bob     → ~33%
+Charlie → ~34%
+</code></pre></div></div> <p>Same randomness, same throwing. The only change is that each kid’s total is now a sum of 100 independent small things instead of one big thing. That is the law of large numbers doing all the work, and it is exactly why virtual nodes exist.</p> <hr> <h2 id="9-these-are-called-virtual-nodes">9. These are called virtual nodes</h2> <p>Standard terminology, so worth naming:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Physical server
+      ↓
+many virtual positions (vnodes / replicas / hash points)
+      ↓
+one consistent-hash ring
+</code></pre></div></div> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Server A                  Server B
+ ├── hash A1               ├── hash B1
+ ├── hash A2               ├── hash B2
+ ├── hash A3               ├── hash B3
+ ├── hash A4               ├── hash B4
+ └── hash A5               └── hash B5
+</code></pre></div></div> <p>Usually generated as <code class="language-plaintext highlighter-rouge">hash(server_id + ":" + i)</code> for <code class="language-plaintext highlighter-rouge">i in 0..k</code>. The client never sees these identities — every one of them resolves back to a physical <code class="language-plaintext highlighter-rouge">A</code> or <code class="language-plaintext highlighter-rouge">B</code>. They are a <strong>statistical device, not a topology</strong>.</p> <hr> <h2 id="10-cloudflares-starting-number-160">10. Cloudflare’s starting number: 160</h2> <p>NGINX’s consistent-hash implementation uses <strong>160 hash positions per server</strong> as its baseline, and Pingora — Cloudflare’s Rust proxy — inherited the same default.</p> <p>For 100 servers:</p> \[100 \times 160 = 16{,}000 \text{ positions}\] <p>Sixteen thousand points instead of a hundred. And the payoff is exactly what you’d hope:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>k = 1    →  CV ≈ 99%
+k = 160  →  CV ≈ 8%
+</code></pre></div></div> <p>From “noise equals signal” to “±8%.” That is a good trade and it is why 160 became folklore. The problem is that folklore does not come with a derivative, so nobody asked what 161 was worth.</p> <hr> <h2 id="11-but-servers-are-not-identical">11. But servers are not identical</h2> <p>Real fleets are heterogeneous:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Server A → 1 TB disk
+Server B → 2 TB disk
+Server C → 4 TB disk
+</code></pre></div></div> <p>Equal shares would be actively wrong. A thrashes while C idles with empty disk. You want share proportional to capacity:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>A → 1 part      A = 1/7 ≈ 14%
+B → 2 parts     B = 2/7 ≈ 29%
+C → 4 parts     C = 4/7 ≈ 57%
+</code></pre></div></div> <p>This is <strong>weighted consistent hashing</strong>.</p> <hr> <h2 id="12-ketama-weight-becomes-position-count">12. Ketama: weight becomes position count</h2> <p>The Ketama-style answer is beautifully dumb, which is why it works:</p> <blockquote> <p>More weight → more hash positions.</p> </blockquote> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>A weight 1 → 10 positions
+B weight 2 → 20 positions
+C weight 4 → 40 positions
+            ───────────────
+            70 positions
+</code></pre></div></div> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>A → 10/70 = 14%
+B → 20/70 = 29%
+C → 40/70 = 57%
+</code></pre></div></div> <p>Exactly the target. The causal chain:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SERVER CAPACITY
+      ↓
+    WEIGHT
+      ↓
+NUMBER OF HASH POSITIONS
+      ↓
+PORTION OF RING
+      ↓
+SHARE OF REQUESTS
+</code></pre></div></div> <p>Cloudflare weights its cache tier by <strong>disk capacity</strong>, since that is what determines how much of the working set a machine can hold. Other workloads weight by CPU cores, GPU count, or memory — the framework does not care what the weight <em>means</em>, only that it is a number.</p> <hr> <h2 id="13-where-it-goes-wrong">13. Where it goes wrong</h2> <p>Now make the spread realistic. Fleets accumulate hardware generations:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Server A = 1 TB
+Server B = 2 TB
+Server C = 10 TB
+</code></pre></div></div> <p>Keep 160 as the <em>baseline for the smallest</em> server and scale up:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>A →  160 positions
+B →  320 positions
+C → 1600 positions
+     ───────────────
+     2080 positions  (for three servers)
+</code></pre></div></div> <p>Notice what happened. Weighting does not redistribute a fixed budget of positions — it <strong>multiplies</strong> the budget. The largest machine in the fleet sets the ceiling and everything is denominated against the smallest.</p> <p>Cloudflare is not doing this for three servers. They are doing it across a global fleet, and some PBR (policy-based routing) processes were spending as much as <strong>6 GB</strong> on consistent-hashing structures alone. The data structure that was supposed to be an index had become one of the larger tenants of the box.</p> <hr> <h2 id="14-and-then-one-ring-is-not-enough">14. And then: one ring is not enough</h2> <p>Servers have capabilities:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PCI-compliant storage
+GPU present
+special cache tier
+region restriction
+</code></pre></div></div> <p>Some requests are only eligible for some servers.</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Request X needs PCI  →  eligible: {A, B, D}
+Request Y needs nothing → eligible: {A, B, C, D, E}
+</code></pre></div></div> <p>You cannot route both off one ring, because the ring encodes <em>which servers exist</em>. Different eligible sets need different rings.</p> <p>And eligible sets are subsets, so they multiply:</p> \[2^4 = 16 \qquad 2^{10} = 1{,}024 \qquad 2^{20} = 1{,}048{,}576\] <p>Classic combinatorial explosion. In practice it is nowhere near the theoretical bound — most combinations never occur — but Cloudflare reports that feature combinations produced <strong>dozens of separate rings</strong> in their system. Dozens of rings, each holding a weighted, 160×-multiplied position list.</p> <hr> <h2 id="15-the-bill-assembled">15. The bill, assembled</h2> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Servers
+   ↓
+× weights (biggest disk sets the multiplier)
+   ↓
+× 160 positions per weight unit
+   ↓
+× dozens of rings for feature combinations
+   ↓
+millions of hash entries per process
+   ↓
+RAM
+</code></pre></div></div> <p>Every multiplication was locally defensible. Nobody made a mistake. The 160 was inherited from NGINX, the weighting was needed for heterogeneous disks, the multiple rings were needed for eligibility. The product is what got expensive.</p> <p>So Cloudflare asked the question that had gone unasked for the entire history of that code:</p> <blockquote> <p><strong>Do we actually need this many positions?</strong></p> </blockquote> <hr> <h2 id="16-diminishing-returns-and-why-square-roots-are-brutal">16. Diminishing returns, and why square roots are brutal</h2> <p>This is the core idea of the whole story. The error behaves like:</p> \[\text{Error} \propto \frac{1}{\sqrt{k}}\] <p>where \(k\) is positions per server. Ignore the derivation; look at what it costs to improve:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    100 positions →  some error E
+    400 positions →  E/2
+  1,600 positions →  E/4
+  6,400 positions →  E/8
+ 25,600 positions →  E/16
+</code></pre></div></div> <p>Each halving of the error costs <strong>four times</strong> the memory. The curve is a sponge: the first squeeze gets you most of the water, and after that you are squeezing very hard for drops.</p> <p>The reason is not mysterious. Averaging \(k\) independent things reduces their spread by \(\sqrt{k}\) — same reason polling 4,000 people is only twice as precise as polling 1,000. It is the most universal cost curve in applied probability, and here it is deciding a memory budget.</p> <hr> <h2 id="17-the-formula-cloudflare-derived">17. The formula Cloudflare derived</h2> <p>For \(N\) servers and \(k\) positions each:</p> \[\text{Expected}_k = \frac{1}{N}\] \[SD_k = \sqrt{\frac{k+1}{N(kN+1)} - \frac{1}{N^2}}\] <p>and dividing through:</p> \[\boxed{\;CV_k = \sqrt{\frac{N-1}{Nk+1}}\;}\] <p>Do not memorize it. Read it. There are only two things in it:</p> <ul> <li> <strong>\(k\) is under a square root in the denominator.</strong> Doubling accuracy costs 4× the positions. Forever.</li> <li> <strong>\(N\) appears on top and bottom.</strong> Add servers and both the numerator and the \(Nk\) term grow, so a bigger fleet does not rescue you — the balance is governed by \(k\), not by how many machines you own.</li> </ul> <p>Sanity check at \(k = 1\), \(N = 100\):</p> \[CV_1 = \sqrt{\frac{99}{101}} \approx 0.99 = 99\% \;\checkmark\] <p>It agrees with the one-hash case from §7, which is how you know you read it right.</p> <h3 id="run-it-yourself">Run it yourself</h3> <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">math</span>
+
+<span class="k">def</span> <span class="nf">cv</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">math</span><span class="p">.</span><span class="nf">sqrt</span><span class="p">((</span><span class="n">N</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+
+<span class="n">N</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">10_000</span><span class="p">,</span> <span class="mi">100_000</span><span class="p">):</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">k=</span><span class="si">{</span><span class="n">k</span><span class="si">:</span><span class="o">&gt;</span><span class="mi">7</span><span class="p">,</span><span class="si">}</span><span class="s">  positions=</span><span class="si">{</span><span class="n">N</span><span class="o">*</span><span class="n">k</span><span class="si">:</span><span class="o">&gt;</span><span class="mi">9</span><span class="p">,</span><span class="si">}</span><span class="s">  CV=</span><span class="si">{</span><span class="nf">cv</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="mf">6.2</span><span class="n">f</span><span class="si">}</span><span class="s">%</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>k=      1  positions=      100  CV= 99.00%
+k=     10  positions=    1,000  CV= 31.45%
+k=    100  positions=   10,000  CV=  9.95%
+k=    160  positions=   16,000  CV=  7.87%
+k=  1,000  positions=  100,000  CV=  3.15%
+k= 10,000  positions=1,000,000  CV=  0.99%
+k=100,000  positions=10,000,000  CV=  0.31%
+</code></pre></div></div> <p>Look at the last three rows. Going from 1,000 to 100,000 positions per server — a <strong>100× increase in memory</strong> — moves CV from 3.15% to 0.31%. You spent 99,000 extra entries per server — 9.9 million across a 100-server fleet — to remove under three percentage points of imbalance that nobody could measure in production anyway.</p> <hr> <h2 id="18-the-concrete-waste">18. The concrete waste</h2> <p>Cloudflare’s own example: a base of 160 positions multiplied by a weighting factor of 625 gives</p> \[160 \times 625 = 100{,}000\] <p>positions for a single server. They measured what the tail of that was worth: the last <strong>90,000 positions</strong> bought roughly a <strong>0.7 percentage-point</strong> reduction in error.</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>90,000 extra entries per server
+        ↓
+0.7 percentage points of balance
+</code></pre></div></div> <p>That is the trade, stated plainly. Once you see it written as a ratio it stops being a judgement call.</p> <hr> <h2 id="19-where-math-meets-a-32-bit-integer">19. Where math meets a 32-bit integer</h2> <p>Here is the twist that makes this an engineering story instead of a math one.</p> <p>The formula in §17 assumes positions are drawn from a continuous space. Real hashes are integers. Cloudflare uses <strong>32-bit</strong> hashes:</p> \[2^{32} = 4{,}294{,}967{,}296\] <p>4.3 billion slots. Enormous — until you start putting millions of points into it.</p> <h3 id="collisions-quickly">Collisions, quickly</h3> <p>Shrink the space to <code class="language-plaintext highlighter-rouge">0..9</code>:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>A → 3
+B → 7
+C → 3      ← A and C collide
+</code></pre></div></div> <p>Two servers claiming the same position means one of them effectively owns a zero-width slice. A wasted entry: full memory cost, zero balancing benefit.</p> <p>This is the <strong>birthday paradox</strong>. With \(M\) slots you start seeing collisions around \(\sqrt{M}\) points, not \(M\) points. For 32-bit hashes:</p> \[\sqrt{2^{32}} = 65{,}536\] <p>Sixty-five thousand. That is a <em>small</em> ring. By the time you have millions of points, collisions are not an edge case — they are a steady drag, and every collided point is memory you bought and got nothing for.</p> <p>Cloudflare found exactly this: past a certain density, measured error was <strong>worse than the ideal formula predicted</strong>, because the formula assumes distinct positions and reality was not supplying them.</p> <p>So the tail of the curve is worse than “diminishing returns.” It is:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>more positions
+      ↓
+tiny accuracy gain (√k)
+      +
+more RAM (linear)
+      +
+more collisions (which give back some of the gain)
+      ↓
+you can make it worse by trying harder
+</code></pre></div></div> <hr> <h2 id="20-what-they-actually-did">20. What they actually did</h2> <p>Two changes.</p> <p><strong>One — stop earlier.</strong> Cut positions by roughly <strong>90%</strong>, with no appreciable accuracy loss in their measurements. Not a heuristic; a decision priced against \(CV_k\) and validated against real traffic.</p> <p><strong>Two — stop paying for padding.</strong> Each ring entry is a hash plus a server index:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>hash  = 4 bytes
+index = 2 bytes
+      = 6 bytes of actual data
+</code></pre></div></div> <p>But a naive struct gets aligned to 8:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌────────────┬──────────┬──────────┐
+│ hash       │ index    │ padding  │
+│ 4 bytes    │ 2 bytes  │ 2 bytes  │
+└────────────┴──────────┴──────────┘
+              8 bytes
+</code></pre></div></div> <p>Store it packed instead:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌────────────┬──────────┐
+│ hash       │ index    │
+│ 4 bytes    │ 2 bytes  │
+└────────────┴──────────┘
+        6 bytes
+</code></pre></div></div> \[\frac{8 - 6}{8} = 25\%\] <p>A 25% reduction from deleting nothing at all. The two bytes were never data — they were alignment. That is the “(and Rust)” half of the title: a language where you can lay out and iterate a packed representation without giving up the safety or the speed.</p> <h3 id="the-arithmetic-of-why-this-is-100-tb">The arithmetic of why this is 100 TB</h3> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1 entry × 8 bytes
+1,000,000,000 entries × 8 bytes  =   8 GB
+100,000,000,000 entries × 8 bytes = 800 GB
+</code></pre></div></div> <p>Now multiply by processes per machine, machines per data center, and data centers per planet. Cloudflare’s reported total: about <strong>100 TB of RAM recovered globally</strong>.</p> <p>Nothing about that came from a clever algorithm. It came from noticing that a constant inherited from NGINX had been multiplied by a weight factor, then by a ring count, then by a fleet — and that nobody had ever differentiated the accuracy curve to see what the last 90% was buying.</p> <hr> <h2 id="21-a-small-system-end-to-end">21. A small system, end to end</h2> <p>Four servers, one position each:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>A = 10   B = 30   C = 70   D = 90
+</code></pre></div></div> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0----10---------30----------------70---------90----100
+     A           B                 C          D
+</code></pre></div></div> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>request        hash    server
+------------------------------
+cat.jpg          12      A
+dog.jpg          35      B
+movie.mp4        72      C
+logo.png         95      D
+index.html        5      D   ← wrapped around
+</code></pre></div></div> <p>Now three positions each:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>A = 10, 45, 83
+B = 20, 55, 96
+C = 30, 61, 74
+D = 40, 68, 88
+</code></pre></div></div> <p>Sorted:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 A   20 B   30 C   40 D   45 A   55 B
+61 C   68 D   74 C   83 A   88 D   96 B
+</code></pre></div></div> <p>Ownership goes from this:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>A → ███████████████
+B → ███
+C → ███████
+D → █████
+</code></pre></div></div> <p>to this:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>A → ███ ███ ███
+B → ███ ███ ███
+C → ███ ███ ███
+D → ███ ███ ███
+</code></pre></div></div> <p>Same hash function. Same randomness. Different variance.</p> <h3 id="simulate-it">Simulate it</h3> <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">bisect</span><span class="p">,</span> <span class="n">hashlib</span><span class="p">,</span> <span class="n">collections</span>
+
+<span class="k">def</span> <span class="nf">h32</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">.</span><span class="nf">from_bytes</span><span class="p">(</span><span class="n">hashlib</span><span class="p">.</span><span class="nf">blake2b</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="nf">encode</span><span class="p">(),</span> <span class="n">digest_size</span><span class="o">=</span><span class="mi">4</span><span class="p">).</span><span class="nf">digest</span><span class="p">(),</span> <span class="sh">"</span><span class="s">big</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="n">servers</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+    <span class="n">ring</span> <span class="o">=</span> <span class="nf">sorted</span><span class="p">((</span><span class="nf">h32</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s">:</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="sh">"</span><span class="p">),</span> <span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">servers</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">ring</span><span class="p">],</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ring</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">route</span><span class="p">(</span><span class="n">positions</span><span class="p">,</span> <span class="n">owners</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="n">bisect</span><span class="p">.</span><span class="nf">bisect_right</span><span class="p">(</span><span class="n">positions</span><span class="p">,</span> <span class="nf">h32</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">owners</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>          <span class="c1"># negative index = wrap-around
+</span>
+<span class="n">servers</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="sh">"</span><span class="s">server-</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="sh">"</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">100</span><span class="p">)]</span>
+<span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="sh">"</span><span class="s">/asset/</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s">.jpg</span><span class="sh">"</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">1_000_000</span><span class="p">)]</span>
+
+<span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">1000</span><span class="p">):</span>
+    <span class="n">pos</span><span class="p">,</span> <span class="n">own</span> <span class="o">=</span> <span class="nf">build</span><span class="p">(</span><span class="n">servers</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">collections</span><span class="p">.</span><span class="nc">Counter</span><span class="p">(</span><span class="nf">route</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">own</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">)</span>
+    <span class="n">loads</span> <span class="o">=</span> <span class="p">[</span><span class="n">counts</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">servers</span><span class="p">]</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="nf">sum</span><span class="p">(</span><span class="n">loads</span><span class="p">)</span> <span class="o">/</span> <span class="nf">len</span><span class="p">(</span><span class="n">loads</span><span class="p">)</span>
+    <span class="n">var</span> <span class="o">=</span> <span class="nf">sum</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">loads</span><span class="p">)</span> <span class="o">/</span> <span class="nf">len</span><span class="p">(</span><span class="n">loads</span><span class="p">)</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">k=</span><span class="si">{</span><span class="n">k</span><span class="si">:</span><span class="o">&gt;</span><span class="mi">5</span><span class="si">}</span><span class="s">  CV=</span><span class="si">{</span><span class="n">var</span><span class="o">**</span><span class="mf">0.5</span><span class="o">/</span><span class="n">mean</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="mf">6.2</span><span class="n">f</span><span class="si">}</span><span class="s">%  </span><span class="sh">"</span>
+          <span class="sa">f</span><span class="sh">"</span><span class="s">min=</span><span class="si">{</span><span class="nf">min</span><span class="p">(</span><span class="n">loads</span><span class="p">)</span><span class="si">:</span><span class="o">&gt;</span><span class="mi">6</span><span class="p">,</span><span class="si">}</span><span class="s">  max=</span><span class="si">{</span><span class="nf">max</span><span class="p">(</span><span class="n">loads</span><span class="p">)</span><span class="si">:</span><span class="o">&gt;</span><span class="mi">6</span><span class="p">,</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div> <p>Measured against predicted, on 200,000 keys and 100 servers:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>k=    1  measCV= 96.86%  predCV= 99.00%  min=    2  max=10,955
+k=   10  measCV= 31.17%  predCV= 31.45%  min=1,012  max= 3,645
+k=  160  measCV=  8.09%  predCV=  7.87%  min=1,540  max= 2,386
+</code></pre></div></div> <p>Look at the <code class="language-plaintext highlighter-rouge">min</code>/<code class="language-plaintext highlighter-rouge">max</code> columns, not just the CV. At \(k=1\) one server got <strong>2 requests</strong> and another got <strong>10,955</strong> — a 5,000× spread, from a perfectly good hash function. At \(k=160\) the whole fleet sits inside 1,540–2,386. The formula tracks \(\sqrt{(N-1)/(Nk+1)}\) to within noise. Worth running — watching the predicted number fall out of a million simulated requests is what makes the formula stop feeling like decoration.</p> <hr> <h2 id="22-the-part-that-makes-it-consistent">22. The part that makes it “consistent”</h2> <p>Everything so far is about balance. The name is about something else.</p> <p>Naive modulo routing:</p> <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">server</span> <span class="o">=</span> <span class="nf">hash</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">%</span> <span class="nf">len</span><span class="p">(</span><span class="n">servers</span><span class="p">)</span>
+</code></pre></div></div> <p>Go from 4 servers to 3 and the modulus changes for <strong>every key</strong>. Roughly 75% of your keys move. Every moved key is a cache miss, and every miss is an origin fetch. Removing one machine stampedes your origin.</p> <p>With consistent hashing, when A dies:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>before:  A A B B C C D D A A B B
+A dies:  · · B B C C D D · · B B
+after:   D D B B C C D D C C B B
+         ↑↑                 ↑↑
+     only A's old regions moved
+</code></pre></div></div> <p>A’s positions vanish; whoever sits to the left of each vanished region inherits it. <strong>Every other key stays exactly where it was.</strong> The fraction of keys that move is about \(1/N\) — the departing server’s share — instead of \((N-1)/N\).</p> <p>That is the whole point of the design, and it is why the operational story matters more than the balance story:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>modulo hashing:            consistent hashing:
+server added                server added
+    ↓                           ↓
+recompute everything        a few ring regions change hands
+    ↓                           ↓
+most objects move           most objects stay put
+    ↓                           ↓
+mass cache miss             small, bounded miss spike
+    ↓                           ↓
+origin traffic spike        origin barely notices
+</code></pre></div></div> <p>Adding capacity should not be an incident.</p> <hr> <h2 id="23-four-things-worth-remembering">23. Four things worth remembering</h2> <p><strong>① The target.</strong> With \(N\) servers, each should get</p> \[\frac{1}{N}\] <p><strong>② Randomness alone does not give you that.</strong> Few points → large gaps → uneven traffic. Uniform hashing is not uniform load.</p> <p><strong>③ More points concentrate the average.</strong></p> \[\text{error} \sim \frac{1}{\sqrt{k}}\] <p><strong>④ And that square root is the whole engineering story.</strong> 2× better balance = 4× memory. 10× better = 100× memory. Somewhere on that curve is the point where you are paying real money for an improvement no dashboard can see — and past it, finite hash space starts taking the improvement back.</p> <hr> <h2 id="24-why-the-title-is-better-than-it-looks">24. Why the title is better than it looks</h2> <p><em>“Saving another 100TB of RAM with math (and Rust).”</em></p> <p>The Rust is real but secondary — packed layouts and cheap iteration. The math is the story, and specifically this loop:</p> <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>      build → measure → find waste → model it
+                                        ↓
+      deploy ← benchmark ←──────── change it
+</code></pre></div></div> <p>They did not say “let’s use fewer hashes, feels like enough.” They asked <em>how much randomness do we actually need</em>, wrote down \(CV_k\), found the knee of the curve, checked it against 32-bit reality where the clean formula stopped holding, and then cut.</p> <p>Which is the honest version of what “engineering at scale” means. Not heroics — noticing that a default someone inherited from NGINX in 2008 had been multiplied by four different things, and being willing to do the arithmetic on it.</p> <hr> <h2 id="25-faq">25. FAQ</h2> <p><strong>How many virtual nodes should I use?</strong> Compute it. \(CV_k=\sqrt{(N-1)/(Nk+1)}\) — pick your tolerable imbalance and solve for \(k\). For most fleets under a few hundred machines, 100–200 lands you under 10% and there is no reason to go further unless you have measured that 10% hurting.</p> <p><strong>Does a better hash function fix the imbalance?</strong> No. The imbalance in §4 comes from uniform randomness itself, not from a defect in the hash. A “better” hash gives you the same exponentially distributed gaps. Only more points fix it.</p> <p><strong>Is this relevant below Cloudflare scale?</strong> The algorithm, yes — deterministic routing and cheap rebalancing are worth having at any size. The 100 TB optimization, no. If your ring holds 16,000 entries, it is ~128 KB and you should never think about it again. The lesson at small scale is the inverse one: <em>don’t</em> build the weighted multi-ring machinery until something forces you to. Same math, opposite conclusion — which is a good subject for its own post.</p> <p><strong>Why 32-bit hashes if collisions are the problem?</strong> Because for reasonable ring sizes they are not a problem, and 4 bytes per entry versus 8 is a 33% saving on a structure you are replicating everywhere. The collisions only bite at the extreme density that the §18 analysis says you should not be at anyway. The two findings point the same direction.</p> <p><strong>What about bounded-load or rendezvous hashing?</strong> Different tools on the same shelf. Rendezvous (HRW) hashing skips the ring entirely — score every server per key, take the max — which gives excellent balance at \(O(N)\) lookup instead of \(O(\log(Nk))\), so it suits small \(N\). Consistent hashing with bounded loads adds a capacity cap and overflow-forwarding on top of the ring. Both are worth knowing; neither changes the \(1/\sqrt{k}\) story above.</p> <hr> <h2 id="source">Source</h2> <p>Cloudflare, <em>Saving another 100TB of RAM with math (and Rust)</em> — <a href="https://blog.cloudflare.com/saving-100-tb-of-ram-with-math/" rel="external nofollow noopener" target="_blank">https://blog.cloudflare.com/saving-100-tb-of-ram-with-math/</a></p> <p>All figures attributed to Cloudflare in this post (the 99% and 8% CV values, 160 positions per server, the 6 GB PBR processes, the dozens of rings, the 160×625 = 100,000 example and its 0.7 percentage points, the ~90% reduction, the 25% struct saving, and the ~100 TB total) come from that post. The derivations, simulations, and the code in §3, §17, and §21 are mine.</p> </div> </article> <br> <hr> <br> <h2 class="text-3xl font-semibold mb-4 mt-12">Enjoy Reading This Article?</h2> <p class="mb-2">Here are some more articles you might like to read next:</p> <ul class="list-disc pl-7 my-3 space-y-2 marker:text-[var(--global-theme-color)]"> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/openflow-from-the-wire-up/">A From-Scratch Tour of OpenFlow, From the Wire Up</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/ipv8-new-internet-fuss/">IPv8 and the Internet's Eternal Transition Problem</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/semantic-mapping-and-entropy/">Semantic Map Explorer - Entropy Embedding Atlas</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/cost-of-Engineering/">The Cost of Free Security: Wazuh and the Engineering Bill</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/everything-is-IPC/">Everything is Inter-Process Communication: HTTP, REST APIs, Serverless functions, what not</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/understanding-cors/">Why Your API Works in Postman but Fails in the Browser</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2025/f5-bigip-wazuh-logging/">F5 BIG-IP + Wazuh: Getting Logs Working After 18 Months</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2025/toon-the-new-json/">TOON - The New JSON</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2025/http-routing-patterns/">Three Essential HTTP Routing Patterns</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2024/webassembly-vs-docker/">WebAssembly: Will this replace Docker?</a> </li> </ul> </div> </div> </div> </div> <footer class="fixed-bottom" role="contentinfo"> <div class="container mt-0"> © Copyright 2026 Karan Kc. Powered by <a href="https://jekyllrb.com/" target="_blank" rel="external nofollow noopener">Jekyll</a> with <a href="https://github.com/alshedivat/al-folio" rel="external nofollow noopener" target="_blank">al-folio</a> theme. Hosted by <a href="https://pages.github.com/" target="_blank" rel="external nofollow noopener">GitHub Pages</a>. Photos from <a href="https://unsplash.com" target="_blank" rel="external nofollow noopener">Unsplash</a>. Last updated: September 20, 2026. </div> </footer> <script>
+  window.alFolio = {
+    compatBootstrap: false
+  };
+</script> <script src="/assets/js/nav-toggle.js?v=141bd79a73ebc0f0b6ea58e440ae79fc"></script> <script defer src="https://cdn.jsdelivr.net/npm/masonry-layout@4.2.2/dist/masonry.pkgd.min.js" integrity="sha256-Nn1q/fx0H7SNLZMQ5Hw5JLaTRZp0yILA/FRexe19VdI=" crossorigin="anonymous"></script> <script defer src="https://cdn.jsdelivr.net/npm/imagesloaded@5.0.0/imagesloaded.pkgd.min.js" integrity="sha256-htrLFfZJ6v5udOG+3kNLINIKh2gvoKqwEhHYfTTMICc=" crossorigin="anonymous"></script> <script defer src="/assets/js/masonry.js?v=e49affc7bd2646f6acdad1dbe02c2359" type="text/javascript"></script> <script defer type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script> <script src="/assets/al_math/js/mathjax-setup.js"></script> <script src="/assets/js/tooltips-setup.js?v=fe487e99db6c43751e6e7bdb2d6a0611"></script> <script defer src="https://cdn.jsdelivr.net/npm/tocbot@4.36.4/dist/tocbot.min.js" integrity="sha256-lo/r+jQ81wWrxdIiiiEEd538z4+dTJTt+leOuAS7GCw=" crossorigin="anonymous"></script> <script src="/assets/js/no_defer.js?v=53b1b1a645525975c963ce8bf8bfefcf"></script> <script defer src="/assets/js/common.js?v=87baac90f765f2f3362dcf6aaf312a8a"></script> <script defer src="/assets/js/copy_code.js?v=c8a01c11a92744d44b093fc3bda915df" type="text/javascript"></script> <script defer src="/assets/js/jupyter_new_tab.js?v=896d254890d9b47f0281f63bfccf0dee"></script> <script async src="https://d1bxh8uas1mnw7.cloudfront.net/assets/embed.js"></script> <script async src="https://badge.dimensions.ai/badge.js"></script> <script defer src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous"></script> <script defer src="/assets/al_img_tools/js/zoom.js"></script> <script defer src="/assets/js/progress-bar.js?v=499464c5c63ced6cf7ad62509f1e2610" type="text/javascript"></script> <script src="https://cdn.jsdelivr.net/npm/vanilla-back-to-top@7.2.1/dist/vanilla-back-to-top.min.js" integrity="sha256-uMJJ3EoTyfRBoTbR+lrfu1uRQ87RZG8AR3cVNuQVeFg=" crossorigin="anonymous"></script> <script>
+    addBackToTop();
+  </script> <script type="module" src="/assets/al_search/js/search/ninja-keys.min.js"></script> <ninja-keys hidebreadcrumbs noautoloadmdicons placeholder="Type to start searching"></ninja-keys> <script src="/assets/al_search/js/search-setup.js"></script> <script>
+// get the ninja-keys element
+const ninja = document.querySelector('ninja-keys');
+
+// add the home and posts menu items
+ninja.data = [{
+    id: "nav-about",
+    title: "about",
+    section: "Navigation",
+    handler: () => {
+      window.location.href = "/";
+    },
+  },{id: "nav-blog",
+          title: "blog",
+          description: "",
+          section: "Navigation",
+          handler: () => {
+            window.location.href = "/blog/";
+          },
+        },{id: "nav-bookshelf",
+          title: "bookshelf",
+          description: "",
+          section: "Navigation",
+          handler: () => {
+            window.location.href = "/books/";
+          },
+        },{id: "post-a-number-line-100-tb-of-ram-and-the-square-root-that-saved-it",
+        
+          title: "A Number Line, 100 TB of RAM, and the Square Root That Saved...",
+        
+        description: "Consistent hashing explained from zero — number line, virtual nodes, weights, and the coefficient of variation — then a walk through how Cloudflare used that math to cut ~90% of its hash-ring entries and recover roughly 100 TB of RAM globally.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/consistent-hashing-100tb-of-ram/";
+          
+        },
+      },{id: "post-a-from-scratch-tour-of-openflow-from-the-wire-up",
+        
+          title: "A From-Scratch Tour of OpenFlow, From the Wire Up",
+        
+        description: "Building a toy OpenFlow switch and controller in ~600 lines of Python, then working bottom-up through PHY, parser, TCAM, pipeline, and actions to show why the protocol&#39;s design is downstream of memory technology and a 20-cycle-per-packet budget.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/openflow-from-the-wire-up/";
+          
+        },
+      },{id: "post-ipv8-and-the-internet-39-s-eternal-transition-problem",
+        
+          title: "IPv8 and the Internet&#39;s Eternal Transition Problem",
+        
+        description: "A reflective breakdown of the IPv8 draft proposal — compatibility claims, zero-prefix IPv4 embedding, ASN routing limits, physics-aware routing metrics, and the risks of collapsing internet infrastructure into a centralized zone server model",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/ipv8-new-internet-fuss/";
+          
+        },
+      },{id: "post-semantic-map-explorer-entropy-embedding-atlas",
+        
+          title: "Semantic Map Explorer - Entropy Embedding Atlas",
+        
+        description: "Understanding text geometry through embeddings, KNN graphs, entropy, and interactive visualization",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/semantic-mapping-and-entropy/";
+          
+        },
+      },{id: "post-the-cost-of-free-security-wazuh-and-the-engineering-bill",
+        
+          title: "The Cost of Free Security: Wazuh and the Engineering Bill",
+        
+        description: "CrowdStrike costs money and control. Wazuh costs engineering time. Understanding the fundamental tradeoff between a fully integrated commercial XDR platforms and an open-source security foundation you customize yourself.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/cost-of-Engineering/";
+          
+        },
+      },{id: "post-everything-is-inter-process-communication-http-rest-apis-serverless-functions-what-not",
+        
+          title: "Everything is Inter-Process Communication: HTTP, REST APIs, Serverless functions, what not",
+        
+        description: "Modern software is rarely a single process doing one thing. Browsers isolate tabs for security. Databases split query workers from storage workers. API backends offload CPU-heavy jobs to background processes. The moment you divide work across processes, you need them to talk to each other.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/everything-is-IPC/";
+          
+        },
+      },{id: "post-why-your-api-works-in-postman-but-fails-in-the-browser",
+        
+          title: "Why Your API Works in Postman but Fails in the Browser",
+        
+        description: "An in-depth exploration of Cross-Origin Resource Sharing (CORS), preflight requests, and common pitfalls, accompanied by a hands-on demo.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/understanding-cors/";
+          
+        },
+      },{id: "post-f5-big-ip-wazuh-getting-logs-working-after-18-months",
+        
+          title: "F5 BIG-IP + Wazuh: Getting Logs Working After 18 Months",
+        
+        description: "How I finally got F5 BIG-IP and Wazuh to exchange logs — configuration steps, troubleshooting, and lessons learned from an 18-month integration.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2025/f5-bigip-wazuh-logging/";
+          
+        },
+      },{id: "post-toon-the-new-json",
+        
+          title: "TOON - The New JSON",
+        
+        description: "TOON is about to take a wild ride in LLMs. Its going to save you money, time &amp; power. Go through it.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2025/toon-the-new-json/";
+          
+        },
+      },{id: "post-three-essential-http-routing-patterns",
+        
+          title: "Three Essential HTTP Routing Patterns",
+        
+        description: "Host-based, path-based, and header-based routing. What each one reads from the request, what that costs you, and why the Host header sits in its own category.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2025/http-routing-patterns/";
+          
+        },
+      },{id: "post-webassembly-will-this-replace-docker",
+        
+          title: "WebAssembly: Will this replace Docker?",
+        
+        description: "WebAssembly vs Docker. WASM, a technology that revamped the way we thought about containerization.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/webassembly-vs-docker/";
+          
+        },
+      },{id: "post-engineering-behind-mutable-and-immutable-in-python",
+        
+          title: "Engineering behind Mutable and Immutable in Python",
+        
+        description: "Explore the core engineering concepts behind mutable and immutable data types in Python with simple explanations and practical examples.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/mutable-immutable-python/";
+          
+        },
+      },{id: "post-a-guide-to-analyzing-and-evaluating-reasoning",
+        
+          title: "A Guide to Analyzing and Evaluating Reasoning",
+        
+        description: "Here we explore the essential techniques for analyzing and evaluating reasoning in arguments. Learn how to identify claims, premises, and conclusions, and strengthen your critical thinking skills.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/analyzing-evaluating-reasoning/";
+          
+        },
+      },{id: "post-how-we-fixed-critical-connectivity-issues-in-our-vkyc-application-a-technical-deep-dive",
+        
+          title: "How We Fixed Critical Connectivity Issues in Our vKYC Application: A Technical Deep...",
+        
+        description: "Users stuck buffering in a video KYC application. The packets never reached the load balancer, and the fix ended up being a firewall policy and a protocol setting we expected to need.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/vkyc-connectivity-issues/";
+          
+        },
+      },{id: "post-threat-classification",
+        
+          title: "Threat Classification",
+        
+        description: "Known-knowns, known-unknowns, unknown-knowns, unknown-unknowns. The four quadrants are a familiar framing, and the interesting one is the quadrant that is a choice rather than a gap in knowledge.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/threat-classification/";
+          
+        },
+      },{id: "post-f5-tmos-administration-essentials-critical-concepts-to-be-remembered",
+        
+          title: "F5 TMOS Administration Essentials: Critical Concepts to be Remembered",
+        
+        description: "The order TMOS evaluates an incoming packet, what to check when traffic does not arrive, and a handful of behaviours that are not obvious from the configuration screens.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/f5-tmos-administration-essentials/";
+          
+        },
+      },{id: "post-understanding-trust-authorities-in-big-ip-systems-a-beginner-39-s-guide",
+        
+          title: "Understanding Trust Authorities in BIG-IP Systems: A Beginner&#39;s Guide",
+        
+        description: "Device trust in BIG-IP decides which systems can vouch for new members of a trust domain. The three authority roles, what each can do, and the prerequisites that catch people out.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/trust-authorities-bigip/";
+          
+        },
+      },{id: "post-reject-virtual-servers-in-big-ip-ltm-purpose-and-practical-use-cases",
+        
+          title: "Reject Virtual Servers in BIG-IP LTM: Purpose and Practical Use Cases",
+        
+        description: "A Reject virtual server drops unwanted traffic without building a connection table entry. Why that matters at volume, and how it differs from blocking the same traffic elsewhere.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/reject-virtual-servers-bigip-ltm/";
+          
+        },
+      },{id: "post-performance-http-virtual-servers-and-the-fast-http-profile-in-big-ip",
+        
+          title: "Performance HTTP Virtual Servers and the Fast HTTP Profile in BIG-IP",
+        
+        description: "The Fast HTTP profile trades away most of the BIG-IP feature set for lower CPU and latency. What you give up, what you get, and why F5 still recommends the standard HTTP profile for internet traffic.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/performance-http-virtual-servers-bigip/";
+          
+        },
+      },{id: "post-immunize-your-photos-protecting-yourself-from-ai-deepfake-manipulation",
+        
+          title: "Immunize Your Photos: Protecting Yourself from AI Deepfake Manipulation",
+        
+        description: "PhotoGuard, from MIT, adds adversarial perturbation to a photo so that generative models editing it produce warped output. A look at what it does, and where the approach runs out.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/immunize-photos-ai-deepfake/";
+          
+        },
+      },{id: "post-recent-surge-in-phishing-attacks-targeting-character-assassination",
+        
+          title: "Recent Surge in Phishing Attacks Targeting Character Assassination",
+        
+        description: "A Facebook phishing campaign that does not stop at stealing your password. It uses your account to damage your reputation, and it recruits every victim into spreading itself further.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/phishing-attacks-character-assassination/";
+          
+        },
+      },{id: "books-the-alchemist",
+          title: 'The Alchemist',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_alchemist/";
+            },},{id: "books-you-39-re-too-good-to-feel-this-bad",
+          title: 'You&amp;#39;re Too Good to Feel This Bad',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/youre_too_good_to_feel_this_bad/";
+            },},{id: "books-read-people-like-a-book",
+          title: 'Read People Like a Book',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/read_people_like_a_book/";
+            },},{id: "books-21-lessons-for-the-21st-century",
+          title: '21 Lessons for the 21st Century',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/21_lessons_for_the_21st_century/";
+            },},{id: "books-think-again",
+          title: 'Think Again',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/think_again/";
+            },},{id: "books-on-truth",
+          title: 'On Truth',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/on_truth/";
+            },},{id: "books-the-myth-of-sisyphus",
+          title: 'The Myth of Sisyphus',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_myth_of_sisyphus/";
+            },},{id: "books-the-personal-mba",
+          title: 'The Personal MBA',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_personal_mba/";
+            },},{id: "books-the-courage-to-be-disliked",
+          title: 'The Courage to Be Disliked',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_courage_to_be_disliked/";
+            },},{id: "books-seto-dharti",
+          title: 'Seto Dharti',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/seto_dharti/";
+            },},{id: "books-the-kite-runner",
+          title: 'The Kite Runner',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_kite_runner/";
+            },},{id: "projects-project-1",
+          title: 'project 1',
+          description: "with background image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/1_project/";
+            },},{id: "projects-project-2",
+          title: 'project 2',
+          description: "a project with a background image and giscus comments",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/2_project/";
+            },},{id: "projects-project-4",
+          title: 'project 4',
+          description: "another without an image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/4_project/";
+            },},{id: "projects-project-5",
+          title: 'project 5',
+          description: "a project with a background image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/5_project/";
+            },},{id: "projects-project-6",
+          title: 'project 6',
+          description: "a project with no image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/6_project/";
+            },},{id: "projects-project-7",
+          title: 'project 7',
+          description: "with background image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/7_project/";
+            },},{id: "projects-project-8",
+          title: 'project 8',
+          description: "an other project with a background image and giscus comments",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/8_project/";
+            },},{id: "projects-project-9",
+          title: 'project 9',
+          description: "another project with an image 🎉",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/9_project/";
+            },},{id: "teachings-data-science-fundamentals",
+          title: 'Data Science Fundamentals',
+          description: "This course covers the foundational aspects of data science, including data collection, cleaning, analysis, and visualization. Students will learn practical skills for working with real-world datasets.",
+          section: "Teachings",handler: () => {
+              window.location.href = "/teachings/data-science-fundamentals/";
+            },},{id: "teachings-introduction-to-machine-learning",
+          title: 'Introduction to Machine Learning',
+          description: "This course provides an introduction to machine learning concepts, algorithms, and applications. Students will learn about supervised and unsupervised learning, model evaluation, and practical implementations.",
+          section: "Teachings",handler: () => {
+              window.location.href = "/teachings/introduction-to-machine-learning/";
+            },},{
+        id: 'social-github',
+        title: 'GitHub',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://github.com/karankessy", "_blank");
+        },
+      },{
+        id: 'social-linkedin',
+        title: 'LinkedIn',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://www.linkedin.com/in/karankessy", "_blank");
+        },
+      },{
+        id: 'social-facebook',
+        title: 'Facebook',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://facebook.com/karankessy", "_blank");
+        },
+      },{
+        id: 'social-x',
+        title: 'X',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://twitter.com/karankessy", "_blank");
+        },
+      },{
+        id: 'social-instagram',
+        title: 'Instagram',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://instagram.com/karankessy", "_blank");
+        },
+      },{
+        id: 'social-rss',
+        title: 'RSS Feed',
+        section: 'Socials',
+        handler: () => {
+          window.open("/feed.xml", "_blank");
+        },
+      },{
+      id: 'light-theme',
+      title: 'Change theme to light',
+      description: 'Change the theme of the site to Light',
+      section: 'Theme',
+      handler: () => {
+        setThemeSetting("light");
+      },
+    },
+    {
+      id: 'dark-theme',
+      title: 'Change theme to dark',
+      description: 'Change the theme of the site to Dark',
+      section: 'Theme',
+      handler: () => {
+        setThemeSetting("dark");
+      },
+    },
+    {
+      id: 'system-theme',
+      title: 'Use system default theme',
+      description: 'Change the theme of the site to System Default',
+      section: 'Theme',
+      handler: () => {
+        setThemeSetting("system");
+      },
+    },];
+
+</script> <script src="/assets/al_search/js/shortcut-key.js"></script> </body> </html>
