@@ -133,7 +133,10 @@
 } /* Operator.Word */
 .highlight .w {
   color: #666666;
-} /* Text.Whitespace */ /* Literal.Number.Float */
+} /* Text.Whitespace */
+.highlight .mf {
+  color: #3677a9;
+} /* Literal.Number.Float */
 .highlight .mh {
   color: #3677a9;
 } /* Literal.Number.Hex */

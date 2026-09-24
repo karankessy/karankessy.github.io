@@ -1,0 +1,521 @@
+<!DOCTYPE html> <html lang="en"> <head> <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> <meta charset="utf-8"> <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> <meta http-equiv="X-UA-Compatible" content="IE=edge"> <title> Teaching a Model to Answer Instead of Talk | Karan Kc </title> <meta name="author" content="Karan Kc"> <meta name="description" content="Jev, Laya, and a weekend spent building a UI for a category of model I didn't know existed — typed-decision models that skip generation entirely and hand back a calibrated probability instead."> <meta name="keywords" content="cybersecurity, web technologies, networking, infrastructure, systems"> <meta property="og:site_name" content="Karan Kc"> <meta property="og:type" content="article"> <meta property="og:title" content="Karan Kc | Teaching a Model to Answer Instead of Talk"> <meta property="og:url" content="https://karanregmi.com.np/blog/2026/jev-and-laya/"> <meta property="og:description" content="Jev, Laya, and a weekend spent building a UI for a category of model I didn't know existed — typed-decision models that skip generation entirely and hand back a calibrated probability instead."> <meta property="og:image" content="https://karanregmi.com.np/assets/img/prof_pic.jpg"> <meta property="og:locale" content="en"> <meta name="twitter:card" content="summary"> <meta name="twitter:title" content="Teaching a Model to Answer Instead of Talk"> <meta name="twitter:description" content="Jev, Laya, and a weekend spent building a UI for a category of model I didn't know existed — typed-decision models that skip generation entirely and hand back a calibrated probability instead."> <meta name="twitter:image" content="https://karanregmi.com.np/assets/img/prof_pic.jpg"> <script type="application/ld+json">
+    {
+        "author":
+        {
+            "@type": "Person",
+            "name": "Karan Kc"
+        },
+        "url": "https://karanregmi.com.np/blog/2026/jev-and-laya/",
+        "@type": "BlogPosting",
+        "description": "Jev, Laya, and a weekend spent building a UI for a category of model I didn't know existed — typed-decision models that skip generation entirely and hand back a calibrated probability instead.",
+        "headline": "Teaching a Model to Answer Instead of Talk",
+        
+        "sameAs": ["https://github.com/karankessy","https://www.linkedin.com/in/karankessy","https://facebook.com/karankessy","https://twitter.com/karankessy","https://instagram.com/karankessy"],
+        
+        "name": "Karan Kc",
+        "@context": "https://schema.org"
+    }
+  </script> <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; media-src 'self' https:; frame-src 'self' https:; connect-src 'self' https:;"> <style>
+  :root {
+    --max-content-width: 930px;
+  }
+</style> <link rel="stylesheet" href="/assets/css/tailwind.css?v=50c64c15cbb9fd1ce6056fdb8bcb4b62"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tocbot@4.36.4/dist/tocbot.css" integrity="sha256-zTN0r+0OKaIv2xqeNNIYxNk0pWJ6+IqPGc1iDgVzWF0=" crossorigin="anonymous"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css" integrity="sha256-MVopmdyC2tYTiJ8wlktf0uh0v4NgT+vNdyVFepi7Q0c=" crossorigin="anonymous"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/academicons@1.9.5/css/academicons.min.css" integrity="sha256-SzrCOBJbGVFMahewkgjwnApaV2+av1DwMAA+/QGLyZw=" crossorigin="anonymous"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/scholar-icons@1.0.3/css/scholar-icons.css" integrity="sha256-VY3hHVj/hNX3fYG6wtbA6TcKJQl7+FthzGSyIB64klY=" crossorigin="anonymous"> <link defer rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:100,300,400,500,700|Material+Icons&amp;display=swap"> <link defer rel="stylesheet" href="/assets/css/jekyll-pygments-themes-github.css?v=591dab5a4e56573bf4ef7fd332894c99" media="" id="highlight_theme_light"> <link rel="shortcut icon" href="data:image/svg+xml,&lt;svg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20100%20100%22&gt;&lt;text%20y=%22.9em%22%20font-size=%2290%22&gt;%E2%9A%9B%EF%B8%8F&lt;/text&gt;&lt;/svg&gt;"> <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png?v=2ccb27a1632d6c52f3d75bbd836ac325"> <link rel="stylesheet" href="/assets/css/main.css?v=3116ba77db9ee1581d05bb3e86fbf7f1"> <link rel="canonical" href="https://karanregmi.com.np/blog/2026/jev-and-laya/"> <script src="/assets/js/theme.js?v=5286c3e4c334d0ecb8fc0c40ff4fa7ec"></script> <link defer rel="stylesheet" href="/assets/css/jekyll-pygments-themes-native.css?v=5847e5ed4a4568527aa6cfab446049ca" media="none" id="highlight_theme_dark"> <script>
+    initTheme();
+  </script> </head> <body class="fixed-top-nav "> <header> <nav id="navbar" class="navbar navbar-light navbar-expand-sm fixed-top" role="navigation"> <div class="container"> <a class="navbar-brand title font-weight-lighter" href="/"> Karan Kc </a> <button class="navbar-toggler collapsed navbar-toggler-main" type="button" data-nav-toggle="navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> <span class="sr-only">Toggle navigation</span> <span class="icon-bar top-bar"></span> <span class="icon-bar middle-bar"></span> <span class="icon-bar bottom-bar"></span> </button> <div class="collapse navbar-collapse navbar-collapse-main" id="navbarNav"> <ul class="navbar-nav navbar-menu-list flex-nowrap"> <li class="nav-item "> <a class="nav-link" href="/">about </a> </li> <li class="nav-item active"> <a class="nav-link" href="/blog/">blog </a> </li> <li class="nav-item "> <a class="nav-link" href="/books/">bookshelf </a> </li> <li class="nav-item"> <button id="search-toggle" type="button" title="Search" aria-label="Open search"> <span class="nav-link">ctrl k <i class="fa-solid fa-magnifying-glass"></i></span> </button> </li> <li class="toggle-container"> <button id="light-toggle" type="button" title="Change theme" aria-label="Change color theme"> <i class="fa-half-sun-moon" id="light-toggle-system"></i> <i class="fa-solid fa-moon" id="light-toggle-dark"></i> <i class="fa-solid fa-sun" id="light-toggle-light"></i> </button> </li> </ul> </div> </div> </nav> <progress id="progress" value="0"> <div class="progress-container"> <span class="progress-bar"></span> </div> </progress> </header> <div class="container mt-5" role="main"> <div class="row"> <div class="col-sm-3"> <nav id="toc-sidebar" class="sticky-top toc toc-sidebar" aria-label="Table of contents" data-toc-collapse="expanded" data-toc-collapse-depth=""></nav> </div> <div class="col-sm-9"> <div class="post"> <header class="post-header"> <h1 class="post-title">Teaching a Model to Answer Instead of Talk</h1> <p class="post-meta"> Created on September 24, 2026 </p> <p class="post-tags"> <a href="/blog/2026"> <i class="fa-solid fa-calendar fa-sm"></i> 2026 </a>   ·   <a href="/blog/tag/llm"> <i class="fa-solid fa-hashtag fa-sm"></i> llm</a>   <a href="/blog/tag/ai-engineering"> <i class="fa-solid fa-hashtag fa-sm"></i> ai-engineering</a>   ·   <a href="/blog/category/ai"> <i class="fa-solid fa-tag fa-sm"></i> ai</a> </p> </header> <article class="post-content"> <div id="markdown-content"> <p><em>Jev, Laya, and a weekend spent building a UI for a category of model I didn’t know existed</em></p> <p>I’ve spent most of the last few years assuming “using an LLM in production” meant one thing: send a prompt, get a stream of tokens back, parse whatever JSON-shaped debris falls out of <code class="language-plaintext highlighter-rouge">generateObject</code>, and hope the schema validator doesn’t throw. That’s been true enough, often enough, that I stopped questioning it.</p> <p>Then I tried to wire up a model called Jev and got this back from the API:</p> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Model 'typesafe-ai/jev' is an evaluation model, not a language model.
+Use the evaluation generation API instead.
+</code></pre></div></div> <p>Not a language model. I stared at that for a second longer than I’d like to admit, because the whole mental model I’d built — prompt in, tokens out, coerce into JSON — turned out to not apply here at all. That error message is the actual subject of this post.</p> <h2 id="the-primitive-state-in-typed-answer-out">The primitive: state in, typed answer out</h2> <p>Jev (from a company called TypeSafe AI) and an open-source project called Laya both belong to a small, newish category people are calling “System 1” models — as in Kahneman’s fast, intuitive System 1, as opposed to the slow, deliberate System 2 that a chat model doing chain-of-thought is trying to emulate. The pitch, as far as I can tell, is: most of what we use big autoregressive models for in production isn’t really generation. It’s classification. Routing. Scoring. Yes-or-no. We just don’t have a native primitive for “answer one typed question about this input” so we reach for the sledgehammer that also happens to write poetry.</p> <p>Jev and Laya give you that primitive directly. You hand the model two things:</p> <ul> <li> <strong>state</strong> — a string, a JSON object, or an array. An HTTP request, a support ticket, a login event, whatever.</li> <li> <strong>questions</strong> — a map of typed judgments to make about that state.</li> </ul> <p>Three question types, and only three:</p> <ul> <li> <strong>choice</strong> — pick one option out of a named set</li> <li> <strong>score</strong> — rate the state against an ordered scale</li> <li> <strong>boolean</strong> — estimate the probability that something is true</li> </ul> <p>No temperature, no system prompt, no max tokens, no free text out. You get back a calibrated probability distribution and, for score, a probability-weighted number that can legitimately land between two defined levels (2.86 on a 0-3 scale, say, because the model wasn’t fully sure between “high” and “critical”). That’s the whole interface. It’s small enough that I initially assumed I was missing something.</p> <p>The mechanical difference from an autoregressive model matters more than it sounds like on paper. Laya, the open one, runs on a ModernBERT-large backbone (~421M parameters, per the project’s own numbers) and does a single forward pass per question — no decoding loop, no next-token sampling, no stopping condition to get wrong. Published numbers are around 33ms for one question and about 7.2ms per question when you batch them, measured on a T4. That’s not “fast LLM inference,” that’s a different computational shape entirely. It’s the difference between reading a paragraph and immediately stamping a verdict on it, versus reading the paragraph and then writing a second paragraph, one word at a time, that happens to end in a verdict.</p> <h2 id="where-my-mental-model-was-wrong">Where my mental model was wrong</h2> <p>Here’s the part I actually want to walk through, because it’s the useful bit.</p> <p>My first pass at wiring Jev into a Next.js app did the thing you’d naturally do: define a Zod schema for the expected answer shape, call <code class="language-plaintext highlighter-rouge">generateObject({ model: 'typesafe-ai/jev', schema, prompt })</code>, and let the AI SDK coerce the model’s output into that schema. This is the standard move for getting structured output out of a normal chat model, and I’d used it a dozen times before without incident.</p> <p>It failed immediately, with the error at the top of this post. Not a language model. It turns out Jev isn’t reachable through the generation surface at all — it’s a distinct model class in the AI SDK, gated behind a function called <code class="language-plaintext highlighter-rouge">experimental_evaluate</code>, which didn’t even exist in the version of <code class="language-plaintext highlighter-rouge">ai</code> I had installed (<code class="language-plaintext highlighter-rouge">5.0.265</code>). I had to bump to <code class="language-plaintext highlighter-rouge">ai@7</code> before the function showed up.</p> <p>Once I did, the actual request/response contract turned out to be nothing like what I’d guessed from the question types. I’d assumed, reasonably I thought, that a <code class="language-plaintext highlighter-rouge">score</code> question would take an array of <code class="language-plaintext highlighter-rouge">{ position, label, description }</code> objects, because that’s how you’d model an ordered scale if you were designing the schema from scratch. The real contract is an ordered array of plain strings — the position <em>is</em> the array index:</p> <div class="language-ts highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">questions</span><span class="p">:</span> <span class="p">{</span>
+  <span class="nl">severity</span><span class="p">:</span> <span class="p">{</span>
+    <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">score</span><span class="dl">'</span><span class="p">,</span>
+    <span class="na">instructions</span><span class="p">:</span> <span class="dl">'</span><span class="s1">How severe is this event?</span><span class="dl">'</span><span class="p">,</span>
+    <span class="na">criteria</span><span class="p">:</span> <span class="p">[</span><span class="dl">'</span><span class="s1">low</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">medium</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">high</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">critical</span><span class="dl">'</span><span class="p">],</span> <span class="c1">// index = position</span>
+  <span class="p">},</span>
+<span class="p">}</span>
+</code></pre></div></div> <p>And <code class="language-plaintext highlighter-rouge">choice</code>, which I’d modeled as an array of <code class="language-plaintext highlighter-rouge">{ id, description }</code> pairs (so the UI could reorder and drag-and-drop them), is actually a flat record on the wire:</p> <div class="language-ts highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">questions</span><span class="p">:</span> <span class="p">{</span>
+  <span class="nl">department</span><span class="p">:</span> <span class="p">{</span>
+    <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">choice</span><span class="dl">'</span><span class="p">,</span>
+    <span class="na">instructions</span><span class="p">:</span> <span class="dl">'</span><span class="s1">Which team should handle this ticket?</span><span class="dl">'</span><span class="p">,</span>
+    <span class="na">criteria</span><span class="p">:</span> <span class="p">{</span>
+      <span class="na">billing</span><span class="p">:</span> <span class="dl">'</span><span class="s1">Charges, invoices, and refunds</span><span class="dl">'</span><span class="p">,</span>
+      <span class="na">technical</span><span class="p">:</span> <span class="dl">'</span><span class="s1">Bugs, outages, integration failures</span><span class="dl">'</span><span class="p">,</span>
+    <span class="p">},</span>
+  <span class="p">},</span>
+<span class="p">}</span>
+</code></pre></div></div> <p>Neither of these is a big design decision on TypeSafe’s part — they’re both perfectly sensible shapes. They just weren’t the shape I’d have guessed, and there wasn’t a lot of prior art to check my guess against, because this API surface is genuinely new. I ended up keeping the array-based shape in my own UI layer, because it’s nicer for a drag-to-reorder question builder, and converting to the wire format server-side, in one function, right before the call. That conversion function is maybe twenty lines, and it’s the only place in the codebase that needs to know the real contract exists. Small price for guessing wrong once.</p> <p>The response side has the same “simpler than expected once you see it” quality:</p> <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"department"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"choice"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"choice"</span><span class="p">:</span><span class="w"> </span><span class="s2">"technical"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"probabilities"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"billing"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.08</span><span class="p">,</span><span class="w"> </span><span class="nl">"technical"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.91</span><span class="p">,</span><span class="w"> </span><span class="nl">"account"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.01</span><span class="w"> </span><span class="p">}</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"severity"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"score"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"score"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.86</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"probabilities"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"0"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nl">"1"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.02</span><span class="p">,</span><span class="w"> </span><span class="nl">"2"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.1</span><span class="p">,</span><span class="w"> </span><span class="nl">"3"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.88</span><span class="w"> </span><span class="p">}</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"requestsRefund"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"boolean"</span><span class="p">,</span><span class="w"> </span><span class="nl">"probability"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.97</span><span class="w"> </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div> <p>No <code class="language-plaintext highlighter-rouge">confidence</code> field, notably — I’d assumed one would exist, the way you’d want a softmax-max as a scalar confidence, but the API just gives you the raw distribution and expects you to derive whatever scalar you want from it. Fair enough. I compute <code class="language-plaintext highlighter-rouge">max(probabilities)</code> for choice and score, and <code class="language-plaintext highlighter-rouge">max(p, 1-p)</code> for boolean, and call that confidence, which is an honest thing to call it because that’s literally what it is.</p> <h2 id="the-numbers-such-as-they-are">The numbers, such as they are</h2> <p>My own measured average, hitting Jev through Vercel’s AI Gateway from a Next.js API route, is around 150ms end to end — that includes the network hop, so the actual model-side latency is presumably a decent chunk lower. I don’t have a controlled benchmark here, just a stopwatch on a side project, so take that as “roughly what I saw,” not a number to cite.</p> <p>Cost-wise, Jev is priced at around $40 per billion tokens (not million — I had to read that twice). For a typed-decision workload where the input is a support ticket or an HTTP request and the output is a handful of probabilities, that’s an enormous number of evaluations for not a lot of money. I’m genuinely unsure how that compares to running the equivalent classification through a general-purpose chat model with structured output, because I haven’t run that comparison side by side, but the shape of the pricing — tokens in, no tokens generated out to speak of — suggests it should be meaningfully cheaper, and the latency numbers back that intuition up.</p> <p>Where this gets interesting to me, and where I want to be careful not to overclaim, is the comparison to how a lot of existing security tooling works: a rule engine walking a signature database, a WAF matching a request against a large ruleset, a SIEM correlation rule chewing through parsed fields. That’s a pipeline shape of <em>raw input → parser → ruleset → verdict</em>, and every new attack pattern means writing (and testing, and maintaining) a new rule. The typed-decision model gives you a different pipeline: <em>raw input → semantic understanding → structured decision</em>, where “semantic understanding” is whatever the model learned, not whatever a human encoded as a regex.</p> <p>I want to be honest that I have not proven this generalizes. I’ve run it against a handful of synthetic and semi-synthetic examples, not a production security pipeline with adversarial pressure on it, and calibration under adversarial pressure specifically — can someone craft an input that reliably fools the probability distribution? — is exactly the kind of question I can’t answer from a weekend of poking at it. It’s early. But the pipeline shape is different enough, and the cost/latency numbers are favorable enough, that it feels worth more than a shrug.</p> <h2 id="building-a-ui-for-the-primitive-not-a-chat-window">Building a UI for the primitive, not a chat window</h2> <p>The thing I actually built this session is called Jev Studio — a small Next.js/TypeScript app whose entire design premise is refusing to look like a chatbot. There’s no message thread, no streaming text, no “thinking…” animation. The interface is, deliberately, just the three things Jev cares about: state, questions, structured decision.</p> <p>The state panel takes text, JSON, or an array, and shows you a live byte count against the 32KB request limit the Gateway enforces. The question builder lets you compose choice/score/boolean questions visually — add options, reorder score levels, write the TRUE/FALSE criteria for a boolean — and validates as you go (a choice question with duplicate option IDs, or a score question with fewer than two levels, gets flagged before you can run it). There’s a raw JSON mode for people who’d rather write the payload by hand, a request/response inspector so you can see exactly what got sent and what came back, and a settings page that lets you paste in a Gateway API key which gets written server-side to <code class="language-plaintext highlighter-rouge">.env.local</code> and never touches the browser — the usual don’t-ship-secrets-to-the-client discipline, just made a first-class settings flow instead of a README instruction.</p> <p>None of that is novel engineering. What made it worth doing was that building the UI forced me to actually internalize the primitive — choice, score, boolean, nothing else — instead of nodding along to a docs page and assuming I understood it.</p> <h2 id="four-use-cases-worked-through">Four use cases, worked through</h2> <p>The templates I ended up shipping in Jev Studio are the ones I kept reaching for while testing, so here they are as actual state-in/answer-out examples rather than abstractions.</p> <p><strong>Security event triage.</strong> Feed it a suspicious-looking request:</p> <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"method"</span><span class="p">:</span><span class="w"> </span><span class="s2">"POST"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/api/user"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"body"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1 OR 1=1"</span><span class="w"> </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div> <p>with three questions — <code class="language-plaintext highlighter-rouge">attack_type</code> (choice: normal / sql_injection / xss / ssrf / other), <code class="language-plaintext highlighter-rouge">severity</code> (score: low → critical), <code class="language-plaintext highlighter-rouge">likely_malicious</code> (boolean) — and you get back, in one round trip, a full triage: which attack category, how bad, and a calibrated probability that it’s malicious at all, rather than a single opaque score you have to reverse-engineer.</p> <p><strong>Auth anomaly / account takeover.</strong> This one I find genuinely more interesting than the SQLi example, because the signal is behavioral rather than syntactic — there’s no regex for “this login is weird”:</p> <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"event"</span><span class="p">:</span><span class="w"> </span><span class="s2">"login_success"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"ip"</span><span class="p">:</span><span class="w"> </span><span class="s2">"185.220.101.7"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"geo"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Unknown (Tor exit node)"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"previous_geo"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Austin, TX, US"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"time_since_last_login_minutes"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"failed_attempts_last_hour"</span><span class="p">:</span><span class="w"> </span><span class="mi">11</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"new_device"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div> <p><code class="language-plaintext highlighter-rouge">attack_pattern</code> (choice: normal / credential_stuffing / brute_force / impossible_travel / session_hijack), <code class="language-plaintext highlighter-rouge">takeover_risk</code> (score: unlikely → near-certain), <code class="language-plaintext highlighter-rouge">should_force_reauth</code> (boolean, with explicit TRUE/FALSE criteria so the model knows what threshold you actually care about). A rule-based version of this exists too, obviously — geo-velocity checks are a known pattern — but it’s usually five or six separate rules that each fire independently and need to be stitched together downstream. Here it’s one call, one coherent judgment.</p> <p><strong>Support ticket routing</strong>, the boring-but-real workhorse case: <code class="language-plaintext highlighter-rouge">department</code> (choice: billing / technical / account / other), <code class="language-plaintext highlighter-rouge">urgency</code> (score), <code class="language-plaintext highlighter-rouge">needs_human_review</code> (boolean) — all three answered against the same ticket text in a single request, because that’s the whole point of typed multi-question evaluation: one state, several independent judgments, evaluated together instead of three separate model calls.</p> <p><strong>Verification / workflow gating.</strong> Less flashy, arguably more useful day to day:</p> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Task: migrate the billing service to the new database.
+Evidence: migration script ran successfully, all rows verified, old table archived.
+</code></pre></div></div> <p>with <code class="language-plaintext highlighter-rouge">is_complete</code> (boolean) and <code class="language-plaintext highlighter-rouge">confidence_review</code> (boolean, “does this need a human before closing”). This is the pattern I’d reach for before letting an agent close out a task automatically — not because the model’s yes/no is infallible, but because it’s a probability, not an assertion, and you can set your own threshold for what “confident enough to auto-close” means.</p> <h2 id="where-im-still-uncertain">Where I’m still uncertain</h2> <p>A few things I don’t have good answers to yet, stated plainly rather than hedged into mush:</p> <ul> <li> <strong>Calibration under pressure.</strong> All my testing has been cooperative — I’m not trying to fool the model. Whether the probability distributions stay honest against inputs deliberately crafted to look benign is an open question I haven’t tested.</li> <li> <strong>Where the ceiling is.</strong> Jev’s own architecture isn’t public, so I can’t reason about its failure modes the way I can reason about a transformer I can actually read the weights of. Laya’s is open, and people are already fine-tuning it into narrower verticals, which is the direction I’d bet on for anything safety-critical — you want to be able to inspect what you’re trusting.</li> <li> <strong>Whether “replace the rule engine” is even the right framing</strong>, versus “add a second signal next to the rule engine and see where they disagree.” My instinct, for anything where a false negative is expensive, is the latter — run both, and treat disagreement as the interesting case, not as a decision to make unilaterally.</li> </ul> <p>I don’t think any of that undercuts the core observation, which is that the pipeline shape — one forward pass, a typed question, a calibrated number back — is a real primitive that a lot of what currently gets built as regex and rule graphs could plausibly be rebuilt on top of. I just don’t have enough hours logged against it yet to say more than “plausibly.”</p> <h2 id="whats-next">What’s next</h2> <p>I left Jev Studio open source specifically so other people can point it at their own use case and tell me where it breaks — that’s more useful to me than anything else I could do with it right now. If you build a use case I haven’t thought of, or find a place where the calibration falls apart, I’d genuinely like to know.</p> <p>For now: still early, still poking at it, and still a little bit delighted that “not a language model” turned out to be the interesting sentence in the whole error log.</p> </div> </article> <br> <hr> <br> <h2 class="text-3xl font-semibold mb-4 mt-12">Enjoy Reading This Article?</h2> <p class="mb-2">Here are some more articles you might like to read next:</p> <ul class="list-disc pl-7 my-3 space-y-2 marker:text-[var(--global-theme-color)]"> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/consistent-hashing-100tb-of-ram/">Consistent Hashing from Scratch, and Why Cloudflare Deleted 90% of It</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/openflow-from-the-wire-up/">A From-Scratch Tour of OpenFlow, From the Wire Up</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/ipv8-new-internet-fuss/">IPv8 and the Internet's Eternal Transition Problem</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/semantic-mapping-and-entropy/">Semantic Map Explorer - Entropy Embedding Atlas</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/cost-of-Engineering/">The Cost of Free Security: Wazuh and the Engineering Bill</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/everything-is-IPC/">Everything is Inter-Process Communication: HTTP, REST APIs, Serverless functions, what not</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/understanding-cors/">Why Your API Works in Postman but Fails in the Browser</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2025/f5-bigip-wazuh-logging/">F5 BIG-IP + Wazuh: Getting Logs Working After 18 Months</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2025/toon-the-new-json/">TOON - The New JSON</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2025/http-routing-patterns/">Three Essential HTTP Routing Patterns</a> </li> </ul> </div> </div> </div> </div> <footer class="fixed-bottom" role="contentinfo"> <div class="container mt-0"> © Copyright 2026 Karan Kc. Powered by <a href="https://jekyllrb.com/" target="_blank" rel="external nofollow noopener">Jekyll</a> with <a href="https://github.com/alshedivat/al-folio" rel="external nofollow noopener" target="_blank">al-folio</a> theme. Hosted by <a href="https://pages.github.com/" target="_blank" rel="external nofollow noopener">GitHub Pages</a>. Photos from <a href="https://unsplash.com" target="_blank" rel="external nofollow noopener">Unsplash</a>. Last updated: September 24, 2026. </div> </footer> <script>
+  window.alFolio = {
+    compatBootstrap: false
+  };
+</script> <script src="/assets/js/nav-toggle.js?v=141bd79a73ebc0f0b6ea58e440ae79fc"></script> <script defer src="https://cdn.jsdelivr.net/npm/masonry-layout@4.2.2/dist/masonry.pkgd.min.js" integrity="sha256-Nn1q/fx0H7SNLZMQ5Hw5JLaTRZp0yILA/FRexe19VdI=" crossorigin="anonymous"></script> <script defer src="https://cdn.jsdelivr.net/npm/imagesloaded@5.0.0/imagesloaded.pkgd.min.js" integrity="sha256-htrLFfZJ6v5udOG+3kNLINIKh2gvoKqwEhHYfTTMICc=" crossorigin="anonymous"></script> <script defer src="/assets/js/masonry.js?v=e49affc7bd2646f6acdad1dbe02c2359" type="text/javascript"></script> <script defer type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script> <script src="/assets/al_math/js/mathjax-setup.js"></script> <script src="/assets/js/tooltips-setup.js?v=fe487e99db6c43751e6e7bdb2d6a0611"></script> <script defer src="https://cdn.jsdelivr.net/npm/tocbot@4.36.4/dist/tocbot.min.js" integrity="sha256-lo/r+jQ81wWrxdIiiiEEd538z4+dTJTt+leOuAS7GCw=" crossorigin="anonymous"></script> <script src="/assets/js/no_defer.js?v=53b1b1a645525975c963ce8bf8bfefcf"></script> <script defer src="/assets/js/common.js?v=87baac90f765f2f3362dcf6aaf312a8a"></script> <script defer src="/assets/js/copy_code.js?v=c8a01c11a92744d44b093fc3bda915df" type="text/javascript"></script> <script defer src="/assets/js/jupyter_new_tab.js?v=896d254890d9b47f0281f63bfccf0dee"></script> <script async src="https://d1bxh8uas1mnw7.cloudfront.net/assets/embed.js"></script> <script async src="https://badge.dimensions.ai/badge.js"></script> <script defer src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous"></script> <script defer src="/assets/al_img_tools/js/zoom.js"></script> <script defer src="/assets/js/progress-bar.js?v=499464c5c63ced6cf7ad62509f1e2610" type="text/javascript"></script> <script src="https://cdn.jsdelivr.net/npm/vanilla-back-to-top@7.2.1/dist/vanilla-back-to-top.min.js" integrity="sha256-uMJJ3EoTyfRBoTbR+lrfu1uRQ87RZG8AR3cVNuQVeFg=" crossorigin="anonymous"></script> <script>
+    addBackToTop();
+  </script> <script type="module" src="/assets/al_search/js/search/ninja-keys.min.js"></script> <ninja-keys hidebreadcrumbs noautoloadmdicons placeholder="Type to start searching"></ninja-keys> <script src="/assets/al_search/js/search-setup.js"></script> <script>
+// get the ninja-keys element
+const ninja = document.querySelector('ninja-keys');
+
+// add the home and posts menu items
+ninja.data = [{
+    id: "nav-about",
+    title: "about",
+    section: "Navigation",
+    handler: () => {
+      window.location.href = "/";
+    },
+  },{id: "nav-blog",
+          title: "blog",
+          description: "",
+          section: "Navigation",
+          handler: () => {
+            window.location.href = "/blog/";
+          },
+        },{id: "nav-bookshelf",
+          title: "bookshelf",
+          description: "",
+          section: "Navigation",
+          handler: () => {
+            window.location.href = "/books/";
+          },
+        },{id: "post-teaching-a-model-to-answer-instead-of-talk",
+        
+          title: "Teaching a Model to Answer Instead of Talk",
+        
+        description: "Jev, Laya, and a weekend spent building a UI for a category of model I didn&#39;t know existed — typed-decision models that skip generation entirely and hand back a calibrated probability instead.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/jev-and-laya/";
+          
+        },
+      },{id: "post-consistent-hashing-from-scratch-and-why-cloudflare-deleted-90-of-it",
+        
+          title: "Consistent Hashing from Scratch, and Why Cloudflare Deleted 90% of It",
+        
+        description: "I built a consistent-hash ring in 40 lines of Python and measured everything — load imbalance, 32-bit collisions, what moves when a server dies — to understand how Cloudflare recovered ~100 TB of RAM by asking how much randomness they actually needed.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/consistent-hashing-100tb-of-ram/";
+          
+        },
+      },{id: "post-a-from-scratch-tour-of-openflow-from-the-wire-up",
+        
+          title: "A From-Scratch Tour of OpenFlow, From the Wire Up",
+        
+        description: "Building a toy OpenFlow switch and controller in ~600 lines of Python, then working bottom-up through PHY, parser, TCAM, pipeline, and actions to show why the protocol&#39;s design is downstream of memory technology and a 20-cycle-per-packet budget.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/openflow-from-the-wire-up/";
+          
+        },
+      },{id: "post-ipv8-and-the-internet-39-s-eternal-transition-problem",
+        
+          title: "IPv8 and the Internet&#39;s Eternal Transition Problem",
+        
+        description: "A reflective breakdown of the IPv8 draft proposal — compatibility claims, zero-prefix IPv4 embedding, ASN routing limits, physics-aware routing metrics, and the risks of collapsing internet infrastructure into a centralized zone server model",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/ipv8-new-internet-fuss/";
+          
+        },
+      },{id: "post-semantic-map-explorer-entropy-embedding-atlas",
+        
+          title: "Semantic Map Explorer - Entropy Embedding Atlas",
+        
+        description: "Understanding text geometry through embeddings, KNN graphs, entropy, and interactive visualization",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/semantic-mapping-and-entropy/";
+          
+        },
+      },{id: "post-the-cost-of-free-security-wazuh-and-the-engineering-bill",
+        
+          title: "The Cost of Free Security: Wazuh and the Engineering Bill",
+        
+        description: "CrowdStrike costs money and control. Wazuh costs engineering time. Understanding the fundamental tradeoff between a fully integrated commercial XDR platforms and an open-source security foundation you customize yourself.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/cost-of-Engineering/";
+          
+        },
+      },{id: "post-everything-is-inter-process-communication-http-rest-apis-serverless-functions-what-not",
+        
+          title: "Everything is Inter-Process Communication: HTTP, REST APIs, Serverless functions, what not",
+        
+        description: "Modern software is rarely a single process doing one thing. Browsers isolate tabs for security. Databases split query workers from storage workers. API backends offload CPU-heavy jobs to background processes. The moment you divide work across processes, you need them to talk to each other.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/everything-is-IPC/";
+          
+        },
+      },{id: "post-why-your-api-works-in-postman-but-fails-in-the-browser",
+        
+          title: "Why Your API Works in Postman but Fails in the Browser",
+        
+        description: "An in-depth exploration of Cross-Origin Resource Sharing (CORS), preflight requests, and common pitfalls, accompanied by a hands-on demo.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/understanding-cors/";
+          
+        },
+      },{id: "post-f5-big-ip-wazuh-getting-logs-working-after-18-months",
+        
+          title: "F5 BIG-IP + Wazuh: Getting Logs Working After 18 Months",
+        
+        description: "How I finally got F5 BIG-IP and Wazuh to exchange logs — configuration steps, troubleshooting, and lessons learned from an 18-month integration.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2025/f5-bigip-wazuh-logging/";
+          
+        },
+      },{id: "post-toon-the-new-json",
+        
+          title: "TOON - The New JSON",
+        
+        description: "TOON is about to take a wild ride in LLMs. Its going to save you money, time &amp; power. Go through it.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2025/toon-the-new-json/";
+          
+        },
+      },{id: "post-three-essential-http-routing-patterns",
+        
+          title: "Three Essential HTTP Routing Patterns",
+        
+        description: "Host-based, path-based, and header-based routing. What each one reads from the request, what that costs you, and why the Host header sits in its own category.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2025/http-routing-patterns/";
+          
+        },
+      },{id: "post-webassembly-will-this-replace-docker",
+        
+          title: "WebAssembly: Will this replace Docker?",
+        
+        description: "WebAssembly vs Docker. WASM, a technology that revamped the way we thought about containerization.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/webassembly-vs-docker/";
+          
+        },
+      },{id: "post-engineering-behind-mutable-and-immutable-in-python",
+        
+          title: "Engineering behind Mutable and Immutable in Python",
+        
+        description: "Explore the core engineering concepts behind mutable and immutable data types in Python with simple explanations and practical examples.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/mutable-immutable-python/";
+          
+        },
+      },{id: "post-a-guide-to-analyzing-and-evaluating-reasoning",
+        
+          title: "A Guide to Analyzing and Evaluating Reasoning",
+        
+        description: "Here we explore the essential techniques for analyzing and evaluating reasoning in arguments. Learn how to identify claims, premises, and conclusions, and strengthen your critical thinking skills.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/analyzing-evaluating-reasoning/";
+          
+        },
+      },{id: "post-how-we-fixed-critical-connectivity-issues-in-our-vkyc-application-a-technical-deep-dive",
+        
+          title: "How We Fixed Critical Connectivity Issues in Our vKYC Application: A Technical Deep...",
+        
+        description: "Users stuck buffering in a video KYC application. The packets never reached the load balancer, and the fix ended up being a firewall policy and a protocol setting we expected to need.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/vkyc-connectivity-issues/";
+          
+        },
+      },{id: "post-threat-classification",
+        
+          title: "Threat Classification",
+        
+        description: "Known-knowns, known-unknowns, unknown-knowns, unknown-unknowns. The four quadrants are a familiar framing, and the interesting one is the quadrant that is a choice rather than a gap in knowledge.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/threat-classification/";
+          
+        },
+      },{id: "post-f5-tmos-administration-essentials-critical-concepts-to-be-remembered",
+        
+          title: "F5 TMOS Administration Essentials: Critical Concepts to be Remembered",
+        
+        description: "The order TMOS evaluates an incoming packet, what to check when traffic does not arrive, and a handful of behaviours that are not obvious from the configuration screens.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/f5-tmos-administration-essentials/";
+          
+        },
+      },{id: "post-understanding-trust-authorities-in-big-ip-systems-a-beginner-39-s-guide",
+        
+          title: "Understanding Trust Authorities in BIG-IP Systems: A Beginner&#39;s Guide",
+        
+        description: "Device trust in BIG-IP decides which systems can vouch for new members of a trust domain. The three authority roles, what each can do, and the prerequisites that catch people out.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/trust-authorities-bigip/";
+          
+        },
+      },{id: "post-reject-virtual-servers-in-big-ip-ltm-purpose-and-practical-use-cases",
+        
+          title: "Reject Virtual Servers in BIG-IP LTM: Purpose and Practical Use Cases",
+        
+        description: "A Reject virtual server drops unwanted traffic without building a connection table entry. Why that matters at volume, and how it differs from blocking the same traffic elsewhere.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/reject-virtual-servers-bigip-ltm/";
+          
+        },
+      },{id: "post-performance-http-virtual-servers-and-the-fast-http-profile-in-big-ip",
+        
+          title: "Performance HTTP Virtual Servers and the Fast HTTP Profile in BIG-IP",
+        
+        description: "The Fast HTTP profile trades away most of the BIG-IP feature set for lower CPU and latency. What you give up, what you get, and why F5 still recommends the standard HTTP profile for internet traffic.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/performance-http-virtual-servers-bigip/";
+          
+        },
+      },{id: "post-immunize-your-photos-protecting-yourself-from-ai-deepfake-manipulation",
+        
+          title: "Immunize Your Photos: Protecting Yourself from AI Deepfake Manipulation",
+        
+        description: "PhotoGuard, from MIT, adds adversarial perturbation to a photo so that generative models editing it produce warped output. A look at what it does, and where the approach runs out.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/immunize-photos-ai-deepfake/";
+          
+        },
+      },{id: "post-recent-surge-in-phishing-attacks-targeting-character-assassination",
+        
+          title: "Recent Surge in Phishing Attacks Targeting Character Assassination",
+        
+        description: "A Facebook phishing campaign that does not stop at stealing your password. It uses your account to damage your reputation, and it recruits every victim into spreading itself further.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/phishing-attacks-character-assassination/";
+          
+        },
+      },{id: "books-the-alchemist",
+          title: 'The Alchemist',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_alchemist/";
+            },},{id: "books-you-39-re-too-good-to-feel-this-bad",
+          title: 'You&amp;#39;re Too Good to Feel This Bad',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/youre_too_good_to_feel_this_bad/";
+            },},{id: "books-read-people-like-a-book",
+          title: 'Read People Like a Book',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/read_people_like_a_book/";
+            },},{id: "books-21-lessons-for-the-21st-century",
+          title: '21 Lessons for the 21st Century',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/21_lessons_for_the_21st_century/";
+            },},{id: "books-think-again",
+          title: 'Think Again',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/think_again/";
+            },},{id: "books-on-truth",
+          title: 'On Truth',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/on_truth/";
+            },},{id: "books-the-myth-of-sisyphus",
+          title: 'The Myth of Sisyphus',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_myth_of_sisyphus/";
+            },},{id: "books-the-personal-mba",
+          title: 'The Personal MBA',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_personal_mba/";
+            },},{id: "books-the-courage-to-be-disliked",
+          title: 'The Courage to Be Disliked',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_courage_to_be_disliked/";
+            },},{id: "books-seto-dharti",
+          title: 'Seto Dharti',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/seto_dharti/";
+            },},{id: "books-the-kite-runner",
+          title: 'The Kite Runner',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_kite_runner/";
+            },},{id: "projects-project-1",
+          title: 'project 1',
+          description: "with background image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/1_project/";
+            },},{id: "projects-project-2",
+          title: 'project 2',
+          description: "a project with a background image and giscus comments",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/2_project/";
+            },},{id: "projects-project-4",
+          title: 'project 4',
+          description: "another without an image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/4_project/";
+            },},{id: "projects-project-5",
+          title: 'project 5',
+          description: "a project with a background image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/5_project/";
+            },},{id: "projects-project-6",
+          title: 'project 6',
+          description: "a project with no image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/6_project/";
+            },},{id: "projects-project-7",
+          title: 'project 7',
+          description: "with background image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/7_project/";
+            },},{id: "projects-project-8",
+          title: 'project 8',
+          description: "an other project with a background image and giscus comments",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/8_project/";
+            },},{id: "projects-project-9",
+          title: 'project 9',
+          description: "another project with an image 🎉",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/9_project/";
+            },},{id: "teachings-data-science-fundamentals",
+          title: 'Data Science Fundamentals',
+          description: "This course covers the foundational aspects of data science, including data collection, cleaning, analysis, and visualization. Students will learn practical skills for working with real-world datasets.",
+          section: "Teachings",handler: () => {
+              window.location.href = "/teachings/data-science-fundamentals/";
+            },},{id: "teachings-introduction-to-machine-learning",
+          title: 'Introduction to Machine Learning',
+          description: "This course provides an introduction to machine learning concepts, algorithms, and applications. Students will learn about supervised and unsupervised learning, model evaluation, and practical implementations.",
+          section: "Teachings",handler: () => {
+              window.location.href = "/teachings/introduction-to-machine-learning/";
+            },},{
+        id: 'social-github',
+        title: 'GitHub',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://github.com/karankessy", "_blank");
+        },
+      },{
+        id: 'social-linkedin',
+        title: 'LinkedIn',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://www.linkedin.com/in/karankessy", "_blank");
+        },
+      },{
+        id: 'social-facebook',
+        title: 'Facebook',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://facebook.com/karankessy", "_blank");
+        },
+      },{
+        id: 'social-x',
+        title: 'X',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://twitter.com/karankessy", "_blank");
+        },
+      },{
+        id: 'social-instagram',
+        title: 'Instagram',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://instagram.com/karankessy", "_blank");
+        },
+      },{
+        id: 'social-rss',
+        title: 'RSS Feed',
+        section: 'Socials',
+        handler: () => {
+          window.open("/feed.xml", "_blank");
+        },
+      },{
+      id: 'light-theme',
+      title: 'Change theme to light',
+      description: 'Change the theme of the site to Light',
+      section: 'Theme',
+      handler: () => {
+        setThemeSetting("light");
+      },
+    },
+    {
+      id: 'dark-theme',
+      title: 'Change theme to dark',
+      description: 'Change the theme of the site to Dark',
+      section: 'Theme',
+      handler: () => {
+        setThemeSetting("dark");
+      },
+    },
+    {
+      id: 'system-theme',
+      title: 'Use system default theme',
+      description: 'Change the theme of the site to System Default',
+      section: 'Theme',
+      handler: () => {
+        setThemeSetting("system");
+      },
+    },];
+
+</script> <script src="/assets/al_search/js/shortcut-key.js"></script> </body> </html>
