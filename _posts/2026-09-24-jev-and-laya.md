@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Teaching a Model to Answer Instead of Talk"
-date: 2026-09-25
+date: 2026-09-24
 description: "Jev, Laya, and a weekend spent building a UI for a category of model I didn't know existed — typed-decision models that skip generation entirely and hand back a calibrated probability instead."
 tags: llm ai-engineering
 categories: ai
