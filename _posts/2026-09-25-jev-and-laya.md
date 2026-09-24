@@ -10,7 +10,7 @@ toc:
 published: true
 ---
 
-*Jev, Laya, and a weekend spent building a UI for a category of model I didn't know existed*
+_Jev, Laya, and a weekend spent building a UI for a category of model I didn't know existed_
 
 I've spent most of the last few years assuming "using an LLM in production" meant one thing: send a prompt, get a stream of tokens back, parse whatever JSON-shaped debris falls out of `generateObject`, and hope the schema validator doesn't throw. That's been true enough, often enough, that I stopped questioning it.
 
@@ -50,7 +50,7 @@ My first pass at wiring Jev into a Next.js app did the thing you'd naturally do:
 
 It failed immediately, with the error at the top of this post. Not a language model. It turns out Jev isn't reachable through the generation surface at all — it's a distinct model class in the AI SDK, gated behind a function called `experimental_evaluate`, which didn't even exist in the version of `ai` I had installed (`5.0.265`). I had to bump to `ai@7` before the function showed up.
 
-Once I did, the actual request/response contract turned out to be nothing like what I'd guessed from the question types. I'd assumed, reasonably I thought, that a `score` question would take an array of `{ position, label, description }` objects, because that's how you'd model an ordered scale if you were designing the schema from scratch. The real contract is an ordered array of plain strings — the position *is* the array index:
+Once I did, the actual request/response contract turned out to be nothing like what I'd guessed from the question types. I'd assumed, reasonably I thought, that a `score` question would take an array of `{ position, label, description }` objects, because that's how you'd model an ordered scale if you were designing the schema from scratch. The real contract is an ordered array of plain strings — the position _is_ the array index:
 
 ```ts
 questions: {
@@ -105,7 +105,7 @@ My own measured average, hitting Jev through Vercel's AI Gateway from a Next.js 
 
 Cost-wise, Jev is priced at around $40 per billion tokens (not million — I had to read that twice). For a typed-decision workload where the input is a support ticket or an HTTP request and the output is a handful of probabilities, that's an enormous number of evaluations for not a lot of money. I'm genuinely unsure how that compares to running the equivalent classification through a general-purpose chat model with structured output, because I haven't run that comparison side by side, but the shape of the pricing — tokens in, no tokens generated out to speak of — suggests it should be meaningfully cheaper, and the latency numbers back that intuition up.
 
-Where this gets interesting to me, and where I want to be careful not to overclaim, is the comparison to how a lot of existing security tooling works: a rule engine walking a signature database, a WAF matching a request against a large ruleset, a SIEM correlation rule chewing through parsed fields. That's a pipeline shape of *raw input → parser → ruleset → verdict*, and every new attack pattern means writing (and testing, and maintaining) a new rule. The typed-decision model gives you a different pipeline: *raw input → semantic understanding → structured decision*, where "semantic understanding" is whatever the model learned, not whatever a human encoded as a regex.
+Where this gets interesting to me, and where I want to be careful not to overclaim, is the comparison to how a lot of existing security tooling works: a rule engine walking a signature database, a WAF matching a request against a large ruleset, a SIEM correlation rule chewing through parsed fields. That's a pipeline shape of _raw input → parser → ruleset → verdict_, and every new attack pattern means writing (and testing, and maintaining) a new rule. The typed-decision model gives you a different pipeline: _raw input → semantic understanding → structured decision_, where "semantic understanding" is whatever the model learned, not whatever a human encoded as a regex.
 
 I want to be honest that I have not proven this generalizes. I've run it against a handful of synthetic and semi-synthetic examples, not a production security pipeline with adversarial pressure on it, and calibration under adversarial pressure specifically — can someone craft an input that reliably fools the probability distribution? — is exactly the kind of question I can't answer from a weekend of poking at it. It's early. But the pipeline shape is different enough, and the cost/latency numbers are favorable enough, that it feels worth more than a shrug.
 
