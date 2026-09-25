@@ -32,7 +32,7 @@ That gap sent me back to something I'd bumped into before and hadn't looked at c
 
 Homa is a transport protocol built at Stanford by John Ousterhout and collaborators, designed specifically for datacenter networks, and its central move is to stop treating traffic as competing streams and start treating it as **messages with a size**, scheduled by a receiver that can see the whole picture arriving on its link.
 
-The paper that makes the case most directly is blunt about it. From the abstract of [*"It's Time to Replace TCP in the Datacenter"*](https://arxiv.org/abs/2210.00714) (arXiv:2210.00714):
+The paper that makes the case most directly is blunt about it. From the abstract of [_"It's Time to Replace TCP in the Datacenter"_](https://arxiv.org/abs/2210.00714) (arXiv:2210.00714):
 
 > "In spite of its long and successful history, TCP is a poor transport protocol for modern datacenters. Every significant element of TCP, from its stream orientation to its expectation of in-order packet delivery, is wrong for the datacenter... It is time to recognize that TCP's problems are too fundamental and interrelated to be fixed; the only way to harness the full performance potential of modern networks is to introduce a new transport protocol into the datacenter."
 
@@ -117,5 +117,6 @@ Homa doesn't solve networking. What it does is name a question that TCP's design
 Sometimes the highway is wide enough. The problem is putting every vehicle in the same queue and then being surprised the ambulance is stuck behind the truck.
 
 **Sources:**
+
 - J. Ousterhout, ["It's Time to Replace TCP in the Datacenter,"](https://arxiv.org/abs/2210.00714) arXiv:2210.00714, 2022.
 - [Homa project wiki](https://homa-transport.atlassian.net/wiki/spaces/HOMA/overview#replaceTcp), homa-transport.atlassian.net.
