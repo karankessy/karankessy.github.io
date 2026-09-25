@@ -1,0 +1,484 @@
+<!DOCTYPE html> <html lang="en"> <head> <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> <meta charset="utf-8"> <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> <meta http-equiv="X-UA-Compatible" content="IE=edge"> <title> The Ambulance Behind the Truck: Why TCP Struggles in the Datacenter, and What Homa Does Differently | Karan Kc </title> <meta name="author" content="Karan Kc"> <meta name="description" content="A transport protocol out of Stanford treats messages, not streams, as the unit that matters — and prioritizes by what's left to send, not what arrived first. Notes from throughput work on F5 ADC and S3/MinIO infrastructure carrying AI workloads."> <meta name="keywords" content="cybersecurity, web technologies, networking, infrastructure, systems"> <meta property="og:site_name" content="Karan Kc"> <meta property="og:type" content="article"> <meta property="og:title" content="Karan Kc | The Ambulance Behind the Truck: Why TCP Struggles in the Datacenter, and What Homa Does Differently"> <meta property="og:url" content="https://karanregmi.com.np/blog/2026/homa-replacing-tcp-in-the-datacenter/"> <meta property="og:description" content="A transport protocol out of Stanford treats messages, not streams, as the unit that matters — and prioritizes by what's left to send, not what arrived first. Notes from throughput work on F5 ADC and S3/MinIO infrastructure carrying AI workloads."> <meta property="og:image" content="https://karanregmi.com.np/assets/img/prof_pic.jpg"> <meta property="og:locale" content="en"> <meta name="twitter:card" content="summary"> <meta name="twitter:title" content="The Ambulance Behind the Truck: Why TCP Struggles in the Datacenter, and What Homa Does Differently"> <meta name="twitter:description" content="A transport protocol out of Stanford treats messages, not streams, as the unit that matters — and prioritizes by what's left to send, not what arrived first. Notes from throughput work on F5 ADC and S3/MinIO infrastructure carrying AI workloads."> <meta name="twitter:image" content="https://karanregmi.com.np/assets/img/prof_pic.jpg"> <script type="application/ld+json">
+    {
+        "author":
+        {
+            "@type": "Person",
+            "name": "Karan Kc"
+        },
+        "url": "https://karanregmi.com.np/blog/2026/homa-replacing-tcp-in-the-datacenter/",
+        "@type": "BlogPosting",
+        "description": "A transport protocol out of Stanford treats messages, not streams, as the unit that matters — and prioritizes by what's left to send, not what arrived first. Notes from throughput work on F5 ADC and S3/MinIO infrastructure carrying AI workloads.",
+        "headline": "The Ambulance Behind the Truck: Why TCP Struggles in the Datacenter, and What Homa Does Differently",
+        
+        "sameAs": ["https://github.com/karankessy","https://www.linkedin.com/in/karankessy","https://facebook.com/karankessy","https://twitter.com/karankessy","https://instagram.com/karankessy"],
+        
+        "name": "Karan Kc",
+        "@context": "https://schema.org"
+    }
+  </script> <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; media-src 'self' https:; frame-src 'self' https:; connect-src 'self' https:;"> <style>
+  :root {
+    --max-content-width: 930px;
+  }
+</style> <link rel="stylesheet" href="/assets/css/tailwind.css?v=50c64c15cbb9fd1ce6056fdb8bcb4b62"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tocbot@4.36.4/dist/tocbot.css" integrity="sha256-zTN0r+0OKaIv2xqeNNIYxNk0pWJ6+IqPGc1iDgVzWF0=" crossorigin="anonymous"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css" integrity="sha256-MVopmdyC2tYTiJ8wlktf0uh0v4NgT+vNdyVFepi7Q0c=" crossorigin="anonymous"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/academicons@1.9.5/css/academicons.min.css" integrity="sha256-SzrCOBJbGVFMahewkgjwnApaV2+av1DwMAA+/QGLyZw=" crossorigin="anonymous"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/scholar-icons@1.0.3/css/scholar-icons.css" integrity="sha256-VY3hHVj/hNX3fYG6wtbA6TcKJQl7+FthzGSyIB64klY=" crossorigin="anonymous"> <link defer rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:100,300,400,500,700|Material+Icons&amp;display=swap"> <link defer rel="stylesheet" href="/assets/css/jekyll-pygments-themes-github.css?v=591dab5a4e56573bf4ef7fd332894c99" media="" id="highlight_theme_light"> <link rel="shortcut icon" href="data:image/svg+xml,&lt;svg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20100%20100%22&gt;&lt;text%20y=%22.9em%22%20font-size=%2290%22&gt;%E2%9A%9B%EF%B8%8F&lt;/text&gt;&lt;/svg&gt;"> <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png?v=2ccb27a1632d6c52f3d75bbd836ac325"> <link rel="stylesheet" href="/assets/css/main.css?v=3116ba77db9ee1581d05bb3e86fbf7f1"> <link rel="canonical" href="https://karanregmi.com.np/blog/2026/homa-replacing-tcp-in-the-datacenter/"> <script src="/assets/js/theme.js?v=5286c3e4c334d0ecb8fc0c40ff4fa7ec"></script> <link defer rel="stylesheet" href="/assets/css/jekyll-pygments-themes-native.css?v=5847e5ed4a4568527aa6cfab446049ca" media="none" id="highlight_theme_dark"> <script>
+    initTheme();
+  </script> </head> <body class="fixed-top-nav "> <header> <nav id="navbar" class="navbar navbar-light navbar-expand-sm fixed-top" role="navigation"> <div class="container"> <a class="navbar-brand title font-weight-lighter" href="/"> Karan Kc </a> <button class="navbar-toggler collapsed navbar-toggler-main" type="button" data-nav-toggle="navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> <span class="sr-only">Toggle navigation</span> <span class="icon-bar top-bar"></span> <span class="icon-bar middle-bar"></span> <span class="icon-bar bottom-bar"></span> </button> <div class="collapse navbar-collapse navbar-collapse-main" id="navbarNav"> <ul class="navbar-nav navbar-menu-list flex-nowrap"> <li class="nav-item "> <a class="nav-link" href="/">about </a> </li> <li class="nav-item active"> <a class="nav-link" href="/blog/">blog </a> </li> <li class="nav-item "> <a class="nav-link" href="/books/">bookshelf </a> </li> <li class="nav-item"> <button id="search-toggle" type="button" title="Search" aria-label="Open search"> <span class="nav-link">ctrl k <i class="fa-solid fa-magnifying-glass"></i></span> </button> </li> <li class="toggle-container"> <button id="light-toggle" type="button" title="Change theme" aria-label="Change color theme"> <i class="fa-half-sun-moon" id="light-toggle-system"></i> <i class="fa-solid fa-moon" id="light-toggle-dark"></i> <i class="fa-solid fa-sun" id="light-toggle-light"></i> </button> </li> </ul> </div> </div> </nav> <progress id="progress" value="0"> <div class="progress-container"> <span class="progress-bar"></span> </div> </progress> </header> <div class="container mt-5" role="main"> <div class="row"> <div class="col-sm-3"> <nav id="toc-sidebar" class="sticky-top toc toc-sidebar" aria-label="Table of contents" data-toc-collapse="expanded" data-toc-collapse-depth=""></nav> </div> <div class="col-sm-9"> <div class="post"> <header class="post-header"> <h1 class="post-title">The Ambulance Behind the Truck: Why TCP Struggles in the Datacenter, and What Homa Does Differently</h1> <p class="post-meta"> Created on September 25, 2026 </p> <p class="post-tags"> <a href="/blog/2026"> <i class="fa-solid fa-calendar fa-sm"></i> 2026 </a>   ·   <a href="/blog/tag/networking"> <i class="fa-solid fa-hashtag fa-sm"></i> networking</a>   <a href="/blog/tag/systems"> <i class="fa-solid fa-hashtag fa-sm"></i> systems</a>   <a href="/blog/tag/ai-infrastructure"> <i class="fa-solid fa-hashtag fa-sm"></i> ai-infrastructure</a>   ·   <a href="/blog/category/infrastructure"> <i class="fa-solid fa-tag fa-sm"></i> infrastructure</a> </p> </header> <article class="post-content"> <div id="markdown-content"> <p><em>Notes from throughput work on F5 ADC and S3/MinIO infrastructure, and a protocol out of Stanford that reframes what a network is supposed to optimize for.</em></p> <p>I keep coming back to the same feeling: TCP starts showing its age exactly when a network gets extremely fast, extremely busy, and the data moving through it gets extremely mixed. Congestion happens. Packets drop. Retransmissions follow. Queues build up. And somewhere in that queue, a few bytes of metadata end up waiting behind something a thousand times its size.</p> <p>That’s not a hypothetical. It’s what I kept seeing while working on large-scale throughput optimization at enterprise scale — specifically, moving AI workloads through F5 ADC and S3/MinIO infrastructure. The thing that stood out wasn’t the volume. It was the variety.</p> <h2 id="the-problem-isnt-speed-its-whats-sharing-the-lane">The problem isn’t speed. It’s what’s sharing the lane.</h2> <p>On that infrastructure, you have large objects — model checkpoints, sharded weights, big S3/MinIO payloads — moving through the same pipes as an enormous number of small messages: metadata, control information, RPCs, requests, responses, fragments of application state.</p> <p>From the network’s point of view, all of that is just packets. Bytes to move from A to B, no different from each other.</p> <p>From the application’s point of view, it is absolutely not the same. A few bytes of metadata stuck behind a large transfer can matter more than the transfer itself — a control-plane message that’s late is a stalled pipeline, a health check that’s late is a false failure, a small RPC that’s late is a tail-latency outlier that drags your p99 somewhere embarrassing.</p> <p>TCP has no concept of that distinction. It sees a byte stream and delivers it in order, first-in, first-out, per connection. It doesn’t know that the four bytes behind the two-hundred-megabyte checkpoint transfer are more urgent than the checkpoint itself. It can’t know — that information doesn’t exist at the transport layer TCP was designed for.</p> <p>That gap sent me back to something I’d bumped into before and hadn’t looked at closely enough: <strong>Homa</strong>.</p> <h2 id="homa-in-one-sentence">Homa, in one sentence</h2> <p>Homa is a transport protocol built at Stanford by John Ousterhout and collaborators, designed specifically for datacenter networks, and its central move is to stop treating traffic as competing streams and start treating it as <strong>messages with a size</strong>, scheduled by a receiver that can see the whole picture arriving on its link.</p> <p>The paper that makes the case most directly is blunt about it. From the abstract of <a href="https://arxiv.org/abs/2210.00714" rel="external nofollow noopener" target="_blank"><em>“It’s Time to Replace TCP in the Datacenter”</em></a> (arXiv:2210.00714):</p> <blockquote> <p>“In spite of its long and successful history, TCP is a poor transport protocol for modern datacenters. Every significant element of TCP, from its stream orientation to its expectation of in-order packet delivery, is wrong for the datacenter… It is time to recognize that TCP’s problems are too fundamental and interrelated to be fixed; the only way to harness the full performance potential of modern networks is to introduce a new transport protocol into the datacenter.”</p> </blockquote> <p>That’s a strong claim, and I want to sit with why it’s not just contrarian noise. TCP was built for a world of long-lived, roughly-equal-priority connections over unreliable, low-bandwidth links. A modern datacenter is close to the opposite: short-lived, wildly unequal-priority messages over links so fast that the bottleneck usually isn’t bandwidth, it’s queueing and scheduling.</p> <h2 id="what-actually-changes-sender-driven-vs-receiver-driven">What actually changes: sender-driven vs. receiver-driven</h2> <p>Here’s the mechanism, and it’s worth drawing out because it inverts something most of us don’t think to question. TCP is sender-driven — the sender decides how much to push based on acks and inferred congestion signals, and the network’s job is mostly to deliver bytes in the order they were sent.</p> <p>Homa flips who’s in charge. It’s <strong>message-oriented and receiver-driven</strong>. The receiver has the better vantage point — it can see everything landing on its link, from every sender, at once — so it decides which messages get bandwidth next, rather than each sender independently guessing.</p> <div class="row mt-3"> <div class="col-sm mt-3 mt-md-0"> <img src="/assets/img/homa/tcp-vs-homa-queue.svg" alt="Diagram comparing TCP's single FIFO queue, where a large object blocks small RPC and metadata messages behind it, against Homa's receiver-driven scheduling, where small messages are interleaved ahead of the large transfer" class="img-fluid rounded z-depth-1"> </div> </div> <div class="caption"> TCP delivers in arrival order down one queue. Homa lets the receiver interleave short messages ahead of a large transfer that's still in flight. </div> <p>The scheduling rule itself is close to a classic result from operating systems theory, applied to network scheduling: approximate <strong>shortest-remaining-processing-time (SRPT)</strong>. Rank messages by how many bytes they have left to send, not by when they arrived, and let the ones closest to finishing go first.</p> <div class="row mt-3"> <div class="col-sm mt-3 mt-md-0"> <img src="/assets/img/homa/srpt-scheduling.svg" alt="Timeline diagram showing a large 200 megabyte object being scheduled around shorter metadata and RPC messages, which are prioritized because they have fewer bytes remaining" class="img-fluid rounded z-depth-1"> </div> </div> <div class="caption"> Rank by bytes remaining, not arrival time. The large transfer still completes — it just yields whenever something smaller shows up. </div> <p>Put plainly: <strong>finish the small thing first.</strong> It sounds obvious once you say it from the application’s point of view. It is not how TCP, or most transport protocols built in TCP’s shadow, actually behave.</p> <h2 id="the-specific-problems-homa-is-aimed-at">The specific problems Homa is aimed at</h2> <p>None of this is scheduling theory for its own sake. Each piece is aimed at a concrete failure mode that gets worse as datacenters get faster and busier.</p> <p><strong>Tail latency.</strong> A network can have a fine average latency and still be miserable for its slowest one percent of requests — and that slowest one percent is usually where short, latency-sensitive messages live, stuck behind something bigger. The <a href="https://homa-transport.atlassian.net/wiki/spaces/HOMA/overview#replaceTcp" rel="external nofollow noopener" target="_blank">Homa project’s own documentation</a> states the target directly: Homa aims at reducing “tail latency by an order of magnitude or more,” particularly for short messages in loaded systems. That’s the number I’d want reproduced independently before leaning on it too hard, but it tells you exactly what problem the design is optimizing for.</p> <p><strong>Head-of-line interference.</strong> A small, latency-sensitive message shouldn’t have to wait behind a large transfer purely because they happen to share a link. That’s the whole picture in the first diagram above — it’s not a corner case, it’s the default behavior of a FIFO byte stream carrying mixed traffic.</p> <p><strong>Reactive congestion control.</strong> TCP mostly finds out about congestion after it’s already happened — a dropped packet, a delayed ack, a signal that pressure already built up somewhere. Homa tries to move more of that decision earlier, to the receiver, before the pressure turns into loss. The project describes this as eliminating “core congestion in datacenter networks” rather than reacting to it after the fact.</p> <p><strong>Unnecessary queueing.</strong> Big queues keep links busy, which looks efficient on a utilization graph, but they also drag down the latency of everything sitting behind them. Homa tries to control what gets admitted and scheduled instead of just letting queues absorb the mismatch.</p> <p><strong>Mixed message sizes.</strong> This is the one that mapped most directly onto what I was actually looking at on the F5/S3/MinIO side. Datacenter workloads are rarely uniform — they’re a genuine mix of enormous and tiny, and a protocol that assumes one typical message size will always be wrong for a meaningful fraction of the traffic. Homa’s SRPT-style approximation is built explicitly to handle that mixture without sacrificing the utilization you get from a long transfer running underneath it.</p> <p>There’s a secondary claim worth naming too, because it’s less about latency and more about implementation cost: the wiki states Homa “eliminates the high overheads of per-connection state,” which is TCP’s other quiet tax — every connection carries state that has to be tracked, and that state doesn’t scale for free when a service is fanning out to thousands of peers.</p> <h2 id="why-this-matters-more-for-ai-infrastructure-specifically">Why this matters more for AI infrastructure specifically</h2> <p>This is where the F5 ADC / S3/MinIO throughput work made the idea click rather than stay academic. AI systems are generating exactly the kind of heterogeneous traffic mix this design targets, and the mix is getting worse, not better, as systems get more distributed:</p> <ul> <li>large model weights and checkpoints</li> <li>embeddings</li> <li>metadata</li> <li>RPCs between services</li> <li>control-plane messages</li> <li>object storage traffic (S3/MinIO reads and writes)</li> <li>distributed inference requests</li> <li>intermediate results between pipeline stages</li> <li>small messages happening at very high frequency</li> </ul> <p>None of that is “just data” anymore in any way that a single transport priority level can represent honestly. It’s data with very different meanings and very different latency budgets, sharing the same wires. As we push toward 100/400/800G networks and more distributed inference and training, the question stops being purely “how fast can we move the data” and starts being <strong>“which data should move first.”</strong></p> <h2 id="where-id-push-back-or-at-least-stay-cautious">Where I’d push back, or at least stay cautious</h2> <p>I don’t want to write this up as a solved problem, because it isn’t one, and the source material doesn’t pretend otherwise either.</p> <p>Homa is not API-compatible with TCP. The paper’s own abstract is explicit that adoption would have to happen through integration with RPC frameworks, not a drop-in socket replacement — that’s a real deployment cost, not a footnote.</p> <p>The receiver-driven model depends on switch priority support and receiver-side scheduling logic that existing infrastructure mostly doesn’t have configured for this purpose. Buffering behavior, compatibility with existing middleboxes and load balancers (the exact layer I was already working in with F5 ADC), and the complexity of implementing this correctly in production are all real, unresolved-by-a-paper engineering problems.</p> <p>And the headline latency numbers are Stanford’s own benchmark environment. I’d want to see them reproduced against DCTCP and TCP in someone else’s production topology, under someone else’s traffic mix, before treating “an order of magnitude” as a number that travels.</p> <p>None of that makes the direction wrong. It makes it early, and worth watching rather than worth assuming.</p> <h2 id="the-actual-question">The actual question</h2> <p>Homa doesn’t solve networking. What it does is name a question that TCP’s design never had to ask, because TCP was built for a world where that question mattered less: <strong>not every packet carries the same stakes, so why does the transport layer treat them as if they do?</strong></p> <p>Sometimes the highway is wide enough. The problem is putting every vehicle in the same queue and then being surprised the ambulance is stuck behind the truck.</p> <p><strong>Sources:</strong></p> <ul> <li>J. Ousterhout, <a href="https://arxiv.org/abs/2210.00714" rel="external nofollow noopener" target="_blank">“It’s Time to Replace TCP in the Datacenter,”</a> arXiv:2210.00714, 2022.</li> <li> <a href="https://homa-transport.atlassian.net/wiki/spaces/HOMA/overview#replaceTcp" rel="external nofollow noopener" target="_blank">Homa project wiki</a>, homa-transport.atlassian.net.</li> </ul> </div> </article> <br> <hr> <br> <h2 class="text-3xl font-semibold mb-4 mt-12">Enjoy Reading This Article?</h2> <p class="mb-2">Here are some more articles you might like to read next:</p> <ul class="list-disc pl-7 my-3 space-y-2 marker:text-[var(--global-theme-color)]"> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/jev-and-laya/">Teaching a Model to Answer Instead of Talk</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/consistent-hashing-100tb-of-ram/">Consistent Hashing from Scratch, and Why Cloudflare Deleted 90% of It</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/openflow-from-the-wire-up/">A From-Scratch Tour of OpenFlow, From the Wire Up</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/ipv8-new-internet-fuss/">IPv8 and the Internet's Eternal Transition Problem</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/semantic-mapping-and-entropy/">Semantic Map Explorer - Entropy Embedding Atlas</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/cost-of-Engineering/">The Cost of Free Security: Wazuh and the Engineering Bill</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/everything-is-IPC/">Everything is Inter-Process Communication: HTTP, REST APIs, Serverless functions, what not</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/understanding-cors/">Why Your API Works in Postman but Fails in the Browser</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2025/f5-bigip-wazuh-logging/">F5 BIG-IP + Wazuh: Getting Logs Working After 18 Months</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2025/toon-the-new-json/">TOON - The New JSON</a> </li> </ul> </div> </div> </div> </div> <footer class="fixed-bottom" role="contentinfo"> <div class="container mt-0"> © Copyright 2026 Karan Kc. Powered by <a href="https://jekyllrb.com/" target="_blank" rel="external nofollow noopener">Jekyll</a> with <a href="https://github.com/alshedivat/al-folio" rel="external nofollow noopener" target="_blank">al-folio</a> theme. Hosted by <a href="https://pages.github.com/" target="_blank" rel="external nofollow noopener">GitHub Pages</a>. Photos from <a href="https://unsplash.com" target="_blank" rel="external nofollow noopener">Unsplash</a>. Last updated: September 25, 2026. </div> </footer> <script>
+  window.alFolio = {
+    compatBootstrap: false
+  };
+</script> <script src="/assets/js/nav-toggle.js?v=141bd79a73ebc0f0b6ea58e440ae79fc"></script> <script defer src="https://cdn.jsdelivr.net/npm/masonry-layout@4.2.2/dist/masonry.pkgd.min.js" integrity="sha256-Nn1q/fx0H7SNLZMQ5Hw5JLaTRZp0yILA/FRexe19VdI=" crossorigin="anonymous"></script> <script defer src="https://cdn.jsdelivr.net/npm/imagesloaded@5.0.0/imagesloaded.pkgd.min.js" integrity="sha256-htrLFfZJ6v5udOG+3kNLINIKh2gvoKqwEhHYfTTMICc=" crossorigin="anonymous"></script> <script defer src="/assets/js/masonry.js?v=e49affc7bd2646f6acdad1dbe02c2359" type="text/javascript"></script> <script defer type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script> <script src="/assets/al_math/js/mathjax-setup.js"></script> <script src="/assets/js/tooltips-setup.js?v=fe487e99db6c43751e6e7bdb2d6a0611"></script> <script defer src="https://cdn.jsdelivr.net/npm/tocbot@4.36.4/dist/tocbot.min.js" integrity="sha256-lo/r+jQ81wWrxdIiiiEEd538z4+dTJTt+leOuAS7GCw=" crossorigin="anonymous"></script> <script src="/assets/js/no_defer.js?v=53b1b1a645525975c963ce8bf8bfefcf"></script> <script defer src="/assets/js/common.js?v=87baac90f765f2f3362dcf6aaf312a8a"></script> <script defer src="/assets/js/copy_code.js?v=c8a01c11a92744d44b093fc3bda915df" type="text/javascript"></script> <script defer src="/assets/js/jupyter_new_tab.js?v=896d254890d9b47f0281f63bfccf0dee"></script> <script async src="https://d1bxh8uas1mnw7.cloudfront.net/assets/embed.js"></script> <script async src="https://badge.dimensions.ai/badge.js"></script> <script defer src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous"></script> <script defer src="/assets/al_img_tools/js/zoom.js"></script> <script defer src="/assets/js/progress-bar.js?v=499464c5c63ced6cf7ad62509f1e2610" type="text/javascript"></script> <script src="https://cdn.jsdelivr.net/npm/vanilla-back-to-top@7.2.1/dist/vanilla-back-to-top.min.js" integrity="sha256-uMJJ3EoTyfRBoTbR+lrfu1uRQ87RZG8AR3cVNuQVeFg=" crossorigin="anonymous"></script> <script>
+    addBackToTop();
+  </script> <script type="module" src="/assets/al_search/js/search/ninja-keys.min.js"></script> <ninja-keys hidebreadcrumbs noautoloadmdicons placeholder="Type to start searching"></ninja-keys> <script src="/assets/al_search/js/search-setup.js"></script> <script>
+// get the ninja-keys element
+const ninja = document.querySelector('ninja-keys');
+
+// add the home and posts menu items
+ninja.data = [{
+    id: "nav-about",
+    title: "about",
+    section: "Navigation",
+    handler: () => {
+      window.location.href = "/";
+    },
+  },{id: "nav-blog",
+          title: "blog",
+          description: "",
+          section: "Navigation",
+          handler: () => {
+            window.location.href = "/blog/";
+          },
+        },{id: "nav-bookshelf",
+          title: "bookshelf",
+          description: "",
+          section: "Navigation",
+          handler: () => {
+            window.location.href = "/books/";
+          },
+        },{id: "post-the-ambulance-behind-the-truck-why-tcp-struggles-in-the-datacenter-and-what-homa-does-differently",
+        
+          title: "The Ambulance Behind the Truck: Why TCP Struggles in the Datacenter, and What...",
+        
+        description: "A transport protocol out of Stanford treats messages, not streams, as the unit that matters — and prioritizes by what&#39;s left to send, not what arrived first. Notes from throughput work on F5 ADC and S3/MinIO infrastructure carrying AI workloads.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/homa-replacing-tcp-in-the-datacenter/";
+          
+        },
+      },{id: "post-teaching-a-model-to-answer-instead-of-talk",
+        
+          title: "Teaching a Model to Answer Instead of Talk",
+        
+        description: "Jev, Laya, and a weekend spent building a UI for a category of model I didn&#39;t know existed — typed-decision models that skip generation entirely and hand back a calibrated probability instead.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/jev-and-laya/";
+          
+        },
+      },{id: "post-consistent-hashing-from-scratch-and-why-cloudflare-deleted-90-of-it",
+        
+          title: "Consistent Hashing from Scratch, and Why Cloudflare Deleted 90% of It",
+        
+        description: "I built a consistent-hash ring in 40 lines of Python and measured everything — load imbalance, 32-bit collisions, what moves when a server dies — to understand how Cloudflare recovered ~100 TB of RAM by asking how much randomness they actually needed.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/consistent-hashing-100tb-of-ram/";
+          
+        },
+      },{id: "post-a-from-scratch-tour-of-openflow-from-the-wire-up",
+        
+          title: "A From-Scratch Tour of OpenFlow, From the Wire Up",
+        
+        description: "Building a toy OpenFlow switch and controller in ~600 lines of Python, then working bottom-up through PHY, parser, TCAM, pipeline, and actions to show why the protocol&#39;s design is downstream of memory technology and a 20-cycle-per-packet budget.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/openflow-from-the-wire-up/";
+          
+        },
+      },{id: "post-ipv8-and-the-internet-39-s-eternal-transition-problem",
+        
+          title: "IPv8 and the Internet&#39;s Eternal Transition Problem",
+        
+        description: "A reflective breakdown of the IPv8 draft proposal — compatibility claims, zero-prefix IPv4 embedding, ASN routing limits, physics-aware routing metrics, and the risks of collapsing internet infrastructure into a centralized zone server model",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/ipv8-new-internet-fuss/";
+          
+        },
+      },{id: "post-semantic-map-explorer-entropy-embedding-atlas",
+        
+          title: "Semantic Map Explorer - Entropy Embedding Atlas",
+        
+        description: "Understanding text geometry through embeddings, KNN graphs, entropy, and interactive visualization",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/semantic-mapping-and-entropy/";
+          
+        },
+      },{id: "post-the-cost-of-free-security-wazuh-and-the-engineering-bill",
+        
+          title: "The Cost of Free Security: Wazuh and the Engineering Bill",
+        
+        description: "CrowdStrike costs money and control. Wazuh costs engineering time. Understanding the fundamental tradeoff between a fully integrated commercial XDR platforms and an open-source security foundation you customize yourself.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/cost-of-Engineering/";
+          
+        },
+      },{id: "post-everything-is-inter-process-communication-http-rest-apis-serverless-functions-what-not",
+        
+          title: "Everything is Inter-Process Communication: HTTP, REST APIs, Serverless functions, what not",
+        
+        description: "Modern software is rarely a single process doing one thing. Browsers isolate tabs for security. Databases split query workers from storage workers. API backends offload CPU-heavy jobs to background processes. The moment you divide work across processes, you need them to talk to each other.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/everything-is-IPC/";
+          
+        },
+      },{id: "post-why-your-api-works-in-postman-but-fails-in-the-browser",
+        
+          title: "Why Your API Works in Postman but Fails in the Browser",
+        
+        description: "An in-depth exploration of Cross-Origin Resource Sharing (CORS), preflight requests, and common pitfalls, accompanied by a hands-on demo.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/understanding-cors/";
+          
+        },
+      },{id: "post-f5-big-ip-wazuh-getting-logs-working-after-18-months",
+        
+          title: "F5 BIG-IP + Wazuh: Getting Logs Working After 18 Months",
+        
+        description: "How I finally got F5 BIG-IP and Wazuh to exchange logs — configuration steps, troubleshooting, and lessons learned from an 18-month integration.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2025/f5-bigip-wazuh-logging/";
+          
+        },
+      },{id: "post-toon-the-new-json",
+        
+          title: "TOON - The New JSON",
+        
+        description: "TOON is about to take a wild ride in LLMs. Its going to save you money, time &amp; power. Go through it.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2025/toon-the-new-json/";
+          
+        },
+      },{id: "post-three-essential-http-routing-patterns",
+        
+          title: "Three Essential HTTP Routing Patterns",
+        
+        description: "Host-based, path-based, and header-based routing. What each one reads from the request, what that costs you, and why the Host header sits in its own category.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2025/http-routing-patterns/";
+          
+        },
+      },{id: "post-webassembly-will-this-replace-docker",
+        
+          title: "WebAssembly: Will this replace Docker?",
+        
+        description: "WebAssembly vs Docker. WASM, a technology that revamped the way we thought about containerization.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/webassembly-vs-docker/";
+          
+        },
+      },{id: "post-engineering-behind-mutable-and-immutable-in-python",
+        
+          title: "Engineering behind Mutable and Immutable in Python",
+        
+        description: "Explore the core engineering concepts behind mutable and immutable data types in Python with simple explanations and practical examples.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/mutable-immutable-python/";
+          
+        },
+      },{id: "post-a-guide-to-analyzing-and-evaluating-reasoning",
+        
+          title: "A Guide to Analyzing and Evaluating Reasoning",
+        
+        description: "Here we explore the essential techniques for analyzing and evaluating reasoning in arguments. Learn how to identify claims, premises, and conclusions, and strengthen your critical thinking skills.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/analyzing-evaluating-reasoning/";
+          
+        },
+      },{id: "post-how-we-fixed-critical-connectivity-issues-in-our-vkyc-application-a-technical-deep-dive",
+        
+          title: "How We Fixed Critical Connectivity Issues in Our vKYC Application: A Technical Deep...",
+        
+        description: "Users stuck buffering in a video KYC application. The packets never reached the load balancer, and the fix ended up being a firewall policy and a protocol setting we expected to need.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/vkyc-connectivity-issues/";
+          
+        },
+      },{id: "post-threat-classification",
+        
+          title: "Threat Classification",
+        
+        description: "Known-knowns, known-unknowns, unknown-knowns, unknown-unknowns. The four quadrants are a familiar framing, and the interesting one is the quadrant that is a choice rather than a gap in knowledge.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/threat-classification/";
+          
+        },
+      },{id: "post-f5-tmos-administration-essentials-critical-concepts-to-be-remembered",
+        
+          title: "F5 TMOS Administration Essentials: Critical Concepts to be Remembered",
+        
+        description: "The order TMOS evaluates an incoming packet, what to check when traffic does not arrive, and a handful of behaviours that are not obvious from the configuration screens.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/f5-tmos-administration-essentials/";
+          
+        },
+      },{id: "post-understanding-trust-authorities-in-big-ip-systems-a-beginner-39-s-guide",
+        
+          title: "Understanding Trust Authorities in BIG-IP Systems: A Beginner&#39;s Guide",
+        
+        description: "Device trust in BIG-IP decides which systems can vouch for new members of a trust domain. The three authority roles, what each can do, and the prerequisites that catch people out.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/trust-authorities-bigip/";
+          
+        },
+      },{id: "post-reject-virtual-servers-in-big-ip-ltm-purpose-and-practical-use-cases",
+        
+          title: "Reject Virtual Servers in BIG-IP LTM: Purpose and Practical Use Cases",
+        
+        description: "A Reject virtual server drops unwanted traffic without building a connection table entry. Why that matters at volume, and how it differs from blocking the same traffic elsewhere.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/reject-virtual-servers-bigip-ltm/";
+          
+        },
+      },{id: "post-performance-http-virtual-servers-and-the-fast-http-profile-in-big-ip",
+        
+          title: "Performance HTTP Virtual Servers and the Fast HTTP Profile in BIG-IP",
+        
+        description: "The Fast HTTP profile trades away most of the BIG-IP feature set for lower CPU and latency. What you give up, what you get, and why F5 still recommends the standard HTTP profile for internet traffic.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/performance-http-virtual-servers-bigip/";
+          
+        },
+      },{id: "post-immunize-your-photos-protecting-yourself-from-ai-deepfake-manipulation",
+        
+          title: "Immunize Your Photos: Protecting Yourself from AI Deepfake Manipulation",
+        
+        description: "PhotoGuard, from MIT, adds adversarial perturbation to a photo so that generative models editing it produce warped output. A look at what it does, and where the approach runs out.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/immunize-photos-ai-deepfake/";
+          
+        },
+      },{id: "post-recent-surge-in-phishing-attacks-targeting-character-assassination",
+        
+          title: "Recent Surge in Phishing Attacks Targeting Character Assassination",
+        
+        description: "A Facebook phishing campaign that does not stop at stealing your password. It uses your account to damage your reputation, and it recruits every victim into spreading itself further.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/phishing-attacks-character-assassination/";
+          
+        },
+      },{id: "books-the-alchemist",
+          title: 'The Alchemist',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_alchemist/";
+            },},{id: "books-you-39-re-too-good-to-feel-this-bad",
+          title: 'You&amp;#39;re Too Good to Feel This Bad',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/youre_too_good_to_feel_this_bad/";
+            },},{id: "books-read-people-like-a-book",
+          title: 'Read People Like a Book',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/read_people_like_a_book/";
+            },},{id: "books-21-lessons-for-the-21st-century",
+          title: '21 Lessons for the 21st Century',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/21_lessons_for_the_21st_century/";
+            },},{id: "books-think-again",
+          title: 'Think Again',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/think_again/";
+            },},{id: "books-on-truth",
+          title: 'On Truth',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/on_truth/";
+            },},{id: "books-the-myth-of-sisyphus",
+          title: 'The Myth of Sisyphus',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_myth_of_sisyphus/";
+            },},{id: "books-the-personal-mba",
+          title: 'The Personal MBA',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_personal_mba/";
+            },},{id: "books-the-courage-to-be-disliked",
+          title: 'The Courage to Be Disliked',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_courage_to_be_disliked/";
+            },},{id: "books-seto-dharti",
+          title: 'Seto Dharti',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/seto_dharti/";
+            },},{id: "books-the-kite-runner",
+          title: 'The Kite Runner',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_kite_runner/";
+            },},{id: "projects-project-1",
+          title: 'project 1',
+          description: "with background image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/1_project/";
+            },},{id: "projects-project-2",
+          title: 'project 2',
+          description: "a project with a background image and giscus comments",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/2_project/";
+            },},{id: "projects-project-4",
+          title: 'project 4',
+          description: "another without an image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/4_project/";
+            },},{id: "projects-project-5",
+          title: 'project 5',
+          description: "a project with a background image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/5_project/";
+            },},{id: "projects-project-6",
+          title: 'project 6',
+          description: "a project with no image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/6_project/";
+            },},{id: "projects-project-7",
+          title: 'project 7',
+          description: "with background image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/7_project/";
+            },},{id: "projects-project-8",
+          title: 'project 8',
+          description: "an other project with a background image and giscus comments",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/8_project/";
+            },},{id: "projects-project-9",
+          title: 'project 9',
+          description: "another project with an image 🎉",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/9_project/";
+            },},{id: "teachings-data-science-fundamentals",
+          title: 'Data Science Fundamentals',
+          description: "This course covers the foundational aspects of data science, including data collection, cleaning, analysis, and visualization. Students will learn practical skills for working with real-world datasets.",
+          section: "Teachings",handler: () => {
+              window.location.href = "/teachings/data-science-fundamentals/";
+            },},{id: "teachings-introduction-to-machine-learning",
+          title: 'Introduction to Machine Learning',
+          description: "This course provides an introduction to machine learning concepts, algorithms, and applications. Students will learn about supervised and unsupervised learning, model evaluation, and practical implementations.",
+          section: "Teachings",handler: () => {
+              window.location.href = "/teachings/introduction-to-machine-learning/";
+            },},{
+        id: 'social-github',
+        title: 'GitHub',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://github.com/karankessy", "_blank");
+        },
+      },{
+        id: 'social-linkedin',
+        title: 'LinkedIn',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://www.linkedin.com/in/karankessy", "_blank");
+        },
+      },{
+        id: 'social-facebook',
+        title: 'Facebook',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://facebook.com/karankessy", "_blank");
+        },
+      },{
+        id: 'social-x',
+        title: 'X',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://twitter.com/karankessy", "_blank");
+        },
+      },{
+        id: 'social-instagram',
+        title: 'Instagram',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://instagram.com/karankessy", "_blank");
+        },
+      },{
+        id: 'social-rss',
+        title: 'RSS Feed',
+        section: 'Socials',
+        handler: () => {
+          window.open("/feed.xml", "_blank");
+        },
+      },{
+      id: 'light-theme',
+      title: 'Change theme to light',
+      description: 'Change the theme of the site to Light',
+      section: 'Theme',
+      handler: () => {
+        setThemeSetting("light");
+      },
+    },
+    {
+      id: 'dark-theme',
+      title: 'Change theme to dark',
+      description: 'Change the theme of the site to Dark',
+      section: 'Theme',
+      handler: () => {
+        setThemeSetting("dark");
+      },
+    },
+    {
+      id: 'system-theme',
+      title: 'Use system default theme',
+      description: 'Change the theme of the site to System Default',
+      section: 'Theme',
+      handler: () => {
+        setThemeSetting("system");
+      },
+    },];
+
+</script> <script src="/assets/al_search/js/shortcut-key.js"></script> </body> </html>

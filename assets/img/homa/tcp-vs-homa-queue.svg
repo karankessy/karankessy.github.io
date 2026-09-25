@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 460" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+  <style>
+    .lbl { font-size: 14px; fill: #333; }
+    .lbl-dark { font-size: 14px; fill: #eee; }
+    .small { font-size: 12px; fill: #666; }
+    .small-dark { font-size: 12px; fill: #bbb; }
+    .title { font-size: 16px; font-weight: 600; fill: #111; }
+    .title-dark { font-size: 16px; font-weight: 600; fill: #f2f2f2; }
+    @media (prefers-color-scheme: dark) {
+      .lbl { fill: #eee; }
+      .small { fill: #bbb; }
+      .title { fill: #f2f2f2; }
+      rect.bg { fill: #1b1b1b; }
+    }
+  </style>
+  <rect class="bg" width="900" height="460" fill="#ffffff"/>
+
+  <text x="20" y="30" class="title">TCP: one queue, one order</text>
+  <rect x="20" y="50" width="860" height="60" rx="6" fill="none" stroke="#999"/>
+  <rect x="24" y="54" width="320" height="52" rx="4" fill="#c9463d" opacity="0.85"/>
+  <text x="180" y="86" text-anchor="middle" class="lbl" fill="#fff">large object (bytes)</text>
+  <rect x="348" y="54" width="30" height="52" rx="4" fill="#3d7fc9" opacity="0.9"/>
+  <text x="363" y="86" text-anchor="middle" class="small" fill="#fff">RPC</text>
+  <rect x="382" y="54" width="30" height="52" rx="4" fill="#3d7fc9" opacity="0.9"/>
+  <text x="397" y="86" text-anchor="middle" class="small" fill="#fff">meta</text>
+  <text x="30" y="130" class="small">first-in-first-out. the metadata sits behind the large transfer just because it arrived after it.</text>
+
+  <line x1="450" y1="150" x2="450" y2="180" stroke="#999" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <text x="20" y="215" class="title">Homa: receiver picks what finishes next</text>
+  <rect x="20" y="235" width="860" height="60" rx="6" fill="none" stroke="#999"/>
+  <rect x="24" y="239" width="30" height="52" rx="4" fill="#3d7fc9" opacity="0.9"/>
+  <text x="39" y="271" text-anchor="middle" class="small" fill="#fff">meta</text>
+  <rect x="58" y="239" width="30" height="52" rx="4" fill="#3d7fc9" opacity="0.9"/>
+  <text x="73" y="271" text-anchor="middle" class="small" fill="#fff">RPC</text>
+  <rect x="96" y="239" width="300" height="52" rx="4" fill="#c9463d" opacity="0.55"/>
+  <text x="246" y="271" text-anchor="middle" class="lbl" fill="#fff">large object, scheduled around the small stuff</text>
+
+  <text x="30" y="325" class="small">receiver ranks messages by bytes remaining, not arrival order. short messages get scheduled first,</text>
+  <text x="30" y="343" class="small">the large object still completes, just interleaved instead of blocking the queue behind it.</text>
+
+  <text x="30" y="400" class="small">source: J. Ousterhout, "It's Time to Replace TCP in the Datacenter," arXiv:2210.00714</text>
+  <text x="30" y="418" class="small">Homa project wiki, homa-transport.atlassian.net</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="5" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L6,3 z" fill="#999"/>
+    </marker>
+  </defs>
+</svg>
