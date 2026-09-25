@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+  <style>
+    .lbl { font-size: 13px; fill: #333; }
+    .title { font-size: 16px; font-weight: 600; fill: #111; }
+    .small { font-size: 12px; fill: #666; }
+    @media (prefers-color-scheme: dark) {
+      .lbl { fill: #eee; }
+      .small { fill: #bbb; }
+      .title { fill: #f2f2f2; }
+      rect.bg { fill: #1b1b1b; }
+    }
+  </style>
+  <rect class="bg" width="900" height="380" fill="#ffffff"/>
+  <text x="20" y="28" class="title">shortest-remaining-processing-time, approximated</text>
+  <text x="20" y="48" class="small">rank = bytes left to send. lower rank moves first. re-ranked continuously as messages shrink.</text>
+
+  <line x1="80" y1="330" x2="860" y2="330" stroke="#999"/>
+  <text x="20" y="335" class="small">t=0</text>
+  <text x="850" y="345" class="small">t</text>
+
+  <!-- large message, low priority most of the time -->
+  <rect x="80" y="80" width="740" height="26" rx="3" fill="#c9463d" opacity="0.4"/>
+  <text x="90" y="98" class="lbl" fill="#fff">large object — 200 MB — scheduled in the gaps</text>
+
+  <!-- message A, arrives t=40, short, jumps ahead -->
+  <rect x="200" y="130" width="40" height="26" rx="3" fill="#3d7fc9"/>
+  <text x="205" y="148" class="lbl" fill="#fff" font-size="11">meta</text>
+  <text x="200" y="175" class="small">arrives, remaining bytes tiny → runs immediately, finishes fast</text>
+
+  <!-- message B, RPC -->
+  <rect x="360" y="130" width="60" height="26" rx="3" fill="#3d7fc9"/>
+  <text x="368" y="148" class="lbl" fill="#fff" font-size="11">RPC req</text>
+  <text x="360" y="175" class="small">outranks the large object until it completes</text>
+
+  <!-- message C, another RPC response later -->
+  <rect x="560" y="130" width="60" height="26" rx="3" fill="#3d7fc9"/>
+  <text x="568" y="148" class="lbl" fill="#fff" font-size="11">RPC resp</text>
+  <text x="560" y="175" class="small">same rule applies again, new short message, new priority</text>
+
+  <text x="20" y="220" class="small">under TCP's FIFO byte stream, all three would queue behind whatever byte range of the</text>
+  <text x="20" y="238" class="small">200 MB object happened to be in flight first. under Homa's ranking, the large transfer still</text>
+  <text x="20" y="256" class="small">finishes, it just yields bandwidth whenever something with less data left shows up.</text>
+
+  <text x="20" y="300" class="small">source: J. Ousterhout, "It's Time to Replace TCP in the Datacenter," arXiv:2210.00714</text>
+</svg>
