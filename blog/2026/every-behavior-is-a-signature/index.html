@@ -1,0 +1,589 @@
+<!DOCTYPE html> <html lang="en"> <head> <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> <meta charset="utf-8"> <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> <meta http-equiv="X-UA-Compatible" content="IE=edge"> <title> Every Behavior Is a Signature | Karan Kc </title> <meta name="author" content="Karan Kc"> <meta name="description" content="Why 'behavioral detection' is still pattern matching, just with better marketing — and why that distinction is about to matter a lot more once attackers start generating their behaviors with LLMs instead of hard-coding them."> <meta name="keywords" content="cybersecurity, web technologies, networking, infrastructure, systems"> <meta property="og:site_name" content="Karan Kc"> <meta property="og:type" content="article"> <meta property="og:title" content="Karan Kc | Every Behavior Is a Signature"> <meta property="og:url" content="https://karanregmi.com.np/blog/2026/every-behavior-is-a-signature/"> <meta property="og:description" content="Why 'behavioral detection' is still pattern matching, just with better marketing — and why that distinction is about to matter a lot more once attackers start generating their behaviors with LLMs instead of hard-coding them."> <meta property="og:image" content="https://karanregmi.com.np/assets/img/prof_pic.jpg"> <meta property="og:locale" content="en"> <meta name="twitter:card" content="summary"> <meta name="twitter:title" content="Every Behavior Is a Signature"> <meta name="twitter:description" content="Why 'behavioral detection' is still pattern matching, just with better marketing — and why that distinction is about to matter a lot more once attackers start generating their behaviors with LLMs instead of hard-coding them."> <meta name="twitter:image" content="https://karanregmi.com.np/assets/img/prof_pic.jpg"> <script type="application/ld+json">
+    {
+        "author":
+        {
+            "@type": "Person",
+            "name": "Karan Kc"
+        },
+        "url": "https://karanregmi.com.np/blog/2026/every-behavior-is-a-signature/",
+        "@type": "BlogPosting",
+        "description": "Why 'behavioral detection' is still pattern matching, just with better marketing — and why that distinction is about to matter a lot more once attackers start generating their behaviors with LLMs instead of hard-coding them.",
+        "headline": "Every Behavior Is a Signature",
+        
+        "sameAs": ["https://github.com/karankessy","https://www.linkedin.com/in/karankessy","https://facebook.com/karankessy","https://twitter.com/karankessy","https://instagram.com/karankessy"],
+        
+        "name": "Karan Kc",
+        "@context": "https://schema.org"
+    }
+  </script> <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; media-src 'self' https:; frame-src 'self' https:; connect-src 'self' https:;"> <style>
+  :root {
+    --max-content-width: 930px;
+  }
+</style> <link rel="stylesheet" href="/assets/css/tailwind.css?v=50c64c15cbb9fd1ce6056fdb8bcb4b62"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tocbot@4.36.4/dist/tocbot.css" integrity="sha256-zTN0r+0OKaIv2xqeNNIYxNk0pWJ6+IqPGc1iDgVzWF0=" crossorigin="anonymous"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css" integrity="sha256-MVopmdyC2tYTiJ8wlktf0uh0v4NgT+vNdyVFepi7Q0c=" crossorigin="anonymous"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/academicons@1.9.5/css/academicons.min.css" integrity="sha256-SzrCOBJbGVFMahewkgjwnApaV2+av1DwMAA+/QGLyZw=" crossorigin="anonymous"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/scholar-icons@1.0.3/css/scholar-icons.css" integrity="sha256-VY3hHVj/hNX3fYG6wtbA6TcKJQl7+FthzGSyIB64klY=" crossorigin="anonymous"> <link defer rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:100,300,400,500,700|Material+Icons&amp;display=swap"> <link defer rel="stylesheet" href="/assets/css/jekyll-pygments-themes-github.css?v=591dab5a4e56573bf4ef7fd332894c99" media="" id="highlight_theme_light"> <link rel="shortcut icon" href="data:image/svg+xml,&lt;svg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20100%20100%22&gt;&lt;text%20y=%22.9em%22%20font-size=%2290%22&gt;%E2%9A%9B%EF%B8%8F&lt;/text&gt;&lt;/svg&gt;"> <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png?v=2ccb27a1632d6c52f3d75bbd836ac325"> <link rel="stylesheet" href="/assets/css/main.css?v=3116ba77db9ee1581d05bb3e86fbf7f1"> <link rel="canonical" href="https://karanregmi.com.np/blog/2026/every-behavior-is-a-signature/"> <script src="/assets/js/theme.js?v=5286c3e4c334d0ecb8fc0c40ff4fa7ec"></script> <link defer rel="stylesheet" href="/assets/css/jekyll-pygments-themes-native.css?v=5847e5ed4a4568527aa6cfab446049ca" media="none" id="highlight_theme_dark"> <script>
+    initTheme();
+  </script> </head> <body class="fixed-top-nav "> <header> <nav id="navbar" class="navbar navbar-light navbar-expand-sm fixed-top" role="navigation"> <div class="container"> <a class="navbar-brand title font-weight-lighter" href="/"> Karan Kc </a> <button class="navbar-toggler collapsed navbar-toggler-main" type="button" data-nav-toggle="navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> <span class="sr-only">Toggle navigation</span> <span class="icon-bar top-bar"></span> <span class="icon-bar middle-bar"></span> <span class="icon-bar bottom-bar"></span> </button> <div class="collapse navbar-collapse navbar-collapse-main" id="navbarNav"> <ul class="navbar-nav navbar-menu-list flex-nowrap"> <li class="nav-item "> <a class="nav-link" href="/">about </a> </li> <li class="nav-item active"> <a class="nav-link" href="/blog/">blog </a> </li> <li class="nav-item "> <a class="nav-link" href="/books/">bookshelf </a> </li> <li class="nav-item"> <button id="search-toggle" type="button" title="Search" aria-label="Open search"> <span class="nav-link">ctrl k <i class="fa-solid fa-magnifying-glass"></i></span> </button> </li> <li class="toggle-container"> <button id="light-toggle" type="button" title="Change theme" aria-label="Change color theme"> <i class="fa-half-sun-moon" id="light-toggle-system"></i> <i class="fa-solid fa-moon" id="light-toggle-dark"></i> <i class="fa-solid fa-sun" id="light-toggle-light"></i> </button> </li> </ul> </div> </div> </nav> <progress id="progress" value="0"> <div class="progress-container"> <span class="progress-bar"></span> </div> </progress> </header> <div class="container mt-5" role="main"> <div class="row"> <div class="col-sm-3"> <nav id="toc-sidebar" class="sticky-top toc toc-sidebar" aria-label="Table of contents" data-toc-collapse="expanded" data-toc-collapse-depth=""></nav> </div> <div class="col-sm-9"> <div class="post"> <header class="post-header"> <h1 class="post-title">Every Behavior Is a Signature</h1> <p class="post-meta"> Created on November 01, 2026 </p> <p class="post-tags"> <a href="/blog/2026"> <i class="fa-solid fa-calendar fa-sm"></i> 2026 </a>   ·   <a href="/blog/tag/security"> <i class="fa-solid fa-hashtag fa-sm"></i> security</a>   <a href="/blog/tag/detection"> <i class="fa-solid fa-hashtag fa-sm"></i> detection</a>   <a href="/blog/tag/malware"> <i class="fa-solid fa-hashtag fa-sm"></i> malware</a>   ·   <a href="/blog/category/security"> <i class="fa-solid fa-tag fa-sm"></i> security</a> </p> </header> <article class="post-content"> <div id="markdown-content"> <p><em>Why “behavioral detection” is still pattern matching, just with better marketing</em></p> <p>Walk through any security conference expo hall, scroll any vendor landing page, or sit through any product demo, and you will hear the same story told two ways. There is the <strong>old way</strong>, signature-based detection, which is described as rigid and reactive. And there is the <strong>new way</strong>, behavioral detection, which is described as smart, adaptive, and able to catch threats nobody has seen before.</p> <p>It is a clean story. It sells well. And I think it is mostly a story.</p> <p>My argument in this article is simple: <strong>behavioral detection is still signature detection.</strong> A behavior rule is a signature written over actions instead of bytes. The computer does not “understand” that a behavior is bad. A human decided it was bad, wrote that decision down as logic, and the machine matches against it. That is exactly what a signature is.</p> <p>That does not make behavioral detection useless. It makes it honest. And once we see it honestly, we can have a much better conversation about what our security tools actually do, where they break, and why the arrival of LLM-driven attackers matters so much.</p> <hr> <h2 id="part-1-the-two-stories-vendors-tell">Part 1: The two stories vendors tell</h2> <p>Let’s first lay out the standard picture, the way it is usually pitched.</p> <h3 id="story-one-signature-based-detection">Story one: signature-based detection</h3> <p>A signature is a known fingerprint of something bad. The simplest version is a <strong>file hash</strong>. Security teams compute the SHA-256 of a known malware sample, put it on a blocklist, and every file on disk is compared against that list. Match? Malicious.</p> <p>A slightly smarter version looks <em>inside</em> files for <strong>strings or byte patterns</strong>. A YARA rule, for example, might say “if a file contains this mutex name, this ransom-note phrase, and this specific byte sequence, flag it”:</p> <pre><code class="language-yara">rule Example_Ransomware_Strings
+{
+    strings:
+        $note  = "All your files have been encrypted" ascii wide
+        $mutex = "Global\\XYZ_LOCK_2024" ascii
+        $hex   = { 6A 40 68 00 30 00 00 6A 14 }
+    condition:
+        2 of them
+}
+</code></pre> <p>The weakness is obvious: change one byte and the hash changes. Rename the mutex and the string match fails. This is why vendors call signatures “reactive.”</p> <h3 id="story-two-behavioral-detection">Story two: behavioral detection</h3> <p>Behavioral detection, as marketed, ignores what a file <em>is</em> and watches what it <em>does</em>. Instead of asking “does this match a known bad file?”, it asks questions like:</p> <ul> <li>Is this process modifying hundreds of files in a few seconds?</li> <li>Did Microsoft Word just spawn PowerShell?</li> <li>Is something deleting Volume Shadow Copies?</li> <li>Is a process calling <code class="language-plaintext highlighter-rouge">VirtualAllocEx</code> and <code class="language-plaintext highlighter-rouge">WriteProcessMemory</code> into another process?</li> </ul> <p>The pitch is that even brand-new, never-seen-before malware has to <em>do</em> something malicious eventually, so watching behavior catches what signatures miss.</p> <p>Here is how that picture is usually drawn:</p> <pre><code class="language-mermaid">flowchart LR
+    subgraph Marketing["How it is usually pitched"]
+        direction TB
+        A["Signature-based&lt;br/&gt;(static, dumb, reactive)"] --&gt; A1["Matches known hashes&lt;br/&gt;and strings"]
+        B["Behavior-based&lt;br/&gt;(dynamic, smart, proactive)"] --&gt; B1["Understands what&lt;br/&gt;the program is doing"]
+    end
+</code></pre> <p>That second box, <em>“understands what the program is doing,”</em> is where I disagree.</p> <hr> <h2 id="part-2-a-computer-cannot-know-what-bad-means">Part 2: A computer cannot know what “bad” means</h2> <p>A computer can observe that a process opened 400 files in 10 seconds. It can count. It can compare numbers. What it cannot do, on its own, is decide that 400 files in 10 seconds is <em>wrong</em>.</p> <p>Think about who else touches 400 files in 10 seconds: backup agents, antivirus scanners (ironically), compilers, <code class="language-plaintext highlighter-rouge">git checkout</code>, OneDrive syncing a folder, a photo editor batch-exporting a shoot. The raw behavior is morally neutral. “Bad” is a judgment, and judgments come from humans.</p> <p>So somewhere, someone sat down and wrote something like:</p> <blockquote> <p><em>If a single process modifies more than N files within T seconds, and the files are in user document folders, and the file extensions change, raise an alert.</em></p> </blockquote> <p>Look at that sentence carefully. It has fixed fields, fixed thresholds, and fixed conditions. It is a pattern. If an event stream matches it, the alert fires. If it doesn’t, nothing happens.</p> <p>That is a signature. It is just a signature over a <strong>sequence of events</strong> instead of a <strong>sequence of bytes</strong>.</p> <pre><code class="language-mermaid">flowchart TB
+    H["Human analyst decides&lt;br/&gt;'this is malicious'"] --&gt; R["Writes it down as logic"]
+    R --&gt; S1["Byte pattern&lt;br/&gt;(hash, YARA, regex)"]
+    R --&gt; S2["Event pattern&lt;br/&gt;(process chain, syscall sequence)"]
+    R --&gt; S3["Rate pattern&lt;br/&gt;(N events in T seconds)"]
+    R --&gt; S4["Statistical pattern&lt;br/&gt;(deviation from baseline &gt; X)"]
+    S1 &amp; S2 &amp; S3 &amp; S4 --&gt; M["Machine matches&lt;br/&gt;incoming data against it"]
+    M --&gt; V{"Match?"}
+    V -- Yes --&gt; AL["Alert / Block"]
+    V -- No --&gt; AL2["Allow"]
+</code></pre> <p>Every branch in that diagram starts at the same box: a human deciding. The only thing that changes is the <em>shape</em> of the pattern being matched.</p> <hr> <h2 id="part-3-the-evidence-was-there-all-along">Part 3: The evidence was there all along</h2> <p>This is not just my opinion. The people who built these systems have, often quite openly, described them in exactly these terms.</p> <h3 id="denning-1987-the-founding-paper-of-behavioral-detection">Denning, 1987: the founding paper of behavioral detection</h3> <p>Dorothy Denning’s <a href="https://faculty.nps.edu/dedennin/publications/IDS%20model.pdf" rel="external nofollow noopener" target="_blank"><em>An Intrusion-Detection Model</em></a> (IEEE Transactions on Software Engineering, 1987) is essentially the origin of anomaly and behavior-based intrusion detection. Her model builds <strong>profiles</strong> of how users and programs normally behave, and flags deviations from those profiles.</p> <p>And yet, in describing her own behavioral model, Denning writes that it <em>“can be regarded as a rule-based pattern matching system.”</em> She also notes that the security officer helps establish the profile templates for which activities get monitored. In other words, the founding document of behavioral detection openly describes it as pattern matching, with a human choosing what to watch.</p> <p>According to <a href="https://en.wikipedia.org/wiki/Dorothy_E._Denning" rel="external nofollow noopener" target="_blank">Wikipedia’s summary of SRI’s IDES system</a>, which grew out of this work, the system combined a rule-based expert system for known intrusions with a statistical anomaly component built on profiles. Even the “statistical” half was built on human-chosen metrics.</p> <h3 id="sigma-the-behavior-rule-format-that-calls-itself-a-signature-format">Sigma: the behavior rule format that calls itself a signature format</h3> <p><a href="https://github.com/SigmaHQ/sigma" rel="external nofollow noopener" target="_blank">Sigma</a> is probably the most widely used open format for writing detection logic over logs. Its own README describes it as <em>“a generic and open signature format.”</em></p> <p>Here is the interesting part. Sigma’s “generic” rule category is explicitly meant to detect <strong>behaviors</strong>, techniques and procedures that attackers use, rather than specific malware. So the community’s go-to tool for writing behavioral detections literally names itself a signature format. A Sigma rule for “Office application spawning a shell” looks like this:</p> <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">title</span><span class="pi">:</span> <span class="s">Office Application Spawning a Command Shell</span>
+<span class="na">logsource</span><span class="pi">:</span>
+  <span class="na">category</span><span class="pi">:</span> <span class="s">process_creation</span>
+  <span class="na">product</span><span class="pi">:</span> <span class="s">windows</span>
+<span class="na">detection</span><span class="pi">:</span>
+  <span class="na">selection</span><span class="pi">:</span>
+    <span class="na">ParentImage|endswith</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s1">'</span><span class="s">\WINWORD.EXE'</span>
+      <span class="pi">-</span> <span class="s1">'</span><span class="s">\EXCEL.EXE'</span>
+    <span class="na">Image|endswith</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s1">'</span><span class="s">\cmd.exe'</span>
+      <span class="pi">-</span> <span class="s1">'</span><span class="s">\powershell.exe'</span>
+  <span class="na">condition</span><span class="pi">:</span> <span class="s">selection</span>
+<span class="na">level</span><span class="pi">:</span> <span class="s">high</span>
+</code></pre></div></div> <p>That is a behavior. It is also, plainly, a string match on two fields.</p> <h3 id="wazuh-behavior-and-hashes-in-the-same-rule-file">Wazuh: behavior and hashes in the same rule file</h3> <p>As a Wazuh Ambassador I’ll pick an example close to home. Wazuh’s own blog posts on ransomware, such as <a href="https://wazuh.com/blog/detecting-medusa-ransomware-with-wazuh/" rel="external nofollow noopener" target="_blank">detecting Medusa ransomware</a> and <a href="https://wazuh.com/blog/detecting-and-responding-mamona-ransomware-with-wazuh/" rel="external nofollow noopener" target="_blank">detecting Mamona ransomware</a>, have sections describing the ransomware’s <em>behaviour</em>, and then implement detection as XML rules containing regex field matches, <code class="language-plaintext highlighter-rouge">frequency</code> and <code class="language-plaintext highlighter-rouge">timeframe</code> counters, and MITRE ATT&amp;CK tags.</p> <p>Here is a simplified rule in the same style, a classic “mass file modification” behavioral detection:</p> <div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">&lt;!-- "Behavioral" ransomware detection --&gt;</span>
+<span class="c">&lt;!-- Fires when file-modified events (rule 550) occur 20+ times in 60 seconds --&gt;</span>
+<span class="nt">&lt;rule</span> <span class="na">id=</span><span class="s">"100200"</span> <span class="na">level=</span><span class="s">"12"</span> <span class="na">frequency=</span><span class="s">"20"</span> <span class="na">timeframe=</span><span class="s">"60"</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;if_matched_sid&gt;</span>550<span class="nt">&lt;/if_matched_sid&gt;</span>
+  <span class="nt">&lt;description&gt;</span>Possible ransomware: mass file modification<span class="nt">&lt;/description&gt;</span>
+  <span class="nt">&lt;mitre&gt;</span>
+    <span class="nt">&lt;id&gt;</span>T1486<span class="nt">&lt;/id&gt;</span>
+  <span class="nt">&lt;/mitre&gt;</span>
+<span class="nt">&lt;/rule&gt;</span>
+</code></pre></div></div> <p>And here is a classic “signature” detection, a hash lookup, written in the <em>same</em> language, in the <em>same</em> engine, by the <em>same</em> human:</p> <div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">&lt;!-- "Signature" detection: compare file SHA-256 against a known-bad list --&gt;</span>
+<span class="nt">&lt;rule</span> <span class="na">id=</span><span class="s">"100201"</span> <span class="na">level=</span><span class="s">"15"</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;if_sid&gt;</span>550, 554<span class="nt">&lt;/if_sid&gt;</span>
+  <span class="nt">&lt;list</span> <span class="na">field=</span><span class="s">"sha256"</span> <span class="na">lookup=</span><span class="s">"match_key"</span><span class="nt">&gt;</span>etc/lists/malware-hashes<span class="nt">&lt;/list&gt;</span>
+  <span class="nt">&lt;description&gt;</span>Known malware hash detected: $(file)<span class="nt">&lt;/description&gt;</span>
+<span class="nt">&lt;/rule&gt;</span>
+</code></pre></div></div> <p>Put them side by side and ask: what is the fundamental difference? One matches a value against a list. The other matches a count against a threshold. Both were authored by a person. Both are deterministic. Both can be evaded by anyone who knows the rule. The “behavioral” one is evaded by encrypting 19 files per minute instead of 20.</p> <p>That number, <strong>20 in 60 seconds</strong>, is the signature.</p> <h3 id="a-behavioral-graph-viewed-honestly">A behavioral graph, viewed honestly</h3> <p>Here is what that rate-based rule “sees.” Normal activity fluctuates, ransomware spikes, and a human-drawn line separates them:</p> <pre><code class="language-mermaid">xychart-beta
+    title "File modifications per 10-second window (bars) vs. alert threshold (line)"
+    x-axis ["0s", "10s", "20s", "30s", "40s", "50s", "60s", "70s", "80s", "90s", "100s", "110s"]
+    y-axis "Files modified" 0 --&gt; 120
+    bar [4, 6, 3, 9, 5, 7, 85, 110, 102, 96, 18, 17]
+    line [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
+</code></pre> <p>The bars from 60s to 90s are a noisy ransomware run, easily caught. The last two bars, sitting just under the line, represent a patient attacker throttling encryption to stay below the threshold. To the rule, those look identical to a user saving documents. The “behavior engine” did not miss them because it failed to understand intent. It missed them because <strong>it never understood intent in the first place</strong>. It only knew the line.</p> <p>The same is true for process-chain behaviors. A detection graph like the one below looks intelligent, but every arrow on it corresponds to a field comparison someone wrote:</p> <pre><code class="language-mermaid">flowchart LR
+    W["WINWORD.EXE"] --&gt;|spawns| P["powershell.exe&lt;br/&gt;-enc ..."]
+    P --&gt;|spawns| R["rundll32.exe"]
+    R --&gt;|network| C["Outbound connection&lt;br/&gt;to rare domain"]
+    P --&gt;|executes| V["vssadmin delete shadows"]
+
+    classDef rule fill:#fde2e2,stroke:#c0392b,color:#000;
+    class P,V rule
+</code></pre> <p>The two red nodes are where rules typically fire. They fire because someone wrote “ParentImage = WINWORD.EXE AND Image = powershell.exe” and “CommandLine contains ‘delete shadows’.” Change the parent, use a different LOLBin, or delete shadow copies via WMI instead of <code class="language-plaintext highlighter-rouge">vssadmin</code>, and you are in the same game as changing a byte to beat a hash.</p> <hr> <h2 id="part-4-this-is-not-just-an-endpoint-problem">Part 4: This is not just an endpoint problem</h2> <p>The signature-versus-behavior framing appears across nearly every security product category, and the pattern repeats in each one.</p> <p><strong>Web Application Firewalls.</strong> My day job involves validating WAAP products, and this is where the illusion is easiest to see. The <a href="https://coreruleset.org/docs/concepts/anomaly_scoring" rel="external nofollow noopener" target="_blank">OWASP Core Rule Set</a> runs in “anomaly scoring” mode by default. That sounds behavioral. In reality, individual rules (mostly regex patterns for SQLi, XSS, and so on) each add points when they match, and the request is blocked once the total crosses a configured threshold, five by default for inbound traffic. Microsoft’s <a href="https://learn.microsoft.com/en-us/troubleshoot/azure/application-gateway/troubleshoot-waf-anomaly-scoring-rule-949110-blocks" rel="external nofollow noopener" target="_blank">Azure WAF documentation</a> even points out that the final blocking rule, 949110, <em>“doesn’t represent a specific attack signature.”</em> True. It is a sum of signatures compared against a human-chosen number.</p> <p><strong>API security and bot management.</strong> “Behavioral” bot detection usually means rate limits, request sequencing, header ordering, TLS fingerprints, and session velocity checks. Each is a pattern with a threshold. “More than 50 login attempts per minute from one ASN” is a signature over time.</p> <p><strong>Network IDS.</strong> Snort and Suricata are the textbook “signature” tools. But a so-called behavioral NDR product that flags “beaconing every 60 seconds with low jitter” is matching a periodicity pattern a human defined as suspicious.</p> <p><strong>SIEM and UEBA.</strong> User and Entity Behavior Analytics flags “impossible travel” or “user logged in at 3 AM from a new country.” Someone decided that those specific deviations are worth alerting on, and someone chose how big the deviation must be.</p> <p><strong>Cloud security.</strong> “Suspicious behavior: IAM user created access key and then disabled CloudTrail” is a two-event sequence rule.</p> <p>Different domain, same structure: <strong>observe, compare to a human-defined pattern, decide.</strong></p> <hr> <h2 id="part-5-but-what-about-machine-learning">Part 5: “But what about machine learning?”</h2> <p>This is the strongest counterargument, so it deserves a fair hearing. Machine learning models are not hand-written rules. They learn from data. Doesn’t that break my argument?</p> <p>I’d argue it moves the signature rather than removing it. A supervised model is trained on samples that humans labeled “malicious” or “benign.” The model then learns a decision boundary, which is effectively a very large, very fuzzy signature, extracted automatically from human judgments. Humans also choose the features (strings? imports? entropy? API calls?), the training data, and the threshold at which a score becomes a block.</p> <p>Robin Sommer and Vern Paxson made this point sharply in their influential 2010 IEEE S&amp;P paper, <a href="https://www1.icsi.berkeley.edu/pubs/networking/outsidethe10.pdf" rel="external nofollow noopener" target="_blank"><em>Outside the Closed World</em></a>. They argued that the common textbook premise, that anomaly detection is good at finding novel attacks, does not hold as broadly as people assume. Instead, they described the real strength of machine learning as <em>“finding activity that is similar to something previously seen”</em>, without anyone having to describe it precisely in advance. That is a beautiful description of a learned signature.</p> <p>There is also a real-world demonstration. In 2019, researchers at <a href="https://skylightcyber.com/2019/07/18/cylance-i-kill-you/" rel="external nofollow noopener" target="_blank">Skylight Cyber</a> reverse-engineered the machine learning model inside BlackBerry Cylance’s “AI-based” antivirus. They found it leaned heavily on strings and showed a strong bias toward a particular video game that had been whitelisted. By appending strings from that game’s executable to malware, they got the engine to score malicious files as benign. As <a href="https://www.techtarget.com/cybersecurity/news/252467203/Researchers-fool-Cylance-AI-antimalware-with-simple-bypass" rel="external nofollow noopener" target="_blank">TechTarget reported</a>, the researchers argued that understanding a model’s features lets you <em>“fool it consistently, creating a universal bypass.”</em> (Cylance disputed the “universal” label and patched the issue.)</p> <p>Read that again: an AI engine, sold as beyond signatures, was bypassed by <strong>appending strings</strong>. Its learned decision boundary was, functionally, a string signature that nobody had written down by hand.</p> <pre><code class="language-mermaid">flowchart LR
+    L["Humans label samples&lt;br/&gt;(malicious / benign)"] --&gt; F["Humans choose features&lt;br/&gt;(strings, imports, APIs)"]
+    F --&gt; T["Model learns&lt;br/&gt;decision boundary"]
+    T --&gt; TH["Humans set score&lt;br/&gt;threshold"]
+    TH --&gt; D["Deployed 'AI detection'&lt;br/&gt;= learned signature"]
+</code></pre> <hr> <h2 id="part-6-why-it-can-never-be-anything-else">Part 6: Why it can never be anything else</h2> <p>There is a deeper, mathematical reason why detection always collapses into human-defined patterns.</p> <p>In 1987, Fred Cohen published <a href="https://web.eecs.umich.edu/~aprakash/eecs588/handouts/cohen-viruses.html" rel="external nofollow noopener" target="_blank"><em>Computer Viruses: Theory and Experiments</em></a>, the paper that gave us the formal definition of a computer virus. In it, he showed that, in general, <em>“detection of a virus is shown to be undecidable both by a-priori and runtime analysis.”</em></p> <p>Note the phrase <strong>runtime analysis</strong>. Cohen was not only talking about static scanning. He was talking about watching behavior at runtime, too. As <a href="https://0xjet.github.io/3OHA/2024/08/03/post.html" rel="external nofollow noopener" target="_blank">this walkthrough of Cohen’s proofs</a> explains, Cohen showed that precise behavior-based detection inherits the same undecidability as static detection, and later work by Chess and White (2000) showed that undetectable viruses can exist.</p> <p>The practical consequence is important. Since no general algorithm can perfectly decide “this program is malicious,” every real product must approximate. It must pick a subset of the problem it <em>can</em> decide, using fixed conditions. Those fixed conditions, picked by people, are signatures. The behavioral label describes <em>what</em> is being matched, not a fundamentally different kind of reasoning.</p> <hr> <h2 id="part-7-so-what-is-the-real-difference">Part 7: So what <em>is</em> the real difference?</h2> <p>I want to be fair here, because “it’s all signatures” can sound like “it’s all the same,” and that is not my claim.</p> <p>Behavioral signatures are genuinely more valuable than hash signatures. David Bianco’s <a href="http://detect-respond.blogspot.com/2013/03/the-pyramid-of-pain.html" rel="external nofollow noopener" target="_blank">Pyramid of Pain</a> (2013) explains why. It ranks indicators by how much it hurts an attacker when you detect them. Hashes sit at the bottom because they are trivial to change. Tactics, techniques, and procedures (TTPs) sit at the top. As Bianco put it, at the TTP level you are <em>“operating directly on adversary behaviors, not against their tools.”</em></p> <pre><code class="language-mermaid">flowchart TB
+    T["TTPs&lt;br/&gt;(behavior signatures)&lt;br/&gt;Tough"] --- TL["Tools&lt;br/&gt;Challenging"]
+    TL --- AR["Network / Host artifacts&lt;br/&gt;Annoying"]
+    AR --- DN["Domain names&lt;br/&gt;Simple"]
+    DN --- IP["IP addresses&lt;br/&gt;Easy"]
+    IP --- HV["Hash values&lt;br/&gt;Trivial"]
+
+    style T fill:#c0392b,color:#fff
+    style TL fill:#e67e22,color:#fff
+    style AR fill:#f1c40f,color:#000
+    style DN fill:#2ecc71,color:#000
+    style IP fill:#3498db,color:#fff
+    style HV fill:#95a5a6,color:#000
+</code></pre> <p>Notice what the pyramid actually says, though. It does not say behaviors are a different <em>category</em> from indicators. It puts them on the <em>same</em> pyramid, as indicators, just at a different altitude. Behavior is the most expensive signature for an attacker to dodge, but it is still something a defender has to define and match.</p> <p>So here is the vocabulary I’d propose instead of “signature vs behavior”:</p> <table> <thead> <tr> <th>What is matched</th> <th>Example</th> <th>Who defines “bad”</th> <th>How it is evaded</th> </tr> </thead> <tbody> <tr> <td> <strong>Artifact signatures</strong> (nouns)</td> <td>Hash, string, YARA, regex</td> <td>Human</td> <td>Change the artifact</td> </tr> <tr> <td> <strong>Action signatures</strong> (verbs)</td> <td>Process chain, syscall sequence, Sigma rule</td> <td>Human</td> <td>Change the technique or order</td> </tr> <tr> <td> <strong>Rate signatures</strong> (tempo)</td> <td>N events in T seconds</td> <td>Human-set threshold</td> <td>Go low and slow</td> </tr> <tr> <td> <strong>Statistical signatures</strong> (deviation)</td> <td>Baseline + “deviation &gt; X is bad”</td> <td>Human-set assumption and threshold</td> <td>Blend into the baseline</td> </tr> <tr> <td> <strong>Learned signatures</strong> (boundaries)</td> <td>ML classifier</td> <td>Human labels, features, threshold</td> <td>Find the model’s blind spots</td> </tr> </tbody> </table> <p>The honest difference between “signature” and “behavioral” products is the <strong>level of abstraction</strong> at which the pattern lives, and therefore <strong>how costly it is to evade</strong>. It is not that one is static and the other “understands.” Neither understands. Both match.</p> <p>Why does this distinction matter rather than being just semantics? Because when buyers believe a product “understands malicious behavior,” they stop asking the right questions:</p> <ul> <li>Which behaviors exactly are covered, and which are not?</li> <li>What are the thresholds, and who tuned them?</li> <li>What happens when the attacker changes the order, the tempo, or the tool?</li> <li>How was it tested against techniques that were <em>not</em> in the vendor’s rule set?</li> </ul> <p>Those are the questions I ask every day in product validation work, and they are exactly the questions marketing language is designed to make you skip.</p> <hr> <h2 id="part-8-a-hint-of-whats-coming-the-llm-problem">Part 8: A hint of what’s coming, the LLM problem</h2> <p>Everything above has been true for decades. What has changed is the attacker’s ability to vary their patterns cheaply.</p> <p>In November 2025, Google’s Threat Intelligence Group <a href="https://cloud.google.com/blog/topics/threat-intelligence/threat-actor-usage-of-ai-tools" rel="external nofollow noopener" target="_blank">reported</a> the first malware families using large language models <em>during execution</em>. One of them, <strong>PROMPTFLUX</strong>, is a VBScript dropper that calls the Gemini API to request obfuscation and evasion techniques, and one variant instructs the model to rewrite the malware’s entire source code every hour. Another, <strong>PROMPTSTEAL</strong>, linked to APT28, queries an LLM to generate its reconnaissance commands on the fly rather than hard-coding them. GTIG called this <em>“a significant step toward more autonomous and adaptive malware.”</em></p> <p>That same month, Anthropic <a href="https://www.anthropic.com/news/disrupting-AI-espionage" rel="external nofollow noopener" target="_blank">disclosed</a> a state-sponsored espionage campaign, designated GTG-1002, in which attackers used an AI coding agent to carry out an estimated 80 to 90 percent of the tactical work across roughly thirty targets, with humans stepping in only at key decision points.</p> <p>The industry’s response has been predictable. As one expert told <a href="https://infosecurity-magazine.com/news/aienabled-malware-actively" rel="external nofollow noopener" target="_blank">Infosecurity Magazine</a> after the GTIG report, defenders need <em>“behavioral EDR that focuses on what malware does, not what it looks like.”</em></p> <p>But think about what PROMPTSTEAL actually does: it asks a model to <em>generate the commands</em>. That means the behavior itself, the process chains, the command lines, the order of operations, can be different every run. If behavioral detection is just signatures over actions, and the actions are now being generated fresh by a model, then we have the same problem we had with polymorphic hashes, one level up the pyramid.</p> <pre><code class="language-mermaid">flowchart LR
+    subgraph Then["Polymorphic era"]
+        A1["Mutate bytes"] --&gt; A2["Hash signatures fail"] --&gt; A3["Move to behavior signatures"]
+    end
+    subgraph Now["LLM era"]
+        B1["Mutate bytes AND behavior&lt;br/&gt;on demand"] --&gt; B2["Both artifact and&lt;br/&gt;action signatures strain"] --&gt; B3["???"]
+    end
+    Then --&gt; Now
+</code></pre> <p>This is where I’ll stop for now, because it deserves its own piece. In the next article, I want to dig into the harder questions:</p> <ul> <li> <strong>Where</strong> can signatures (artifact, action, rate, statistical, learned) realistically be implemented across a security stack?</li> <li> <strong>What are the pros and cons</strong> of each, in terms of false positives, performance cost, maintenance burden, and evasion resistance?</li> <li> <strong>What are the trade-offs</strong> of trying to implement <em>all</em> of them at once, and does stacking more signatures actually scale against attackers who can generate new patterns faster than humans can write rules?</li> <li>And what does defense look like when the adversary is a model that can read your detection logic and route around it?</li> </ul> <p>Until then, the next time someone tells you their product “doesn’t use signatures, it understands behavior,” ask them one question:</p> <p><strong>Who wrote down what “bad behavior” means?</strong></p> <p>The answer will always be a person. And that person’s definition is the signature.</p> <hr> <h2 id="references">References</h2> <ol> <li>Fred Cohen, <a href="https://web.eecs.umich.edu/~aprakash/eecs588/handouts/cohen-viruses.html" rel="external nofollow noopener" target="_blank"><em>Computer Viruses: Theory and Experiments</em></a>, Computers &amp; Security, 1987.</li> <li>Dorothy E. Denning, <a href="https://faculty.nps.edu/dedennin/publications/IDS%20model.pdf" rel="external nofollow noopener" target="_blank"><em>An Intrusion-Detection Model</em></a>, IEEE Transactions on Software Engineering, SE-13(2), 1987.</li> <li>Robin Sommer and Vern Paxson, <a href="https://www1.icsi.berkeley.edu/pubs/networking/outsidethe10.pdf" rel="external nofollow noopener" target="_blank"><em>Outside the Closed World: On Using Machine Learning for Network Intrusion Detection</em></a>, IEEE Symposium on Security and Privacy, 2010.</li> <li>David J. Bianco, <a href="http://detect-respond.blogspot.com/2013/03/the-pyramid-of-pain.html" rel="external nofollow noopener" target="_blank"><em>The Pyramid of Pain</em></a>, 2013 (updated 2014).</li> <li>SigmaHQ, <a href="https://github.com/SigmaHQ/sigma" rel="external nofollow noopener" target="_blank"><em>Sigma: Generic Signature Format for SIEM Systems</em></a>.</li> <li>Wazuh, <a href="https://wazuh.com/blog/detecting-medusa-ransomware-with-wazuh/" rel="external nofollow noopener" target="_blank"><em>Detecting Medusa ransomware with Wazuh</em></a> and <a href="https://wazuh.com/blog/detecting-and-responding-mamona-ransomware-with-wazuh/" rel="external nofollow noopener" target="_blank"><em>Detecting and responding to Mamona ransomware with Wazuh</em></a>.</li> <li>OWASP CRS, <a href="https://coreruleset.org/docs/concepts/anomaly_scoring" rel="external nofollow noopener" target="_blank"><em>Anomaly Scoring</em></a>.</li> <li>Microsoft Learn, <a href="https://learn.microsoft.com/en-us/troubleshoot/azure/application-gateway/troubleshoot-waf-anomaly-scoring-rule-949110-blocks" rel="external nofollow noopener" target="_blank"><em>Troubleshoot WAF anomaly scoring rule 949110 blocks</em></a>.</li> <li>Skylight Cyber, <a href="https://skylightcyber.com/2019/07/18/cylance-i-kill-you/" rel="external nofollow noopener" target="_blank"><em>Cylance, I Kill You!</em></a>, 2019; coverage by <a href="https://www.techtarget.com/cybersecurity/news/252467203/Researchers-fool-Cylance-AI-antimalware-with-simple-bypass" rel="external nofollow noopener" target="_blank">TechTarget</a>.</li> <li>0xjet, <a href="https://0xjet.github.io/3OHA/2024/08/03/post.html" rel="external nofollow noopener" target="_blank"><em>Impossibility results in computer virology</em></a>, 2024.</li> <li>Google Threat Intelligence Group, <a href="https://cloud.google.com/blog/topics/threat-intelligence/threat-actor-usage-of-ai-tools" rel="external nofollow noopener" target="_blank"><em>Advances in Threat Actor Usage of AI Tools</em></a>, November 2025.</li> <li>Anthropic, <a href="https://www.anthropic.com/news/disrupting-AI-espionage" rel="external nofollow noopener" target="_blank"><em>Disrupting the first reported AI-orchestrated cyber espionage campaign</em></a>, November 2025.</li> <li>Infosecurity Magazine, <a href="https://infosecurity-magazine.com/news/aienabled-malware-actively" rel="external nofollow noopener" target="_blank"><em>AI-Enabled Malware Now Actively Deployed, Says Google</em></a>, November 2025.</li> </ol> </div> </article> <br> <hr> <br> <h2 class="text-3xl font-semibold mb-4 mt-12">Enjoy Reading This Article?</h2> <p class="mb-2">Here are some more articles you might like to read next:</p> <ul class="list-disc pl-7 my-3 space-y-2 marker:text-[var(--global-theme-color)]"> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/homa-replacing-tcp-in-the-datacenter/">The Ambulance Behind the Truck: Why TCP Struggles in the Datacenter, and What Homa Does Differently</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/jev-and-laya/">Teaching a Model to Answer Instead of Talk</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/consistent-hashing-100tb-of-ram/">Consistent Hashing from Scratch, and Why Cloudflare Deleted 90% of It</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/openflow-from-the-wire-up/">A From-Scratch Tour of OpenFlow, From the Wire Up</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/ipv8-new-internet-fuss/">IPv8 and the Internet's Eternal Transition Problem</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/semantic-mapping-and-entropy/">Semantic Map Explorer - Entropy Embedding Atlas</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/cost-of-Engineering/">The Cost of Free Security: Wazuh and the Engineering Bill</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/everything-is-IPC/">Everything is Inter-Process Communication: HTTP, REST APIs, Serverless functions, what not</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/understanding-cors/">Why Your API Works in Postman but Fails in the Browser</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2025/f5-bigip-wazuh-logging/">F5 BIG-IP + Wazuh: Getting Logs Working After 18 Months</a> </li> </ul> </div> </div> </div> </div> <footer class="fixed-bottom" role="contentinfo"> <div class="container mt-0"> © Copyright 2026 Karan Kc. Powered by <a href="https://jekyllrb.com/" target="_blank" rel="external nofollow noopener">Jekyll</a> with <a href="https://github.com/alshedivat/al-folio" rel="external nofollow noopener" target="_blank">al-folio</a> theme. Hosted by <a href="https://pages.github.com/" target="_blank" rel="external nofollow noopener">GitHub Pages</a>. Photos from <a href="https://unsplash.com" target="_blank" rel="external nofollow noopener">Unsplash</a>. Last updated: November 01, 2026. </div> </footer> <script>
+  window.alFolio = {
+    compatBootstrap: false
+  };
+</script> <script src="/assets/js/nav-toggle.js?v=141bd79a73ebc0f0b6ea58e440ae79fc"></script> <script defer src="https://cdn.jsdelivr.net/npm/masonry-layout@4.2.2/dist/masonry.pkgd.min.js" integrity="sha256-Nn1q/fx0H7SNLZMQ5Hw5JLaTRZp0yILA/FRexe19VdI=" crossorigin="anonymous"></script> <script defer src="https://cdn.jsdelivr.net/npm/imagesloaded@5.0.0/imagesloaded.pkgd.min.js" integrity="sha256-htrLFfZJ6v5udOG+3kNLINIKh2gvoKqwEhHYfTTMICc=" crossorigin="anonymous"></script> <script defer src="/assets/js/masonry.js?v=e49affc7bd2646f6acdad1dbe02c2359" type="text/javascript"></script> <script defer type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script> <script src="/assets/al_math/js/mathjax-setup.js"></script> <script src="/assets/js/tooltips-setup.js?v=fe487e99db6c43751e6e7bdb2d6a0611"></script> <script defer src="https://cdn.jsdelivr.net/npm/tocbot@4.36.4/dist/tocbot.min.js" integrity="sha256-lo/r+jQ81wWrxdIiiiEEd538z4+dTJTt+leOuAS7GCw=" crossorigin="anonymous"></script> <script src="/assets/js/no_defer.js?v=53b1b1a645525975c963ce8bf8bfefcf"></script> <script defer src="/assets/js/common.js?v=87baac90f765f2f3362dcf6aaf312a8a"></script> <script defer src="/assets/js/copy_code.js?v=c8a01c11a92744d44b093fc3bda915df" type="text/javascript"></script> <script defer src="/assets/js/jupyter_new_tab.js?v=896d254890d9b47f0281f63bfccf0dee"></script> <script async src="https://d1bxh8uas1mnw7.cloudfront.net/assets/embed.js"></script> <script async src="https://badge.dimensions.ai/badge.js"></script> <script defer src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous"></script> <script defer src="/assets/al_img_tools/js/zoom.js"></script> <script defer src="/assets/js/progress-bar.js?v=499464c5c63ced6cf7ad62509f1e2610" type="text/javascript"></script> <script src="https://cdn.jsdelivr.net/npm/vanilla-back-to-top@7.2.1/dist/vanilla-back-to-top.min.js" integrity="sha256-uMJJ3EoTyfRBoTbR+lrfu1uRQ87RZG8AR3cVNuQVeFg=" crossorigin="anonymous"></script> <script>
+    addBackToTop();
+  </script> <script type="module" src="/assets/al_search/js/search/ninja-keys.min.js"></script> <ninja-keys hidebreadcrumbs noautoloadmdicons placeholder="Type to start searching"></ninja-keys> <script src="/assets/al_search/js/search-setup.js"></script> <script>
+// get the ninja-keys element
+const ninja = document.querySelector('ninja-keys');
+
+// add the home and posts menu items
+ninja.data = [{
+    id: "nav-about",
+    title: "about",
+    section: "Navigation",
+    handler: () => {
+      window.location.href = "/";
+    },
+  },{id: "nav-blog",
+          title: "blog",
+          description: "",
+          section: "Navigation",
+          handler: () => {
+            window.location.href = "/blog/";
+          },
+        },{id: "nav-bookshelf",
+          title: "bookshelf",
+          description: "",
+          section: "Navigation",
+          handler: () => {
+            window.location.href = "/books/";
+          },
+        },{id: "post-every-behavior-is-a-signature",
+        
+          title: "Every Behavior Is a Signature",
+        
+        description: "Why &#39;behavioral detection&#39; is still pattern matching, just with better marketing — and why that distinction is about to matter a lot more once attackers start generating their behaviors with LLMs instead of hard-coding them.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/every-behavior-is-a-signature/";
+          
+        },
+      },{id: "post-the-ambulance-behind-the-truck-why-tcp-struggles-in-the-datacenter-and-what-homa-does-differently",
+        
+          title: "The Ambulance Behind the Truck: Why TCP Struggles in the Datacenter, and What...",
+        
+        description: "A transport protocol out of Stanford treats messages, not streams, as the unit that matters — and prioritizes by what&#39;s left to send, not what arrived first. Notes from throughput work on F5 ADC and S3/MinIO infrastructure carrying AI workloads.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/homa-replacing-tcp-in-the-datacenter/";
+          
+        },
+      },{id: "post-teaching-a-model-to-answer-instead-of-talk",
+        
+          title: "Teaching a Model to Answer Instead of Talk",
+        
+        description: "Jev, Laya, and a weekend spent building a UI for a category of model I didn&#39;t know existed — typed-decision models that skip generation entirely and hand back a calibrated probability instead.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/jev-and-laya/";
+          
+        },
+      },{id: "post-consistent-hashing-from-scratch-and-why-cloudflare-deleted-90-of-it",
+        
+          title: "Consistent Hashing from Scratch, and Why Cloudflare Deleted 90% of It",
+        
+        description: "I built a consistent-hash ring in 40 lines of Python and measured everything — load imbalance, 32-bit collisions, what moves when a server dies — to understand how Cloudflare recovered ~100 TB of RAM by asking how much randomness they actually needed.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/consistent-hashing-100tb-of-ram/";
+          
+        },
+      },{id: "post-a-from-scratch-tour-of-openflow-from-the-wire-up",
+        
+          title: "A From-Scratch Tour of OpenFlow, From the Wire Up",
+        
+        description: "Building a toy OpenFlow switch and controller in ~600 lines of Python, then working bottom-up through PHY, parser, TCAM, pipeline, and actions to show why the protocol&#39;s design is downstream of memory technology and a 20-cycle-per-packet budget.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/openflow-from-the-wire-up/";
+          
+        },
+      },{id: "post-ipv8-and-the-internet-39-s-eternal-transition-problem",
+        
+          title: "IPv8 and the Internet&#39;s Eternal Transition Problem",
+        
+        description: "A reflective breakdown of the IPv8 draft proposal — compatibility claims, zero-prefix IPv4 embedding, ASN routing limits, physics-aware routing metrics, and the risks of collapsing internet infrastructure into a centralized zone server model",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/ipv8-new-internet-fuss/";
+          
+        },
+      },{id: "post-semantic-map-explorer-entropy-embedding-atlas",
+        
+          title: "Semantic Map Explorer - Entropy Embedding Atlas",
+        
+        description: "Understanding text geometry through embeddings, KNN graphs, entropy, and interactive visualization",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/semantic-mapping-and-entropy/";
+          
+        },
+      },{id: "post-the-cost-of-free-security-wazuh-and-the-engineering-bill",
+        
+          title: "The Cost of Free Security: Wazuh and the Engineering Bill",
+        
+        description: "CrowdStrike costs money and control. Wazuh costs engineering time. Understanding the fundamental tradeoff between a fully integrated commercial XDR platforms and an open-source security foundation you customize yourself.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/cost-of-Engineering/";
+          
+        },
+      },{id: "post-everything-is-inter-process-communication-http-rest-apis-serverless-functions-what-not",
+        
+          title: "Everything is Inter-Process Communication: HTTP, REST APIs, Serverless functions, what not",
+        
+        description: "Modern software is rarely a single process doing one thing. Browsers isolate tabs for security. Databases split query workers from storage workers. API backends offload CPU-heavy jobs to background processes. The moment you divide work across processes, you need them to talk to each other.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/everything-is-IPC/";
+          
+        },
+      },{id: "post-why-your-api-works-in-postman-but-fails-in-the-browser",
+        
+          title: "Why Your API Works in Postman but Fails in the Browser",
+        
+        description: "An in-depth exploration of Cross-Origin Resource Sharing (CORS), preflight requests, and common pitfalls, accompanied by a hands-on demo.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/understanding-cors/";
+          
+        },
+      },{id: "post-f5-big-ip-wazuh-getting-logs-working-after-18-months",
+        
+          title: "F5 BIG-IP + Wazuh: Getting Logs Working After 18 Months",
+        
+        description: "How I finally got F5 BIG-IP and Wazuh to exchange logs — configuration steps, troubleshooting, and lessons learned from an 18-month integration.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2025/f5-bigip-wazuh-logging/";
+          
+        },
+      },{id: "post-toon-the-new-json",
+        
+          title: "TOON - The New JSON",
+        
+        description: "TOON is about to take a wild ride in LLMs. Its going to save you money, time &amp; power. Go through it.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2025/toon-the-new-json/";
+          
+        },
+      },{id: "post-three-essential-http-routing-patterns",
+        
+          title: "Three Essential HTTP Routing Patterns",
+        
+        description: "Host-based, path-based, and header-based routing. What each one reads from the request, what that costs you, and why the Host header sits in its own category.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2025/http-routing-patterns/";
+          
+        },
+      },{id: "post-webassembly-will-this-replace-docker",
+        
+          title: "WebAssembly: Will this replace Docker?",
+        
+        description: "WebAssembly vs Docker. WASM, a technology that revamped the way we thought about containerization.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/webassembly-vs-docker/";
+          
+        },
+      },{id: "post-engineering-behind-mutable-and-immutable-in-python",
+        
+          title: "Engineering behind Mutable and Immutable in Python",
+        
+        description: "Explore the core engineering concepts behind mutable and immutable data types in Python with simple explanations and practical examples.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/mutable-immutable-python/";
+          
+        },
+      },{id: "post-a-guide-to-analyzing-and-evaluating-reasoning",
+        
+          title: "A Guide to Analyzing and Evaluating Reasoning",
+        
+        description: "Here we explore the essential techniques for analyzing and evaluating reasoning in arguments. Learn how to identify claims, premises, and conclusions, and strengthen your critical thinking skills.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/analyzing-evaluating-reasoning/";
+          
+        },
+      },{id: "post-how-we-fixed-critical-connectivity-issues-in-our-vkyc-application-a-technical-deep-dive",
+        
+          title: "How We Fixed Critical Connectivity Issues in Our vKYC Application: A Technical Deep...",
+        
+        description: "Users stuck buffering in a video KYC application. The packets never reached the load balancer, and the fix ended up being a firewall policy and a protocol setting we expected to need.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/vkyc-connectivity-issues/";
+          
+        },
+      },{id: "post-threat-classification",
+        
+          title: "Threat Classification",
+        
+        description: "Known-knowns, known-unknowns, unknown-knowns, unknown-unknowns. The four quadrants are a familiar framing, and the interesting one is the quadrant that is a choice rather than a gap in knowledge.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/threat-classification/";
+          
+        },
+      },{id: "post-f5-tmos-administration-essentials-critical-concepts-to-be-remembered",
+        
+          title: "F5 TMOS Administration Essentials: Critical Concepts to be Remembered",
+        
+        description: "The order TMOS evaluates an incoming packet, what to check when traffic does not arrive, and a handful of behaviours that are not obvious from the configuration screens.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/f5-tmos-administration-essentials/";
+          
+        },
+      },{id: "post-understanding-trust-authorities-in-big-ip-systems-a-beginner-39-s-guide",
+        
+          title: "Understanding Trust Authorities in BIG-IP Systems: A Beginner&#39;s Guide",
+        
+        description: "Device trust in BIG-IP decides which systems can vouch for new members of a trust domain. The three authority roles, what each can do, and the prerequisites that catch people out.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/trust-authorities-bigip/";
+          
+        },
+      },{id: "post-reject-virtual-servers-in-big-ip-ltm-purpose-and-practical-use-cases",
+        
+          title: "Reject Virtual Servers in BIG-IP LTM: Purpose and Practical Use Cases",
+        
+        description: "A Reject virtual server drops unwanted traffic without building a connection table entry. Why that matters at volume, and how it differs from blocking the same traffic elsewhere.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/reject-virtual-servers-bigip-ltm/";
+          
+        },
+      },{id: "post-performance-http-virtual-servers-and-the-fast-http-profile-in-big-ip",
+        
+          title: "Performance HTTP Virtual Servers and the Fast HTTP Profile in BIG-IP",
+        
+        description: "The Fast HTTP profile trades away most of the BIG-IP feature set for lower CPU and latency. What you give up, what you get, and why F5 still recommends the standard HTTP profile for internet traffic.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/performance-http-virtual-servers-bigip/";
+          
+        },
+      },{id: "post-immunize-your-photos-protecting-yourself-from-ai-deepfake-manipulation",
+        
+          title: "Immunize Your Photos: Protecting Yourself from AI Deepfake Manipulation",
+        
+        description: "PhotoGuard, from MIT, adds adversarial perturbation to a photo so that generative models editing it produce warped output. A look at what it does, and where the approach runs out.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/immunize-photos-ai-deepfake/";
+          
+        },
+      },{id: "post-recent-surge-in-phishing-attacks-targeting-character-assassination",
+        
+          title: "Recent Surge in Phishing Attacks Targeting Character Assassination",
+        
+        description: "A Facebook phishing campaign that does not stop at stealing your password. It uses your account to damage your reputation, and it recruits every victim into spreading itself further.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2024/phishing-attacks-character-assassination/";
+          
+        },
+      },{id: "books-the-alchemist",
+          title: 'The Alchemist',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_alchemist/";
+            },},{id: "books-you-39-re-too-good-to-feel-this-bad",
+          title: 'You&amp;#39;re Too Good to Feel This Bad',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/youre_too_good_to_feel_this_bad/";
+            },},{id: "books-read-people-like-a-book",
+          title: 'Read People Like a Book',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/read_people_like_a_book/";
+            },},{id: "books-21-lessons-for-the-21st-century",
+          title: '21 Lessons for the 21st Century',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/21_lessons_for_the_21st_century/";
+            },},{id: "books-think-again",
+          title: 'Think Again',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/think_again/";
+            },},{id: "books-on-truth",
+          title: 'On Truth',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/on_truth/";
+            },},{id: "books-the-myth-of-sisyphus",
+          title: 'The Myth of Sisyphus',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_myth_of_sisyphus/";
+            },},{id: "books-the-personal-mba",
+          title: 'The Personal MBA',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_personal_mba/";
+            },},{id: "books-the-courage-to-be-disliked",
+          title: 'The Courage to Be Disliked',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_courage_to_be_disliked/";
+            },},{id: "books-seto-dharti",
+          title: 'Seto Dharti',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/seto_dharti/";
+            },},{id: "books-the-kite-runner",
+          title: 'The Kite Runner',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_kite_runner/";
+            },},{id: "projects-project-1",
+          title: 'project 1',
+          description: "with background image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/1_project/";
+            },},{id: "projects-project-2",
+          title: 'project 2',
+          description: "a project with a background image and giscus comments",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/2_project/";
+            },},{id: "projects-project-4",
+          title: 'project 4',
+          description: "another without an image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/4_project/";
+            },},{id: "projects-project-5",
+          title: 'project 5',
+          description: "a project with a background image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/5_project/";
+            },},{id: "projects-project-6",
+          title: 'project 6',
+          description: "a project with no image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/6_project/";
+            },},{id: "projects-project-7",
+          title: 'project 7',
+          description: "with background image",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/7_project/";
+            },},{id: "projects-project-8",
+          title: 'project 8',
+          description: "an other project with a background image and giscus comments",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/8_project/";
+            },},{id: "projects-project-9",
+          title: 'project 9',
+          description: "another project with an image 🎉",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/9_project/";
+            },},{id: "teachings-data-science-fundamentals",
+          title: 'Data Science Fundamentals',
+          description: "This course covers the foundational aspects of data science, including data collection, cleaning, analysis, and visualization. Students will learn practical skills for working with real-world datasets.",
+          section: "Teachings",handler: () => {
+              window.location.href = "/teachings/data-science-fundamentals/";
+            },},{id: "teachings-introduction-to-machine-learning",
+          title: 'Introduction to Machine Learning',
+          description: "This course provides an introduction to machine learning concepts, algorithms, and applications. Students will learn about supervised and unsupervised learning, model evaluation, and practical implementations.",
+          section: "Teachings",handler: () => {
+              window.location.href = "/teachings/introduction-to-machine-learning/";
+            },},{
+        id: 'social-github',
+        title: 'GitHub',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://github.com/karankessy", "_blank");
+        },
+      },{
+        id: 'social-linkedin',
+        title: 'LinkedIn',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://www.linkedin.com/in/karankessy", "_blank");
+        },
+      },{
+        id: 'social-facebook',
+        title: 'Facebook',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://facebook.com/karankessy", "_blank");
+        },
+      },{
+        id: 'social-x',
+        title: 'X',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://twitter.com/karankessy", "_blank");
+        },
+      },{
+        id: 'social-instagram',
+        title: 'Instagram',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://instagram.com/karankessy", "_blank");
+        },
+      },{
+        id: 'social-rss',
+        title: 'RSS Feed',
+        section: 'Socials',
+        handler: () => {
+          window.open("/feed.xml", "_blank");
+        },
+      },{
+      id: 'light-theme',
+      title: 'Change theme to light',
+      description: 'Change the theme of the site to Light',
+      section: 'Theme',
+      handler: () => {
+        setThemeSetting("light");
+      },
+    },
+    {
+      id: 'dark-theme',
+      title: 'Change theme to dark',
+      description: 'Change the theme of the site to Dark',
+      section: 'Theme',
+      handler: () => {
+        setThemeSetting("dark");
+      },
+    },
+    {
+      id: 'system-theme',
+      title: 'Use system default theme',
+      description: 'Change the theme of the site to System Default',
+      section: 'Theme',
+      handler: () => {
+        setThemeSetting("system");
+      },
+    },];
+
+</script> <script src="/assets/al_search/js/shortcut-key.js"></script> </body> </html>
