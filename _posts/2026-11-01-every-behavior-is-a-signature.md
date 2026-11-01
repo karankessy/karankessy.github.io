@@ -7,6 +7,9 @@ tags: security detection malware
 categories: security
 toc:
   sidebar: left
+mermaid:
+  enabled: true
+  zoomable: true
 published: true
 ---
 
