@@ -12,7 +12,7 @@ published: true
 
 _Why "behavioral detection" is still pattern matching, just with better marketing_
 
-Walk through any security conference expo hall, scroll any vendor landing page, or sit through any product demo, and you will hear the same story told two ways. There is the **old way**, signature-based detection, which is described as rigid, reactive, and already beaten. And there is the **new way**, behavioral detection, which is described as smart, adaptive, and able to catch threats nobody has seen before.
+Walk through any security conference expo hall, scroll any vendor landing page, or sit through any product demo, and you will hear the same story told two ways. There is the **old way**, signature-based detection, which is described as rigid and reactive. And there is the **new way**, behavioral detection, which is described as smart, adaptive, and able to catch threats nobody has seen before.
 
 It is a clean story. It sells well. And I think it is mostly a story.
 
