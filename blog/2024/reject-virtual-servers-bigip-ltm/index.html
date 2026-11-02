@@ -28,7 +28,7 @@ Type:                Reject
                                   (source match, most specific)
 
       all other traffic ────────►  Standard VS ────►  Pool ────►  Backend
-</code></pre></div></div> <hr> <h2 id="where-it-fits">Where it fits</h2> <p>The value is proportional to volume. For a handful of blocked addresses, an AFM rule or an iRule does the job and gives you better logging and more expressive matching.</p> <p>The Reject virtual server earns its place when the volume is high enough that connection tracking and software-stack processing are themselves the cost you are trying to avoid. Blocking a noisy scanning range, shedding traffic from a network you have no relationship with, keeping known-bad sources off the box entirely.</p> <p>The tradeoff is expressiveness. Source address and mask is all you get. No inspection, no conditional logic, and the logging is thin compared to a firewall rule, which matters if you need to answer questions later about what you dropped and why.</p> <p>So it is not a firewall replacement. It is the right tool when you already know what you want gone, you want it gone as early and cheaply as possible, and you do not need to reason about it afterwards.</p> </div> </article> <br> <hr> <br> <h2 class="text-3xl font-semibold mb-4 mt-12">Enjoy Reading This Article?</h2> <p class="mb-2">Here are some more articles you might like to read next:</p> <ul class="list-disc pl-7 my-3 space-y-2 marker:text-[var(--global-theme-color)]"> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/every-behavior-is-a-signature/">Every Behavior Is a Signature</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/homa-replacing-tcp-in-the-datacenter/">The Ambulance Behind the Truck: Why TCP Struggles in the Datacenter, and What Homa Does Differently</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/jev-and-laya/">Teaching a Model to Answer Instead of Talk</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/consistent-hashing-100tb-of-ram/">Consistent Hashing from Scratch, and Why Cloudflare Deleted 90% of It</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/openflow-from-the-wire-up/">A From-Scratch Tour of OpenFlow, From the Wire Up</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/ipv8-new-internet-fuss/">IPv8 and the Internet's Eternal Transition Problem</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/semantic-mapping-and-entropy/">Semantic Map Explorer - Entropy Embedding Atlas</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/cost-of-Engineering/">The Cost of Free Security: Wazuh and the Engineering Bill</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/everything-is-IPC/">Everything is Inter-Process Communication: HTTP, REST APIs, Serverless functions, what not</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/understanding-cors/">Why Your API Works in Postman but Fails in the Browser</a> </li> </ul> </div> </div> <footer class="fixed-bottom" role="contentinfo"> <div class="container mt-0"> © Copyright 2026 Karan Kc. Powered by <a href="https://jekyllrb.com/" target="_blank" rel="external nofollow noopener">Jekyll</a> with <a href="https://github.com/alshedivat/al-folio" rel="external nofollow noopener" target="_blank">al-folio</a> theme. Hosted by <a href="https://pages.github.com/" target="_blank" rel="external nofollow noopener">GitHub Pages</a>. Photos from <a href="https://unsplash.com" target="_blank" rel="external nofollow noopener">Unsplash</a>. Last updated: November 01, 2026. </div> </footer> <script>
+</code></pre></div></div> <hr> <h2 id="where-it-fits">Where it fits</h2> <p>The value is proportional to volume. For a handful of blocked addresses, an AFM rule or an iRule does the job and gives you better logging and more expressive matching.</p> <p>The Reject virtual server earns its place when the volume is high enough that connection tracking and software-stack processing are themselves the cost you are trying to avoid. Blocking a noisy scanning range, shedding traffic from a network you have no relationship with, keeping known-bad sources off the box entirely.</p> <p>The tradeoff is expressiveness. Source address and mask is all you get. No inspection, no conditional logic, and the logging is thin compared to a firewall rule, which matters if you need to answer questions later about what you dropped and why.</p> <p>So it is not a firewall replacement. It is the right tool when you already know what you want gone, you want it gone as early and cheaply as possible, and you do not need to reason about it afterwards.</p> </div> </article> <br> <hr> <br> <h2 class="text-3xl font-semibold mb-4 mt-12">Enjoy Reading This Article?</h2> <p class="mb-2">Here are some more articles you might like to read next:</p> <ul class="list-disc pl-7 my-3 space-y-2 marker:text-[var(--global-theme-color)]"> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/every-behavior-is-a-signature/">Every Behavior Is a Signature</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/homa-replacing-tcp-in-the-datacenter/">The Ambulance Behind the Truck: Why TCP Struggles in the Datacenter, and What Homa Does Differently</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/jev-and-laya/">Teaching a Model to Answer Instead of Talk</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/consistent-hashing-100tb-of-ram/">Consistent Hashing from Scratch, and Why Cloudflare Deleted 90% of It</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/openflow-from-the-wire-up/">A From-Scratch Tour of OpenFlow, From the Wire Up</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/ipv8-new-internet-fuss/">IPv8 and the Internet's Eternal Transition Problem</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/semantic-mapping-and-entropy/">Semantic Map Explorer - Entropy Embedding Atlas</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/cost-of-Engineering/">The Cost of Free Security: Wazuh and the Engineering Bill</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/everything-is-IPC/">Everything is Inter-Process Communication: HTTP, REST APIs, Serverless functions, what not</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/understanding-cors/">Why Your API Works in Postman but Fails in the Browser</a> </li> </ul> </div> </div> <footer class="fixed-bottom" role="contentinfo"> <div class="container mt-0"> © Copyright 2026 Karan Kc. Powered by <a href="https://jekyllrb.com/" target="_blank" rel="external nofollow noopener">Jekyll</a> with <a href="https://github.com/alshedivat/al-folio" rel="external nofollow noopener" target="_blank">al-folio</a> theme. Hosted by <a href="https://pages.github.com/" target="_blank" rel="external nofollow noopener">GitHub Pages</a>. Photos from <a href="https://unsplash.com" target="_blank" rel="external nofollow noopener">Unsplash</a>. Last updated: November 02, 2026. </div> </footer> <script>
   window.alFolio = {
     compatBootstrap: false
   };
@@ -379,6 +379,66 @@ ninja.data = [{
           description: "",
           section: "Books",handler: () => {
               window.location.href = "/books/the_kite_runner/";
+            },},{id: "books-a-brief-history-of-intelligence",
+          title: 'A Brief History of Intelligence',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/a_brief_history_of_intelligence/";
+            },},{id: "books-freedom-from-the-known",
+          title: 'Freedom from the Known',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/freedom_from_the_known/";
+            },},{id: "books-gunahon-ka-devata",
+          title: 'Gunahon ka Devata',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/gunahon_ka_devata/";
+            },},{id: "books-i-am-that",
+          title: 'I Am That',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/i_am_that/";
+            },},{id: "books-influence-the-psychology-of-persuasion",
+          title: 'Influence: The Psychology of Persuasion',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/influence/";
+            },},{id: "books-man-39-s-search-for-meaning",
+          title: 'Man&amp;#39;s Search for Meaning',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/mans_search_for_meaning/";
+            },},{id: "books-modern-operating-systems-5th-edition",
+          title: 'Modern Operating Systems (5th Edition)',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/modern_operating_systems/";
+            },},{id: "books-notes-from-underground",
+          title: 'Notes from Underground',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/notes_from_underground/";
+            },},{id: "books-radha",
+          title: 'Radha',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/radha/";
+            },},{id: "books-the-48-laws-of-power",
+          title: 'The 48 Laws of Power',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_48_laws_of_power/";
+            },},{id: "books-the-first-and-last-freedom",
+          title: 'The First and Last Freedom',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_first_and_last_freedom/";
+            },},{id: "books-the-web-application-hacker-39-s-handbook",
+          title: 'The Web Application Hacker&amp;#39;s Handbook',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/web_application_hackers_handbook/";
             },},{id: "projects-project-1",
           title: 'project 1',
           description: "with background image",
