@@ -10,7 +10,7 @@ buy_link: https://www.amazon.com/s?k=Influence%3A+The+Psychology+of+Persuasion+R
 date: 2019-01-01
 started: 2019-01-01
 released: 1984
-status: Reading
+status: Finished
 ---
 
-Currently reading.
+Finished.

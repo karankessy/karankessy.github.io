@@ -10,7 +10,7 @@ buy_link: https://www.amazon.com/s?k=The+48+Laws+of+Power+Robert+Greene
 date: 2019-01-01
 started: 2019-01-01
 released: 1998
-status: Reading
+status: Finished
 ---
 
-Currently reading.
+Finished.
