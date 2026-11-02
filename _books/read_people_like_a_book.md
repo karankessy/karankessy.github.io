@@ -3,6 +3,7 @@ layout: book-review
 title: "Read People Like a Book"
 author: Patrick King
 isbn: 9781647432232
+cover: assets/img/books/read_people_like_a_book.webp
 categories: psychology communication self-help
 tags:
 buy_link: https://www.amazon.com/s?k=Read+People+Like+a+Book+Patrick+King

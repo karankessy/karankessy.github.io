@@ -3,6 +3,7 @@ layout: book-review
 title: "The Kite Runner"
 author: Khaled Hosseini
 isbn: 9780525534488
+cover: assets/img/books/the_kite_runner.webp
 categories: fiction literary drama
 tags:
 buy_link: https://www.amazon.com/s?k=The+Kite+Runner+Khaled+Hosseini

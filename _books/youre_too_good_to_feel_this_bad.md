@@ -3,6 +3,7 @@ layout: book-review
 title: "You're Too Good to Feel This Bad"
 author: Nate Dallas
 isbn: 9780578643427
+cover: assets/img/books/youre_too_good_to_feel_this_bad.webp
 categories: self-help wellness
 tags:
 buy_link: https://www.amazon.com/s?k=Youre+Too+Good+to+Feel+This+Bad+Nate+Dallas

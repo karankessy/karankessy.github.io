@@ -3,6 +3,7 @@ layout: book-review
 title: "The Alchemist"
 author: Paulo Coelho
 isbn: 9780062315007
+cover: assets/img/books/the_alchemist.webp
 categories: fiction spiritual fable
 tags:
 buy_link: https://www.amazon.com/s?k=The+Alchemist+Paulo+Coelho

@@ -3,6 +3,7 @@ layout: book-review
 title: "The Myth of Sisyphus"
 author: Albert Camus
 isbn: 9780525564454
+cover: assets/img/books/the_myth_of_sisyphus.webp
 categories: philosophy existentialism essays
 tags:
 buy_link: https://www.amazon.com/s?k=The+Myth+of+Sisyphus+Albert+Camus

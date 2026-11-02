@@ -3,6 +3,7 @@ layout: book-review
 title: "The Personal MBA"
 author: Josh Kaufman
 isbn: 9781591845577
+cover: assets/img/books/the_personal_mba.webp
 categories: business education nonfiction
 tags:
 buy_link: https://www.amazon.com/s?k=The+Personal+MBA+Josh+Kaufman

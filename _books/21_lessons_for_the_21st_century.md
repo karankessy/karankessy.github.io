@@ -3,6 +3,7 @@ layout: book-review
 title: "21 Lessons for the 21st Century"
 author: Yuval Noah Harari
 isbn: 9780525512172
+cover: assets/img/books/21_lessons_for_the_21st_century.webp
 categories: nonfiction society history
 tags:
 buy_link: https://www.amazon.com/s?k=21+Lessons+for+the+21st+Century+Yuval+Noah+Harari

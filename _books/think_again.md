@@ -3,6 +3,7 @@ layout: book-review
 title: "Think Again"
 author: Adam Grant
 isbn: 9781984878106
+cover: assets/img/books/think_again.webp
 categories: psychology critical-thinking nonfiction
 tags:
 buy_link: https://www.amazon.com/s?k=Think+Again+Adam+Grant

@@ -3,6 +3,7 @@ layout: book-review
 title: "The Courage to Be Disliked"
 author: Ichiro Kishimi & Fumitake Koga
 isbn: 9781501197277
+cover: assets/img/books/the_courage_to_be_disliked.webp
 categories: psychology self-help philosophy
 tags:
 buy_link: https://www.amazon.com/s?k=The+Courage+to+Be+Disliked+Ichiro+Kishimi

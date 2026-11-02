@@ -3,6 +3,7 @@ layout: book-review
 title: "On Truth"
 author: J. Krishnamurti
 isbn: 9780062510136
+cover: assets/img/books/on_truth.webp
 categories: philosophy spirituality
 tags:
 buy_link: https://www.amazon.com/s?k=On+Truth+J+Krishnamurti
