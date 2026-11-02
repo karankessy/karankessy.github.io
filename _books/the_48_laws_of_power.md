@@ -7,8 +7,8 @@ cover: assets/img/books/the_48_laws_of_power.webp
 categories: nonfiction strategy psychology
 tags:
 buy_link: https://www.amazon.com/s?k=The+48+Laws+of+Power+Robert+Greene
-date: 2026-11-02
-started: 2026-11-02
+date: 2019-01-01
+started: 2019-01-01
 released: 1998
 status: Reading
 ---
